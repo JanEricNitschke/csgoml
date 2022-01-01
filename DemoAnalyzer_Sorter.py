@@ -19,10 +19,10 @@ else:
 
 dir="D:\CSGO\Demos"
 #dir="C:\Program Files (x86)\Steam\steamapps\common\Counter-Strike Global Offensive\csgo\\replays"
-StartID=0
-EndID=1
+StartID=118
+EndID=999
 logging.info("Scanning directory: "+dir)
-existing_maps=["vertigo","ancient","cache","cbble","dust2","inferno","mirage","nuke","overpass","train","santorini_playtest"]
+existing_maps=["vertigo","ancient","cache","cbble","dust2","inferno","mirage","nuke","overpass","train","santorini_playtest","santorini"]
 logging.info("Maps considered: "+", ".join(existing_maps))
 
 logging.debug("Changing directoy now.")
@@ -46,9 +46,12 @@ for filename in os.listdir(dir):
                 if int(ID)>EndID:
                     logging.info("Parsed last relevant demo.")
                     break
-                demo_parser = DemoParser(demofile=f,demo_id=ID,parse_rate=64, buy_style="hltv",dmg_rolled=True,parse_frames=True)
+                demo_parser = DemoParser(demofile=f,demo_id=ID,parse_rate=128, buy_style="hltv",dmg_rolled=True,parse_frames=True)
                 data = demo_parser.parse()
-                demo_parser.clean_rounds()
+                try:
+                    demo_parser.clean_rounds()
+                except AttributeError:
+                    pass
                 data=demo_parser.json
                 if data["mapName"].startswith("de_"):
                     MapName=data["mapName"].split("_")[1]
