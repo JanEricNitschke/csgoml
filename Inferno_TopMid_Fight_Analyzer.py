@@ -4,6 +4,7 @@ import os
 import sys
 import json
 import logging
+import pandas as pd
 
 def checkPosition(dict):
     logging.debug("Checking Position")
@@ -13,11 +14,11 @@ def checkPosition(dict):
     logging.debug("VictimSide: "+str(dict["victimSide"]))
     if ((dict["attackerAreaName"]=="TopofMid" or dict["attackerAreaName"]=="Middle") and dict["attackerSide"]=="CT"):
     # Filter for victim Position and bottom mid and side of T
-        if ((dict["victimAreaName"]=="Middle") and dict["victimSide"]=="T"): # or dict["victimAreaName"]=="TRamp"
+        if ((dict["victimAreaName"]=="Middle") and dict["victimSide"]=="T") or dict["victimAreaName"]=="TRamp":
             return True
     if ((dict["victimAreaName"]=="TopofMid" or dict["victimAreaName"]=="Middle") and dict["victimSide"]=="CT"):
                 # Filter for victim Position at top mid and side of CT
-        if ((dict["attackerAreaName"]=="Middle") and dict["attackerSide"]=="T"): #dict["attackerAreaName"]=="TRamp" or 
+        if ((dict["attackerAreaName"]=="Middle") and dict["attackerSide"]=="T") or dict["attackerAreaName"]=="TRamp":
             return True
     return False
 
@@ -95,141 +96,49 @@ def RoundAllowed(round):
     #return ((round["isWarmup"]==False) and (round["winningSide"]!="") and (round["ctSpend"]>0 or round["tSpend"]>0))
     return (round["ctSpend"]>1 or round["tSpend"]>1)
 
-def InitializeRoundResults():
-    RoundResults={}
-    RoundResults["TKills"]=0
-    RoundResults["CTKills"]=0
-    RoundResults["TDamage"]=0
-    RoundResults["CTDamage"]=0
-    RoundResults["Times"]=[]
-    RoundResults["CTKillWeapons"]=[]
-    RoundResults["CTDamageWeapons"]=[]
-    RoundResults["TKillWeapons"]=[]
-    RoundResults["TDamageWeapons"]=[]
-    RoundResults["Events"]=[]
-    RoundResults["Round"]=0
-    RoundResults["Empty"]=True
-    return RoundResults
 
-def InitializeMapResult():
-    MapResult={}
-    MapResult["TKills"]=0
-    MapResult["CTKills"]=0
-    MapResult["TDamage"]=0
-    MapResult["CTDamage"]=0
-    MapResult["NetDamage"]=[] # >0 Means more Dmg done by CT
-    MapResult["NetKills"]=[]  # >0 Means more kills done by CT
-    MapResult["Times"]=[]
-    MapResult["CTKillWeapons"]=[]
-    MapResult["CTDamageWeapons"]=[]
-    MapResult["TKillWeapons"]=[]
-    MapResult["TDamageWeapons"]=[]
-    MapResult["Rounds"]=[]
-    MapResult["RoundResults"]=[]
-    return MapResult
 
-def InitializeTotalResult():
-    TotalResult={}
-    TotalResult["RoundWithCTDamageAdvantage"]=0
-    TotalResult["RoundWithTDamageAdvantage"]=0
-    TotalResult["RoundWithCTKillAdvantage"]=0
-    TotalResult["RoundWithTKillAdvantage"]=0
-    TotalResult["TKills"]=0
-    TotalResult["CTKills"]=0
-    TotalResult["TDamage"]=0
-    TotalResult["CTDamage"]=0
-    TotalResult["NetDamage"]=[] # >0 Means more Dmg done by CT
-    TotalResult["NetKills"]=[]  # >0 Means more kills done by CT
-    TotalResult["Times"]=[]
-    TotalResult["CTKillWeapons"]=[]
-    TotalResult["CTDamageWeapons"]=[]
-    TotalResult["TKillWeapons"]=[]
-    TotalResult["TDamageWeapons"]=[]
-    TotalResult["Rounds"]=[]
-    TotalResult["RoundResults"]=[]
-    return TotalResult
 
-def SummarizeRound(dict,gameTime,round,RoundResults):
-    EventResult={}
+def SummarizeRound(dict,gameTime,round,Results,MatchID):
+    Results["Weapon"].append(dict["weapon"])
+    Results["Round"].append(round["endTScore"]+round["endCTScore"])
     if "hpDamageTaken" in dict:
-        EventResult["type"]="Damage"
-        EventResult["DamageTaken"]=dict["hpDamageTaken"]
+        Results["type"].append("Damage")
+        Results["DamageTaken"].append(dict["hpDamageTaken"])
     else:
-        EventResult["type"]="Kill"
-    EventResult["WinnerSide"]=dict["attackerSide"]
-    if EventResult["type"]=="Kill":
-        if EventResult["WinnerSide"]=="CT":
-            RoundResults["CTKillWeapons"].append(dict["weapon"])
-            RoundResults["CTKills"]+=1
-        elif EventResult["WinnerSide"]=="T":
-            RoundResults["TKillWeapons"].append(dict["weapon"])
-            RoundResults["TKills"]+=1
-    elif EventResult["type"]=="Damage":
-        if EventResult["WinnerSide"]=="CT":
-            RoundResults["CTDamageWeapons"].append(dict["weapon"])
-            RoundResults["CTDamage"]+=EventResult["DamageTaken"]
-        elif EventResult["WinnerSide"]=="T":
-            RoundResults["TDamageWeapons"].append(dict["weapon"])
-            RoundResults["TDamage"]+=EventResult["DamageTaken"]
-    RoundResults["Round"]=round["endTScore"]+round["endCTScore"]
-    EventResult["Time"]=gameTime
-    RoundResults["Times"].append(gameTime)
-    #RoundResults["Events"].append(EventResult)
-    RoundResults["Empty"]=False
-
-def UpdateMapResult(MapResult,RoundResults):
-    if RoundResults["Empty"]:
-        return
-    MapResult["TKills"]+=RoundResults["TKills"]
-    MapResult["CTKills"]+=RoundResults["CTKills"]
-    MapResult["TDamage"]+=RoundResults["TDamage"]
-    MapResult["CTDamage"]+=RoundResults["CTDamage"]
-    MapResult["NetDamage"].append(RoundResults["CTDamage"]-RoundResults["TDamage"]) # >0 Means more Dmg done by CT
-    MapResult["NetKills"].append(RoundResults["CTKills"]-RoundResults["TKills"])  # >0 Means more kills done by CT
-    MapResult["Times"].extend(RoundResults["Times"])
-    MapResult["CTKillWeapons"].extend(RoundResults["CTKillWeapons"])
-    MapResult["CTDamageWeapons"].extend(RoundResults["CTDamageWeapons"])
-    MapResult["TKillWeapons"].extend(RoundResults["TKillWeapons"])
-    MapResult["TDamageWeapons"].extend(RoundResults["TDamageWeapons"])
-    MapResult["Rounds"].append(RoundResults["Round"])
-    #MapResult["RoundResults"].append(RoundResults)
-
-def UpdateTotalResult(TotalResult,MapResults):
-    TotalResult["TKills"]+=MapResults["TKills"]
-    TotalResult["CTKills"]+=MapResults["CTKills"]
-    TotalResult["TDamage"]+=MapResults["TDamage"]
-    TotalResult["CTDamage"]+=MapResults["CTDamage"]
-    TotalResult["NetDamage"].extend(MapResults["NetDamage"]) # >0 Means more Dmg done by CT
-    TotalResult["NetKills"].extend(MapResults["NetKills"])  # >0 Means more kills done by CT
-    TotalResult["Times"].extend(MapResults["Times"])
-    TotalResult["CTKillWeapons"].extend(MapResults["CTKillWeapons"])
-    TotalResult["CTDamageWeapons"].extend(MapResults["CTDamageWeapons"])
-    TotalResult["TKillWeapons"].extend(MapResults["TKillWeapons"])
-    TotalResult["TDamageWeapons"].extend(MapResults["TDamageWeapons"])
-    TotalResult["Rounds"].extend(MapResults["Rounds"])
-    for NetDamage in Map["NetDamage"]:
-        if NetDamage>0:
-            TotalResult["RoundWithCTDamageAdvantage"]+=1
-        elif NetDamage<0:
-            TotalResult["RoundWithTDamageAdvantage"]+=1
-    for NetKills in Map["NetKills"]:
-        if NetKills>0:
-            TotalResult["RoundWithCTKillAdvantage"]+=1
-        elif NetKills<0:
-            TotalResult["RoundWithTKillAdvantage"]+=1
-    #TotalResult["RoundResults"].append(MapResults)
+        Results["type"].append("Kill")
+        Results["DamageTaken"].append(0)
+    Results["WinnerSide"].append(dict["attackerSide"])
+    Results["Time"].append(gameTime)
+    Results["AttackerArea"].append(dict["attackerAreaName"])
+    Results["VictimArea"].append(dict["victimAreaName"])
+    Results["MatchID"].append(MatchID)
 
 
-def AnalyzeMap(data,FastWeaponCheck):
-    MapResult=InitializeMapResult()
-    events=["kills","damages"]
+def InitializeResults():
+    Results={}
+    Results["Weapon"]=[]
+    Results["Round"]=[]
+    Results["type"]=[]
+    Results["DamageTaken"]=[]
+    Results["WinnerSide"]=[]
+    Results["Time"]=[]
+    Results["AttackerArea"]=[]
+    Results["VictimArea"]=[]
+    Results["MatchID"]=[]
+    return Results
+
+
+def AnalyzeMap(data,FastWeaponCheck,Results):
+    #events=["kills","damages"]
+    events=["kills"]
+    MatchID=data["matchID"]
     for round in data["gameRounds"]:
         # Throw away warump or reset round.
         # Proper rounds are neither warump but always have a winningSide
         if RoundAllowed(round):
             logging.debug("Round:")
             logging.debug(round)
-            RoundResults=InitializeRoundResults()
             #Go through all damage events
             for event in events:
                 logging.debug(event+" of that round:")
@@ -238,28 +147,25 @@ def AnalyzeMap(data,FastWeaponCheck):
                     logging.debug("Round does not have damages recorded")
                     continue
                 for dict in round[event]:
-                    if checkPosition(dict): 
-                        gameTime=getGameTime(dict)
-                        if gameTime>100:
+                    gameTime=getGameTime(dict)
+                    if gameTime>100:
+                        if checkPosition(dict):
                             if checkWeapons(round,dict,FastWeaponCheck):
                                 #printInfo(dict,gameTime,round)
-                                SummarizeRound(dict,gameTime,round,RoundResults)
-            UpdateMapResult(MapResult,RoundResults)
-    #Combine Round Results to MapResult
-    return MapResult
+                                SummarizeRound(dict,gameTime,round,Results,MatchID)
 
 
 Debug=False
 
 if Debug:
-    logging.basicConfig(encoding='utf-8', level=logging.DEBUG)
+    logging.basicConfig(filename='D:\CSGO\ML\CSGOML\Inferno_Analyzer.log', encoding='utf-8', level=logging.DEBUG,filemode='w')
 else:
-    logging.basicConfig(encoding='utf-8', level=logging.INFO)
-FastWeaponCheck=True
-TotalResults=InitializeTotalResult()
-MapResults=[]
+    logging.basicConfig(filename='D:\CSGO\ML\CSGOML\Inferno_Analyzer.log', encoding='utf-8', level=logging.INFO,filemode='w')
+FastWeaponCheck=False
+dataframe=None
+Results=InitializeResults()
 NumberOfDemosAnalyzed=0
-#Number="669"
+Number=""
 dir="D:\CSGO\Demos\Maps\inferno"
 for filename in os.listdir(dir):
     try:
@@ -267,18 +173,18 @@ for filename in os.listdir(dir):
         NumberStart=True
     except ValueError:
         NumberStart=False
-    if filename.endswith(".json") and NumberStart: #and filename.startswith(Number):
+    if filename.endswith(".json") and NumberStart and filename.startswith(Number):
         logging.info("Working on file "+filename)
         f = os.path.join(dir, filename)
         # checking if it is a file
         if os.path.isfile(f):
             with open(f, encoding='utf-8') as f:
                 demo_data = json.load(f)
-                MapResults.append(AnalyzeMap(demo_data,FastWeaponCheck))
+                AnalyzeMap(demo_data,FastWeaponCheck,Results)
                 NumberOfDemosAnalyzed+=1
-for Map in MapResults:
-    UpdateTotalResult(TotalResults,Map)
-print(TotalResults)
+dataframe=pd.DataFrame(Results)
+logging.info(dataframe)
+logging.info("Number of demos analyzed: "+str(NumberOfDemosAnalyzed))
 # Combine MapResults to total Result
 #os.chdir(dir)
 #print(os.path.abspath(os.getcwd()))
@@ -292,4 +198,115 @@ print(TotalResults)
 
 
 
-                        
+# def UpdateMapResult(MapResult,RoundResults,MatchID):
+#     if RoundResults["Empty"]:
+#         return
+#     MapResult["TKillStamps"].extend([MatchID+"_"+str(Round) for Round in RoundResults["TKillStamps"]])
+#     MapResult["CTKillStamps"].extend([MatchID+"_"+str(Round) for Round in RoundResults["CTKillStamps"]])
+#     MapResult["TKills"]+=RoundResults["TKills"]
+#     MapResult["CTKills"]+=RoundResults["CTKills"]
+#     MapResult["TDamage"]+=RoundResults["TDamage"]
+#     MapResult["CTDamage"]+=RoundResults["CTDamage"]
+#     MapResult["NetDamage"].append(RoundResults["CTDamage"]-RoundResults["TDamage"]) # >0 Means more Dmg done by CT
+#     MapResult["NetKills"].append(RoundResults["CTKills"]-RoundResults["TKills"])  # >0 Means more kills done by CT
+#     MapResult["Times"].extend(RoundResults["Times"])
+#     MapResult["CTKillWeapons"].extend(RoundResults["CTKillWeapons"])
+#     MapResult["CTDamageWeapons"].extend(RoundResults["CTDamageWeapons"])
+#     MapResult["TKillWeapons"].extend(RoundResults["TKillWeapons"])
+#     MapResult["TDamageWeapons"].extend(RoundResults["TDamageWeapons"])
+#     MapResult["Rounds"].append(RoundResults["Round"])
+#    # MapResult["RoundResults"].append(RoundResults)
+#     if len(MapResult["Events"])==0:
+#         MapResult["Events"]=RoundResults["Events"]
+#     else:
+#         for key in MapResult["Events"]:
+#             MapResult["Events"][key].extend(RoundResults["Events"][key])
+
+
+# def UpdateTotalResult(TotalResult,MapResults):
+#     TotalResult["TKills"]+=MapResults["TKills"]
+#     TotalResult["CTKills"]+=MapResults["CTKills"]
+#     TotalResult["TDamage"]+=MapResults["TDamage"]
+#     TotalResult["CTDamage"]+=MapResults["CTDamage"]
+#     TotalResult["NetDamage"].extend(MapResults["NetDamage"]) # >0 Means more Dmg done by CT
+#     TotalResult["NetKills"].extend(MapResults["NetKills"])  # >0 Means more kills done by CT
+#     TotalResult["Times"].extend(MapResults["Times"])
+#     TotalResult["CTKillStamps"].extend(MapResults["CTKillStamps"])
+#     TotalResult["CTKillWeapons"].extend(MapResults["CTKillWeapons"])
+#     TotalResult["CTDamageWeapons"].extend(MapResults["CTDamageWeapons"])
+#     TotalResult["TKillStamps"].extend(MapResults["TKillStamps"])
+#     TotalResult["TKillWeapons"].extend(MapResults["TKillWeapons"])
+#     TotalResult["TDamageWeapons"].extend(MapResults["TDamageWeapons"])
+#     TotalResult["Rounds"].extend(MapResults["Rounds"])
+#     for NetDamage in Map["NetDamage"]:
+#         if NetDamage>0:
+#             TotalResult["RoundWithCTDamageAdvantage"]+=1
+#         elif NetDamage<0:
+#             TotalResult["RoundWithTDamageAdvantage"]+=1
+#     for NetKills in Map["NetKills"]:
+#         if NetKills>0:
+#             TotalResult["RoundWithCTKillAdvantage"]+=1
+#         elif NetKills<0:
+#             TotalResult["RoundWithTKillAdvantage"]+=1
+#     #TotalResult["RoundResults"].append(MapResults)
+#     if len(TotalResult["Events"])==0:
+#         TotalResult["Events"]=MapResults["Events"]
+#     else:
+#         if len(MapResults["Events"])==0:
+#             return
+#         for key in TotalResult["Events"]:
+#             TotalResult["Events"][key].extend(MapResults["Events"][key])
+
+# def InitializeMapResult():
+#     MapResult={}
+#     MapResult["TKills"]=0
+#     MapResult["CTKills"]=0
+#     MapResult["TDamage"]=0
+#     MapResult["CTDamage"]=0
+#     MapResult["NetDamage"]=[] # >0 Means more Dmg done by CT
+#     MapResult["NetKills"]=[]  # >0 Means more kills done by CT
+#     MapResult["Times"]=[]
+#     MapResult["CTKillWeapons"]=[]
+#     MapResult["CTDamageWeapons"]=[]
+#     MapResult["TKillWeapons"]=[]
+#     MapResult["TDamageWeapons"]=[]
+#     MapResult["Rounds"]=[]
+#     MapResult["RoundResults"]=[]
+#     return MapResult
+
+# def InitializeTotalResult():
+#     TotalResult={}
+#     TotalResult["RoundWithCTDamageAdvantage"]=0
+#     TotalResult["RoundWithTDamageAdvantage"]=0
+#     TotalResult["RoundWithCTKillAdvantage"]=0
+#     TotalResult["RoundWithTKillAdvantage"]=0
+#     TotalResult["TKills"]=0
+#     TotalResult["CTKills"]=0
+#     TotalResult["TDamage"]=0
+#     TotalResult["CTDamage"]=0
+#     TotalResult["NetDamage"]=[] # >0 Means more Dmg done by CT
+#     TotalResult["NetKills"]=[]  # >0 Means more kills done by CT
+#     TotalResult["Times"]=[]
+#     TotalResult["CTKillWeapons"]=[]
+#     TotalResult["CTDamageWeapons"]=[]
+#     TotalResult["TKillWeapons"]=[]
+#     TotalResult["TDamageWeapons"]=[]
+#     TotalResult["Rounds"]=[]
+#     TotalResult["RoundResults"]=[]
+#     return TotalResult
+
+# def InitializeRoundResults():
+#     RoundResults={}
+#     RoundResults["TKills"]=0
+#     RoundResults["CTKills"]=0
+#     RoundResults["TDamage"]=0
+#     RoundResults["CTDamage"]=0
+#     RoundResults["Times"]=[]
+#     RoundResults["CTKillWeapons"]=[]
+#     RoundResults["CTDamageWeapons"]=[]
+#     RoundResults["TKillWeapons"]=[]
+#     RoundResults["TDamageWeapons"]=[]
+#     RoundResults["Events"]=[]
+#     RoundResults["Round"]=0
+#     RoundResults["Empty"]=True
+#     return RoundResults
