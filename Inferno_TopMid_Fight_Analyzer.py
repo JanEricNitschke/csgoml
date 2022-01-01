@@ -130,8 +130,8 @@ def InitializeResults():
 
 
 def AnalyzeMap(data,FastWeaponCheck,Results):
-    #events=["kills","damages"]
-    events=["kills"]
+    events=["kills","damages"]
+    #events=["kills"]
     MatchID=data["matchID"]
     for round in data["gameRounds"]:
         # Throw away warump or reset round.
@@ -183,6 +183,8 @@ for filename in os.listdir(dir):
                 AnalyzeMap(demo_data,FastWeaponCheck,Results)
                 NumberOfDemosAnalyzed+=1
 dataframe=pd.DataFrame(Results)
+output_path="D:\CSGO\Demos\Maps\inferno"
+dataframe.to_json(output_path+"\Inferno_kills_damages_mid.json")
 logging.info(dataframe)
 logging.info("Number of demos analyzed: "+str(NumberOfDemosAnalyzed))
 # Combine MapResults to total Result
