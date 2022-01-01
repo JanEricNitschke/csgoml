@@ -33,24 +33,35 @@ def getGameTime(dict):
 
 
 def printInfo(dict,gameTime,round):
-    print("Attacker: "+dict["attackerSide"])
-    print("Round: "+str(round["endTScore"]+round["endCTScore"]))
-    print("Time: "+str(gameTime))
-    print("Weapon: "+dict["weapon"])
     if "hpDamageTaken" in dict:
-        print("Damage: "+str(dict["hpDamageTaken"]))
+        logging.info("Damage event:")
+    else:
+        logging.info("Kill event:")
+    logging.info("Attacker: "+dict["attackerSide"])
+    logging.info("Round: "+str(round["endTScore"]+round["endCTScore"]))
+    logging.info("Time: "+str(gameTime))
+    logging.info("Weapon: "+dict["weapon"])
+    logging.info("AttackerArea: "+str(dict["attackerAreaName"]))
+    logging.info("AttackerSide: "+str(dict["attackerSide"]))
+    logging.info("VictimArea: "+str(dict["victimAreaName"]))
+    logging.info("VictimSide: "+str(dict["victimSide"]))
+    if "hpDamageTaken" in dict:
+       logging.info("Damage: "+str(dict["hpDamageTaken"]))
+    logging.info("")
       
 
 def checkWeapons(round,dict,FastCheck):
     # Change check weapons to look at inventory of the player for frames before his death
     logging.debug("Checking weapons!")
+    # Fast check logic
+    logging.debug("Doing fast check with buyType!")
+    logging.debug("victimBuy: "+round[dict["victimSide"].lower()+"BuyType"])
+    logging.debug("attackerBuy: "+round[dict["attackerSide"].lower()+"BuyType"])
+    VictimFullBuy=round[dict["victimSide"].lower()+"BuyType"]=="Full Buy"
+    BothHalfBuy=(round[dict["victimSide"].lower()+"BuyType"]=="Half Buy" and round[dict["attackerSide"].lower()+"BuyType"]=="Half Buy")
+    FastCheckResult=(VictimFullBuy or BothHalfBuy)
     if FastCheck:
-        logging.debug("Doing fast check with buyType!")
-        logging.debug("victimBuy: "+round[dict["victimSide"].lower()+"BuyType"])
-        logging.debug("attackerBuy: "+round[dict["attackerSide"].lower()+"BuyType"])
-        VictimFullBuy=round[dict["victimSide"].lower()+"BuyType"]=="Full Buy"
-        BothHalfBuy=(round[dict["victimSide"].lower()+"BuyType"]=="Half Buy" and round[dict["attackerSide"].lower()+"BuyType"]=="Half Buy")
-        return (VictimFullBuy or BothHalfBuy)
+        return FastCheckResult
     logging.debug("Doing slow check with active weapons!")
     weaponslist=[]
     for frame in round["frames"]:
@@ -59,11 +70,13 @@ def checkWeapons(round,dict,FastCheck):
         else:
             for player in frame[dict["victimSide"].lower()]["players"]:
                 if player["steamID"]==dict["victimSteamID"]:
+                    if not player["isAlive"]:
+                        continue
                     for weapon in player["inventory"]:
                         if weapon["weaponClass"]=="Rifle":
                             if weapon["weaponName"] not in weaponslist:
                                 weaponslist.append(weapon["weaponName"])
-    allowedWeapons=["M4A4","AWP","AK-47","M4A1","FAMAS","Galil AR","SG 553","SSG 08","G3SG1","SCAR-20"]
+    allowedWeapons=["M4A4","AWP","AK-47","Galil AR","M4A1","SG 553","SSG 08","G3SG1","SCAR-20"] #"FAMAS",
     logging.debug("Allowed weapons: " +" ".join(allowedWeapons))
     logging.debug("Attacker weapon: "+dict["weapon"])
     logging.debug("Victim weapons: "+" ".join(weaponslist))
@@ -71,7 +84,7 @@ def checkWeapons(round,dict,FastCheck):
         return False
     for weapon in weaponslist:
         if weapon in allowedWeapons:
-            return True
+            return (True and FastCheckResult)
     return False
 
 def RoundAllowed(round):
