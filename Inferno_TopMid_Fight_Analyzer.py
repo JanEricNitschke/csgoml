@@ -28,7 +28,7 @@ def getGameTime(dict):
     try:
         return int(TimeList[0])*60+int(TimeList[1])
     except ValueError:
-        return 120+int(TimeList[1])
+        return -int(TimeList[1])
     
 
 
