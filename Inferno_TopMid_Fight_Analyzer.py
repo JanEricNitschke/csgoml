@@ -77,7 +77,7 @@ def printInfo(dict,gameTime,round,map):
       
 
 def checkWeapons(round,dict,FastCheck):
-    # Change check weapons to look at inventory of the player for frames before his death
+    # Check if the round was a proper buy and that both the attacker and victim had weapons that would be used for an actual mid fight.
     logging.debug("Checking weapons!")
     # Fast check logic
     logging.debug("Doing fast check with buyType!")
@@ -114,6 +114,7 @@ def checkWeapons(round,dict,FastCheck):
     return False
 
 def RoundAllowed(round):
+    # Some round cleaning, not neccesarily needed anymore due to the jsons having already been cleaned at creation.
     logging.debug("Checking if round should be analyzed!")
     logging.debug("Round is warmup: "+str(round["isWarmup"]))
     logging.debug("Winning side: "+round["winningSide"])
@@ -178,42 +179,98 @@ def AnalyzeMap(data,FastWeaponCheck,Results,map):
                     if gameTime>100:
                         if checkPosition(dict,map):
                             if checkWeapons(round,dict,FastWeaponCheck):
-                                #printInfo(dict,gameTime,round)
-                                SummarizeRound(dict,gameTime,round,Results,MatchID)
+                                #printInfo(dict,gameTime,round,map)
+                                SummarizeRound(dict,gameTime,round,Results,MatchID,map)
+
+def CalculateCTWinPercentage(df):
+        CTWin=(df.WinnerSide == "CT").sum()
+        TWin=(df.WinnerSide == "T").sum()
+        if (CTWin+TWin)>0:
+            return ("CT Win: "+str(round(100*CTWin/(CTWin+TWin)))+"%", "Total Kills: "+str(CTWin+TWin))
+        else:
+            return "No Kills found!"
+
+def main(args):
+    parser = argparse.ArgumentParser("Analyze the early mid fight on inferno")
+    parser.add_argument("-d", "--debug",  action='store_true', default=False, help="Enable debug output.")
+    parser.add_argument("-a", "--analyze",  action='store_true', default=True, help="Reanalyze demos instead of reading from existing json file.")
+    parser.add_argument("-j", "--json",  default="D:\CSGO\Demos\Maps\inferno\Analysis\Inferno_kills_damages_mid.json", help="Path of json containting preanalyzed results.")
+    parser.add_argument("-f", "--fastcheck",  action='store_true', default=False,  help="When analyzing demos only do the fast check of looking at the victim teams buy status.")
+    parser.add_argument("-n", "--number", type=str, default="", help="Only analyze demos that start with this string.")
+    parser.add_argument("--starttime", type=int, default=90, help="Lower end of the clock time range that should be analyzed")
+    parser.add_argument("--endtime", type=int, default=110, help="Upper end of the clock time range that should be analyzed")
+    parser.add_argument("--dir", type=str, default="D:\CSGO\Demos\Maps\inferno", help="Directoy containting the demos to be analyzed.")
+    options = parser.parse_args(args)
 
 
-Debug=False
+    Debug=options.debug
+    InputJson=options.json
+    ReAnalyze=options.analyze
 
-if Debug:
-    logging.basicConfig(filename='D:\CSGO\ML\CSGOML\Inferno_Analyzer.log', encoding='utf-8', level=logging.DEBUG,filemode='w')
-else:
-    logging.basicConfig(filename='D:\CSGO\ML\CSGOML\Inferno_Analyzer.log', encoding='utf-8', level=logging.INFO,filemode='w')
-FastWeaponCheck=False
-dataframe=None
-Results=InitializeResults()
-NumberOfDemosAnalyzed=0
-Number=""
-dir="D:\CSGO\Demos\Maps\inferno"
-for filename in os.listdir(dir):
-    try:
-        int(filename[0:3])
-        NumberStart=True
-    except ValueError:
-        NumberStart=False
-    if filename.endswith(".json") and NumberStart and filename.startswith(Number):
-        logging.info("Working on file "+filename)
-        f = os.path.join(dir, filename)
-        # checking if it is a file
-        if os.path.isfile(f):
-            with open(f, encoding='utf-8') as f:
-                demo_data = json.load(f)
-                AnalyzeMap(demo_data,FastWeaponCheck,Results)
-                NumberOfDemosAnalyzed+=1
-dataframe=pd.DataFrame(Results)
-output_path="D:\CSGO\Demos\Maps\inferno"
-dataframe.to_json(output_path+"\Inferno_kills_damages_mid.json")
-logging.info(dataframe)
-logging.info("Number of demos analyzed: "+str(NumberOfDemosAnalyzed))
+    if Debug:
+        logging.basicConfig(filename='D:\CSGO\ML\CSGOML\Inferno_Analyzer.log', encoding='utf-8', level=logging.DEBUG,filemode='w')
+    else:
+        logging.basicConfig(filename='D:\CSGO\ML\CSGOML\Inferno_Analyzer.log', encoding='utf-8', level=logging.INFO,filemode='w')
+
+    FastWeaponCheck=options.fastcheck
+    dataframe=None
+    Results=InitializeResults()
+    
+    NumberOfDemosAnalyzed=0
+    Number=options.number
+    dir=options.dir
+    if ReAnalyze:
+        for filename in os.listdir(dir):
+            try:
+                int(filename[0:3])
+                NumberStart=True
+            except ValueError:
+                NumberStart=False
+            if filename.endswith(".json") and NumberStart and filename.startswith(Number):
+                logging.info("Working on file "+filename)
+                f = os.path.join(dir, filename)
+                # checking if it is a file
+                if os.path.isfile(f):
+                    with open(f, encoding='utf-8') as f:
+                        demo_data = json.load(f)
+                        map=demo_data["mapName"]
+                        AnalyzeMap(demo_data,FastWeaponCheck,Results,map)
+                        NumberOfDemosAnalyzed+=1
+        logging.info("Number of demos analyzed: "+str(NumberOfDemosAnalyzed))
+        dataframe=pd.DataFrame(Results)
+        output_path="D:\CSGO\Demos\Maps\inferno"
+        dataframe.to_json(options.json)
+    else:
+        with open(InputJson, encoding='utf-8') as PreAnalyzed:
+            dataframe=pd.read_json(PreAnalyzed)
+
+    logging.info(dataframe)
+
+    RemoveDamage=(dataframe["type"]=="Kill")
+    RemoveTramp=(((dataframe["WinnerSide"]=="T") & (dataframe["AttackerArea"]!="TRamp")) | ((dataframe["WinnerSide"]=="CT") & (dataframe["VictimArea"]!="TRamp")))
+    StartTime=options.starttime
+    EndTime=options.endtime
+    gameTimes=np.linspace(StartTime,EndTime,EndTime-StartTime+1)
+
+    logging.info("CTWinPercentages:")
+
+    logging.info("With TRamp forbidden:")
+    for Time in gameTimes:
+        timeAllowed=(dataframe["Time"]>Time)
+        logging.info(str(Time)+":")
+        logging.info(CalculateCTWinPercentage(dataframe[timeAllowed & RemoveTramp & RemoveDamage]))
+
+    logging.info("\nWith TRamp allowed:")
+    for Time in gameTimes:
+        timeAllowed=(dataframe["Time"]>Time)
+        logging.info(str(Time)+":")
+        logging.info(CalculateCTWinPercentage(dataframe[timeAllowed & RemoveDamage]))
+
+if __name__ == '__main__':
+    main(sys.argv[1:])
+
+
+#for 
 # Combine MapResults to total Result
 #os.chdir(dir)
 #print(os.path.abspath(os.getcwd()))
@@ -224,118 +281,3 @@ logging.info("Number of demos analyzed: "+str(NumberOfDemosAnalyzed))
 # data = demo_parser._read_json()
 # Loop over all Rounds
 #AnalyzeMap(data,FastWeaponCheck)
-
-
-
-# def UpdateMapResult(MapResult,RoundResults,MatchID):
-#     if RoundResults["Empty"]:
-#         return
-#     MapResult["TKillStamps"].extend([MatchID+"_"+str(Round) for Round in RoundResults["TKillStamps"]])
-#     MapResult["CTKillStamps"].extend([MatchID+"_"+str(Round) for Round in RoundResults["CTKillStamps"]])
-#     MapResult["TKills"]+=RoundResults["TKills"]
-#     MapResult["CTKills"]+=RoundResults["CTKills"]
-#     MapResult["TDamage"]+=RoundResults["TDamage"]
-#     MapResult["CTDamage"]+=RoundResults["CTDamage"]
-#     MapResult["NetDamage"].append(RoundResults["CTDamage"]-RoundResults["TDamage"]) # >0 Means more Dmg done by CT
-#     MapResult["NetKills"].append(RoundResults["CTKills"]-RoundResults["TKills"])  # >0 Means more kills done by CT
-#     MapResult["Times"].extend(RoundResults["Times"])
-#     MapResult["CTKillWeapons"].extend(RoundResults["CTKillWeapons"])
-#     MapResult["CTDamageWeapons"].extend(RoundResults["CTDamageWeapons"])
-#     MapResult["TKillWeapons"].extend(RoundResults["TKillWeapons"])
-#     MapResult["TDamageWeapons"].extend(RoundResults["TDamageWeapons"])
-#     MapResult["Rounds"].append(RoundResults["Round"])
-#    # MapResult["RoundResults"].append(RoundResults)
-#     if len(MapResult["Events"])==0:
-#         MapResult["Events"]=RoundResults["Events"]
-#     else:
-#         for key in MapResult["Events"]:
-#             MapResult["Events"][key].extend(RoundResults["Events"][key])
-
-
-# def UpdateTotalResult(TotalResult,MapResults):
-#     TotalResult["TKills"]+=MapResults["TKills"]
-#     TotalResult["CTKills"]+=MapResults["CTKills"]
-#     TotalResult["TDamage"]+=MapResults["TDamage"]
-#     TotalResult["CTDamage"]+=MapResults["CTDamage"]
-#     TotalResult["NetDamage"].extend(MapResults["NetDamage"]) # >0 Means more Dmg done by CT
-#     TotalResult["NetKills"].extend(MapResults["NetKills"])  # >0 Means more kills done by CT
-#     TotalResult["Times"].extend(MapResults["Times"])
-#     TotalResult["CTKillStamps"].extend(MapResults["CTKillStamps"])
-#     TotalResult["CTKillWeapons"].extend(MapResults["CTKillWeapons"])
-#     TotalResult["CTDamageWeapons"].extend(MapResults["CTDamageWeapons"])
-#     TotalResult["TKillStamps"].extend(MapResults["TKillStamps"])
-#     TotalResult["TKillWeapons"].extend(MapResults["TKillWeapons"])
-#     TotalResult["TDamageWeapons"].extend(MapResults["TDamageWeapons"])
-#     TotalResult["Rounds"].extend(MapResults["Rounds"])
-#     for NetDamage in Map["NetDamage"]:
-#         if NetDamage>0:
-#             TotalResult["RoundWithCTDamageAdvantage"]+=1
-#         elif NetDamage<0:
-#             TotalResult["RoundWithTDamageAdvantage"]+=1
-#     for NetKills in Map["NetKills"]:
-#         if NetKills>0:
-#             TotalResult["RoundWithCTKillAdvantage"]+=1
-#         elif NetKills<0:
-#             TotalResult["RoundWithTKillAdvantage"]+=1
-#     #TotalResult["RoundResults"].append(MapResults)
-#     if len(TotalResult["Events"])==0:
-#         TotalResult["Events"]=MapResults["Events"]
-#     else:
-#         if len(MapResults["Events"])==0:
-#             return
-#         for key in TotalResult["Events"]:
-#             TotalResult["Events"][key].extend(MapResults["Events"][key])
-
-# def InitializeMapResult():
-#     MapResult={}
-#     MapResult["TKills"]=0
-#     MapResult["CTKills"]=0
-#     MapResult["TDamage"]=0
-#     MapResult["CTDamage"]=0
-#     MapResult["NetDamage"]=[] # >0 Means more Dmg done by CT
-#     MapResult["NetKills"]=[]  # >0 Means more kills done by CT
-#     MapResult["Times"]=[]
-#     MapResult["CTKillWeapons"]=[]
-#     MapResult["CTDamageWeapons"]=[]
-#     MapResult["TKillWeapons"]=[]
-#     MapResult["TDamageWeapons"]=[]
-#     MapResult["Rounds"]=[]
-#     MapResult["RoundResults"]=[]
-#     return MapResult
-
-# def InitializeTotalResult():
-#     TotalResult={}
-#     TotalResult["RoundWithCTDamageAdvantage"]=0
-#     TotalResult["RoundWithTDamageAdvantage"]=0
-#     TotalResult["RoundWithCTKillAdvantage"]=0
-#     TotalResult["RoundWithTKillAdvantage"]=0
-#     TotalResult["TKills"]=0
-#     TotalResult["CTKills"]=0
-#     TotalResult["TDamage"]=0
-#     TotalResult["CTDamage"]=0
-#     TotalResult["NetDamage"]=[] # >0 Means more Dmg done by CT
-#     TotalResult["NetKills"]=[]  # >0 Means more kills done by CT
-#     TotalResult["Times"]=[]
-#     TotalResult["CTKillWeapons"]=[]
-#     TotalResult["CTDamageWeapons"]=[]
-#     TotalResult["TKillWeapons"]=[]
-#     TotalResult["TDamageWeapons"]=[]
-#     TotalResult["Rounds"]=[]
-#     TotalResult["RoundResults"]=[]
-#     return TotalResult
-
-# def InitializeRoundResults():
-#     RoundResults={}
-#     RoundResults["TKills"]=0
-#     RoundResults["CTKills"]=0
-#     RoundResults["TDamage"]=0
-#     RoundResults["CTDamage"]=0
-#     RoundResults["Times"]=[]
-#     RoundResults["CTKillWeapons"]=[]
-#     RoundResults["CTDamageWeapons"]=[]
-#     RoundResults["TKillWeapons"]=[]
-#     RoundResults["TDamageWeapons"]=[]
-#     RoundResults["Events"]=[]
-#     RoundResults["Round"]=0
-#     RoundResults["Empty"]=True
-#     return RoundResults
