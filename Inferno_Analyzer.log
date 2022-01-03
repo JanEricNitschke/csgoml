@@ -1,0 +1,206 @@
+INFO:root:Working on file 008.json
+INFO:root:Working on file 009.json
+INFO:root:Working on file 014.json
+INFO:root:Working on file 030.json
+INFO:root:Working on file 035.json
+INFO:root:Working on file 041.json
+INFO:root:Working on file 045.json
+INFO:root:Working on file 065.json
+INFO:root:Working on file 102.json
+INFO:root:Working on file 106.json
+INFO:root:Working on file 145.json
+INFO:root:Working on file 146.json
+INFO:root:Working on file 154.json
+INFO:root:Working on file 157.json
+INFO:root:Working on file 168esea.json
+INFO:root:Working on file 169esea.json
+INFO:root:Working on file 183esea.json
+INFO:root:Working on file 187esea.json
+INFO:root:Working on file 256esea.json
+INFO:root:Working on file 271esea.json
+INFO:root:Working on file 277esea.json
+INFO:root:Working on file 278.json
+INFO:root:Working on file 293.json
+INFO:root:Working on file 312esea.json
+INFO:root:Working on file 319esea.json
+INFO:root:Working on file 334.json
+INFO:root:Working on file 337.json
+INFO:root:Working on file 343.json
+INFO:root:Working on file 346.json
+INFO:root:Working on file 353.json
+INFO:root:Working on file 354.json
+INFO:root:Working on file 356.json
+INFO:root:Working on file 382.json
+INFO:root:Working on file 389.json
+INFO:root:Working on file 392.json
+INFO:root:Working on file 396.json
+INFO:root:Working on file 401.json
+INFO:root:Working on file 403.json
+INFO:root:Working on file 408.json
+INFO:root:Working on file 409.json
+INFO:root:Working on file 411.json
+INFO:root:Working on file 416.json
+INFO:root:Working on file 418.json
+INFO:root:Working on file 422.json
+INFO:root:Working on file 423.json
+INFO:root:Working on file 425.json
+INFO:root:Working on file 436.json
+INFO:root:Working on file 441.json
+INFO:root:Working on file 442.json
+INFO:root:Working on file 447.json
+INFO:root:Working on file 452.json
+INFO:root:Working on file 471.json
+INFO:root:Working on file 472.json
+INFO:root:Working on file 477.json
+INFO:root:Working on file 482.json
+INFO:root:Working on file 490.json
+INFO:root:Working on file 500.json
+INFO:root:Working on file 503.json
+INFO:root:Working on file 508.json
+INFO:root:Working on file 510.json
+INFO:root:Working on file 522.json
+INFO:root:Working on file 523.json
+INFO:root:Working on file 531.json
+INFO:root:Working on file 539.json
+INFO:root:Working on file 541.json
+INFO:root:Working on file 543.json
+INFO:root:Working on file 549.json
+INFO:root:Working on file 565.json
+INFO:root:Working on file 566.json
+INFO:root:Working on file 572.json
+INFO:root:Working on file 576.json
+INFO:root:Working on file 578.json
+INFO:root:Working on file 579.json
+INFO:root:Working on file 583.json
+INFO:root:Working on file 592.json
+INFO:root:Working on file 594.json
+INFO:root:Working on file 596.json
+INFO:root:Working on file 603.json
+INFO:root:Working on file 608.json
+INFO:root:Working on file 613.json
+INFO:root:Working on file 620.json
+INFO:root:Working on file 622.json
+INFO:root:Working on file 626.json
+INFO:root:Working on file 627.json
+INFO:root:Working on file 631.json
+INFO:root:Working on file 636.json
+INFO:root:Working on file 638.json
+INFO:root:Working on file 639.json
+INFO:root:Working on file 641.json
+INFO:root:Working on file 647.json
+INFO:root:Working on file 648.json
+INFO:root:Working on file 652.json
+INFO:root:Working on file 653.json
+INFO:root:Working on file 655.json
+INFO:root:Working on file 658.json
+INFO:root:Working on file 661.json
+INFO:root:Working on file 665.json
+INFO:root:Working on file 666.json
+INFO:root:Working on file 667.json
+INFO:root:Working on file 669.json
+INFO:root:Working on file 677.json
+INFO:root:Working on file 684.json
+INFO:root:Working on file 687.json
+INFO:root:Number of demos analyzed: 103
+INFO:root:    Weapon  Round    type  DamageTaken WinnerSide  Time AttackerArea VictimArea MatchID
+0     M4A1      3    Kill            0         CT   103     TopofMid     Middle     008
+1      AWP     19    Kill            0         CT   105     TopofMid     Middle     008
+2      AWP      7    Kill            0         CT   102     TopofMid     Middle     009
+3      AWP     12    Kill            0          T   104        TRamp   TopofMid     009
+4      AWP     10    Kill            0         CT   106     TopofMid     Middle     030
+..     ...    ...     ...          ...        ...   ...          ...        ...     ...
+449    AWP     14  Damage           40         CT   105     TopofMid     Middle     684
+450   M4A1     14  Damage           26         CT   103       Middle      TRamp     684
+451    AWP     15  Damage           45         CT   102     TopofMid     Middle     687
+452    AWP     21    Kill            0          T   106        TRamp     Middle     687
+453    AWP     21  Damage          100          T   106        TRamp     Middle     687
+
+[454 rows x 9 columns]
+INFO:root:CTWinPercentages:
+INFO:root:With TRamp forbidden:
+INFO:root:90.0:
+INFO:root:('CT Win: 65%', 'Total Kills: 88')
+INFO:root:91.0:
+INFO:root:('CT Win: 65%', 'Total Kills: 88')
+INFO:root:92.0:
+INFO:root:('CT Win: 65%', 'Total Kills: 88')
+INFO:root:93.0:
+INFO:root:('CT Win: 65%', 'Total Kills: 88')
+INFO:root:94.0:
+INFO:root:('CT Win: 65%', 'Total Kills: 88')
+INFO:root:95.0:
+INFO:root:('CT Win: 65%', 'Total Kills: 88')
+INFO:root:96.0:
+INFO:root:('CT Win: 65%', 'Total Kills: 88')
+INFO:root:97.0:
+INFO:root:('CT Win: 65%', 'Total Kills: 88')
+INFO:root:98.0:
+INFO:root:('CT Win: 65%', 'Total Kills: 88')
+INFO:root:99.0:
+INFO:root:('CT Win: 65%', 'Total Kills: 88')
+INFO:root:100.0:
+INFO:root:('CT Win: 65%', 'Total Kills: 88')
+INFO:root:101.0:
+INFO:root:('CT Win: 65%', 'Total Kills: 78')
+INFO:root:102.0:
+INFO:root:('CT Win: 68%', 'Total Kills: 62')
+INFO:root:103.0:
+INFO:root:('CT Win: 69%', 'Total Kills: 52')
+INFO:root:104.0:
+INFO:root:('CT Win: 74%', 'Total Kills: 42')
+INFO:root:105.0:
+INFO:root:('CT Win: 71%', 'Total Kills: 17')
+INFO:root:106.0:
+INFO:root:No Kills found!
+INFO:root:107.0:
+INFO:root:No Kills found!
+INFO:root:108.0:
+INFO:root:No Kills found!
+INFO:root:109.0:
+INFO:root:No Kills found!
+INFO:root:110.0:
+INFO:root:No Kills found!
+INFO:root:
+With TRamp allowed:
+INFO:root:90.0:
+INFO:root:('CT Win: 57%', 'Total Kills: 136')
+INFO:root:91.0:
+INFO:root:('CT Win: 57%', 'Total Kills: 136')
+INFO:root:92.0:
+INFO:root:('CT Win: 57%', 'Total Kills: 136')
+INFO:root:93.0:
+INFO:root:('CT Win: 57%', 'Total Kills: 136')
+INFO:root:94.0:
+INFO:root:('CT Win: 57%', 'Total Kills: 136')
+INFO:root:95.0:
+INFO:root:('CT Win: 57%', 'Total Kills: 136')
+INFO:root:96.0:
+INFO:root:('CT Win: 57%', 'Total Kills: 136')
+INFO:root:97.0:
+INFO:root:('CT Win: 57%', 'Total Kills: 136')
+INFO:root:98.0:
+INFO:root:('CT Win: 57%', 'Total Kills: 136')
+INFO:root:99.0:
+INFO:root:('CT Win: 57%', 'Total Kills: 136')
+INFO:root:100.0:
+INFO:root:('CT Win: 57%', 'Total Kills: 136')
+INFO:root:101.0:
+INFO:root:('CT Win: 57%', 'Total Kills: 123')
+INFO:root:102.0:
+INFO:root:('CT Win: 58%', 'Total Kills: 102')
+INFO:root:103.0:
+INFO:root:('CT Win: 59%', 'Total Kills: 87')
+INFO:root:104.0:
+INFO:root:('CT Win: 64%', 'Total Kills: 72')
+INFO:root:105.0:
+INFO:root:('CT Win: 60%', 'Total Kills: 40')
+INFO:root:106.0:
+INFO:root:('CT Win: 60%', 'Total Kills: 10')
+INFO:root:107.0:
+INFO:root:No Kills found!
+INFO:root:108.0:
+INFO:root:No Kills found!
+INFO:root:109.0:
+INFO:root:No Kills found!
+INFO:root:110.0:
+INFO:root:No Kills found!
