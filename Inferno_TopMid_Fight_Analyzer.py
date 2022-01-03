@@ -1,28 +1,54 @@
+#!/usr/bin/env python
+
 from logging import BASIC_FORMAT, NullHandler
+
+from csgo.analytics.nav import find_closest_area
 from csgo.parser import DemoParser
 import os
-import sys
 import json
 import logging
 import pandas as pd
+import numpy as np
+import argparse
+import sys
+from csgo.analytics import nav
+from csgo.data import NAV
 
-def checkPosition(dict):
+def getAreaFromPos(map,pos):
+    if None in pos:
+        logging.debug("No area found for pos:")
+        logging.debug(pos)
+        return "No area found"
+    ClosestArea = find_closest_area(map, pos)
+    AreaID=ClosestArea["areaId"]
+    if AreaID==None:
+        logging.debug("No area found for pos:")
+        logging.debug(map)
+        logging.debug(pos)
+        return "No area found"
+    return NAV[map][AreaID]["areaName"]
+
+def checkPosition(dict,map):
+    # Make sure that attacker and victim are in one of the desired positions.
     logging.debug("Checking Position")
-    logging.debug("AttackerArea: "+str(dict["attackerAreaName"]))
+    AttackerArea=getAreaFromPos(map,[dict["attackerX"],dict["attackerY"],dict["attackerZ"]])
+    VictimArea=getAreaFromPos(map,[dict["victimX"],dict["victimY"],dict["victimZ"]])
+    logging.debug("AttackerArea: "+str(AttackerArea))
     logging.debug("AttackerSide: "+str(dict["attackerSide"]))
-    logging.debug("VictimArea: "+str(dict["victimAreaName"]))
+    logging.debug("VictimArea: "+str(VictimArea))
     logging.debug("VictimSide: "+str(dict["victimSide"]))
-    if ((dict["attackerAreaName"]=="TopofMid" or dict["attackerAreaName"]=="Middle") and dict["attackerSide"]=="CT"):
+    if ((AttackerArea=="TopofMid" or AttackerArea=="Middle") and dict["attackerSide"]=="CT"):
     # Filter for victim Position and bottom mid and side of T
-        if ((dict["victimAreaName"]=="Middle") and dict["victimSide"]=="T") or dict["victimAreaName"]=="TRamp":
+        if ((VictimArea=="Middle") and dict["victimSide"]=="T") or VictimArea=="TRamp":
             return True
-    if ((dict["victimAreaName"]=="TopofMid" or dict["victimAreaName"]=="Middle") and dict["victimSide"]=="CT"):
+    if ((VictimArea=="TopofMid" or VictimArea=="Middle") and dict["victimSide"]=="CT"):
                 # Filter for victim Position at top mid and side of CT
-        if ((dict["attackerAreaName"]=="Middle") and dict["attackerSide"]=="T") or dict["attackerAreaName"]=="TRamp":
+        if ((AttackerArea=="Middle") and dict["attackerSide"]=="T") or AttackerArea=="TRamp":
             return True
     return False
 
 def getGameTime(dict):
+    # Convert the clocktime to seconds.
     logging.debug("Getting game time!")
     TimeList=dict["clockTime"].split(":")
     logging.debug("ClockTime: "+dict["clockTime"])
@@ -30,10 +56,9 @@ def getGameTime(dict):
         return int(TimeList[0])*60+int(TimeList[1])
     except ValueError:
         return -int(TimeList[1])
-    
 
 
-def printInfo(dict,gameTime,round):
+def printInfo(dict,gameTime,round,map):
     if "hpDamageTaken" in dict:
         logging.info("Damage event:")
     else:
@@ -42,9 +67,9 @@ def printInfo(dict,gameTime,round):
     logging.info("Round: "+str(round["endTScore"]+round["endCTScore"]))
     logging.info("Time: "+str(gameTime))
     logging.info("Weapon: "+dict["weapon"])
-    logging.info("AttackerArea: "+str(dict["attackerAreaName"]))
+    logging.info("AttackerArea: "+str(getAreaFromPos(map,[dict["attackerX"],dict["attackerY"],dict["attackerZ"]])))
     logging.info("AttackerSide: "+str(dict["attackerSide"]))
-    logging.info("VictimArea: "+str(dict["victimAreaName"]))
+    logging.info("VictimArea: "+str(getAreaFromPos(map,[dict["victimX"],dict["victimY"],dict["victimZ"]])))
     logging.info("VictimSide: "+str(dict["victimSide"]))
     if "hpDamageTaken" in dict:
        logging.info("Damage: "+str(dict["hpDamageTaken"]))
@@ -99,7 +124,8 @@ def RoundAllowed(round):
 
 
 
-def SummarizeRound(dict,gameTime,round,Results,MatchID):
+def SummarizeRound(dict,gameTime,round,Results,MatchID,map):
+    # Get relevant information from each event
     Results["Weapon"].append(dict["weapon"])
     Results["Round"].append(round["endTScore"]+round["endCTScore"])
     if "hpDamageTaken" in dict:
@@ -110,8 +136,8 @@ def SummarizeRound(dict,gameTime,round,Results,MatchID):
         Results["DamageTaken"].append(0)
     Results["WinnerSide"].append(dict["attackerSide"])
     Results["Time"].append(gameTime)
-    Results["AttackerArea"].append(dict["attackerAreaName"])
-    Results["VictimArea"].append(dict["victimAreaName"])
+    Results["AttackerArea"].append(getAreaFromPos(map,[dict["attackerX"],dict["attackerY"],dict["attackerZ"]]))
+    Results["VictimArea"].append(getAreaFromPos(map,[dict["victimX"],dict["victimY"],dict["victimZ"]]))
     Results["MatchID"].append(MatchID)
 
 
@@ -129,7 +155,8 @@ def InitializeResults():
     return Results
 
 
-def AnalyzeMap(data,FastWeaponCheck,Results):
+def AnalyzeMap(data,FastWeaponCheck,Results,map):
+    # Loop over rounds and each event in them and check if they fulfill all criteria
     events=["kills","damages"]
     #events=["kills"]
     MatchID=data["matchID"]
@@ -149,7 +176,7 @@ def AnalyzeMap(data,FastWeaponCheck,Results):
                 for dict in round[event]:
                     gameTime=getGameTime(dict)
                     if gameTime>100:
-                        if checkPosition(dict):
+                        if checkPosition(dict,map):
                             if checkWeapons(round,dict,FastWeaponCheck):
                                 #printInfo(dict,gameTime,round)
                                 SummarizeRound(dict,gameTime,round,Results,MatchID)
