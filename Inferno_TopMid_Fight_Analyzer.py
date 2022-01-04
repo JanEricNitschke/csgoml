@@ -96,7 +96,7 @@ def checkWeapons(round,dict,FastCheck):
         else:
             for player in frame[dict["victimSide"].lower()]["players"]:
                 if player["steamID"]==dict["victimSteamID"]:
-                    if not player["isAlive"]:
+                    if (not player["isAlive"]) or player["inventory"]==None:
                         continue
                     for weapon in player["inventory"]:
                         if weapon["weaponClass"]=="Rifle":
@@ -190,6 +190,17 @@ def CalculateCTWinPercentage(df):
         else:
             return "No Kills found!"
 
+def CheckNumberStart(filename, numberstart):
+    if numberstart:
+        try:
+            int(filename[0:3])
+            return True
+        except ValueError:
+            return False
+    else:
+        return True
+         
+
 def main(args):
     parser = argparse.ArgumentParser("Analyze the early mid fight on inferno")
     parser.add_argument("-d", "--debug",  action='store_true', default=False, help="Enable debug output.")
@@ -197,17 +208,13 @@ def main(args):
     parser.add_argument("-j", "--json",  default="D:\CSGO\Demos\Maps\inferno\Analysis\Inferno_kills_damages_mid.json", help="Path of json containting preanalyzed results.")
     parser.add_argument("-f", "--fastcheck",  action='store_true', default=False,  help="When analyzing demos only do the fast check of looking at the victim teams buy status.")
     parser.add_argument("-n", "--number", type=str, default="", help="Only analyze demos that start with this string.")
+    parser.add_argument("--numberstart", action='store_true', default=False,  help="Require demos to start with a number (so exclude mm demos.")
     parser.add_argument("--starttime", type=int, default=90, help="Lower end of the clock time range that should be analyzed")
     parser.add_argument("--endtime", type=int, default=110, help="Upper end of the clock time range that should be analyzed")
     parser.add_argument("--dir", type=str, default="D:\CSGO\Demos\Maps\inferno", help="Directoy containting the demos to be analyzed.")
     options = parser.parse_args(args)
 
-
-    Debug=options.debug
-    InputJson=options.json
-    ReAnalyze=options.analyze
-
-    if Debug:
+    if options.debug:
         logging.basicConfig(filename='D:\CSGO\ML\CSGOML\Inferno_Analyzer.log', encoding='utf-8', level=logging.DEBUG,filemode='w')
     else:
         logging.basicConfig(filename='D:\CSGO\ML\CSGOML\Inferno_Analyzer.log', encoding='utf-8', level=logging.INFO,filemode='w')
@@ -217,16 +224,11 @@ def main(args):
     Results=InitializeResults()
     
     NumberOfDemosAnalyzed=0
-    Number=options.number
     dir=options.dir
-    if ReAnalyze:
+    if options.analyze:
         for filename in os.listdir(dir):
-            try:
-                int(filename[0:3])
-                NumberStart=True
-            except ValueError:
-                NumberStart=False
-            if filename.endswith(".json") and NumberStart and filename.startswith(Number):
+            NumberStartMatches=CheckNumberStart(filename, options.numberstart)
+            if filename.endswith(".json") and NumberStartMatches and filename.startswith(options.number):
                 logging.info("Working on file "+filename)
                 f = os.path.join(dir, filename)
                 # checking if it is a file
@@ -238,10 +240,9 @@ def main(args):
                         NumberOfDemosAnalyzed+=1
         logging.info("Number of demos analyzed: "+str(NumberOfDemosAnalyzed))
         dataframe=pd.DataFrame(Results)
-        output_path="D:\CSGO\Demos\Maps\inferno"
         dataframe.to_json(options.json)
     else:
-        with open(InputJson, encoding='utf-8') as PreAnalyzed:
+        with open(options.json, encoding='utf-8') as PreAnalyzed:
             dataframe=pd.read_json(PreAnalyzed)
 
     logging.info(dataframe)
@@ -268,16 +269,3 @@ def main(args):
 
 if __name__ == '__main__':
     main(sys.argv[1:])
-
-
-#for 
-# Combine MapResults to total Result
-#os.chdir(dir)
-#print(os.path.abspath(os.getcwd()))
-
-#demo_parser = DemoParser(demofile=f,demo_id=Number,parse_rate=128, buy_style="csgo",dmg_rolled=True)
-#data = demo_parser.parse()
-# demo_parser.output_file=Number+".json"
-# data = demo_parser._read_json()
-# Loop over all Rounds
-#AnalyzeMap(data,FastWeaponCheck)
