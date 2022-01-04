@@ -212,12 +212,13 @@ def main(args):
     parser.add_argument("--starttime", type=int, default=90, help="Lower end of the clock time range that should be analyzed")
     parser.add_argument("--endtime", type=int, default=110, help="Upper end of the clock time range that should be analyzed")
     parser.add_argument("--dir", type=str, default="D:\CSGO\Demos\Maps\inferno", help="Directoy containting the demos to be analyzed.")
+    parser.add_argument("-l", "--log",  default='D:\CSGO\ML\CSGOML\Inferno_Analyzer.log', help="Path to output log.")
     options = parser.parse_args(args)
 
     if options.debug:
-        logging.basicConfig(filename='D:\CSGO\ML\CSGOML\Inferno_Analyzer.log', encoding='utf-8', level=logging.DEBUG,filemode='w')
+        logging.basicConfig(filename=options.log, encoding='utf-8', level=logging.DEBUG,filemode='w')
     else:
-        logging.basicConfig(filename='D:\CSGO\ML\CSGOML\Inferno_Analyzer.log', encoding='utf-8', level=logging.INFO,filemode='w')
+        logging.basicConfig(filename=options.log, encoding='utf-8', level=logging.INFO,filemode='w')
 
     FastWeaponCheck=options.fastcheck
     dataframe=None
