@@ -239,14 +239,13 @@ def main(args):
                         map=demo_data["mapName"]
                         AnalyzeMap(demo_data,FastWeaponCheck,Results,map)
                         NumberOfDemosAnalyzed+=1
-        logging.info("Number of demos analyzed: "+str(NumberOfDemosAnalyzed))
+        logging.info("Analyzed a total of "+str(NumberOfDemosAnalyzed)+" demos!")
         dataframe=pd.DataFrame(Results)
         dataframe.to_json(options.json)
     else:
         with open(options.json, encoding='utf-8') as PreAnalyzed:
             dataframe=pd.read_json(PreAnalyzed)
 
-    logging.info("Analyzed a total of "+str(NumberOfDemosAnalyzed)+" demos!")
     logging.info(dataframe)
 
     RemoveDamage=(dataframe["type"]=="Kill")

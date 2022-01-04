@@ -102,54 +102,55 @@ INFO:root:Working on file 677.json
 INFO:root:Working on file 684.json
 INFO:root:Working on file 687.json
 INFO:root:Number of demos analyzed: 103
+INFO:root:Analyzed a total of 103 demos!
 INFO:root:    Weapon  Round    type  DamageTaken WinnerSide  Time AttackerArea VictimArea MatchID
 0     M4A1      3    Kill            0         CT   103     TopofMid     Middle     008
 1      AWP     19    Kill            0         CT   105     TopofMid     Middle     008
 2      AWP      7    Kill            0         CT   102     TopofMid     Middle     009
 3      AWP     12    Kill            0          T   104        TRamp   TopofMid     009
-4      AWP     10    Kill            0         CT   106     TopofMid     Middle     030
+4      AWP     15    Kill            0         CT   105     TopofMid     Middle     030
 ..     ...    ...     ...          ...        ...   ...          ...        ...     ...
-449    AWP     14  Damage           40         CT   105     TopofMid     Middle     684
-450   M4A1     14  Damage           26         CT   103       Middle      TRamp     684
-451    AWP     15  Damage           45         CT   102     TopofMid     Middle     687
-452    AWP     21    Kill            0          T   106        TRamp     Middle     687
-453    AWP     21  Damage          100          T   106        TRamp     Middle     687
+480    AWP     19    Kill            0          T   101        TRamp   TopofMid     684
+481    AWP     19  Damage          100          T   101        TRamp   TopofMid     684
+482    AWP     15  Damage           45         CT   102     TopofMid     Middle     687
+483    AWP     21    Kill            0          T   106        TRamp     Middle     687
+484    AWP     21  Damage          100          T   106        TRamp     Middle     687
 
-[454 rows x 9 columns]
+[485 rows x 9 columns]
 INFO:root:CTWinPercentages:
 INFO:root:With TRamp forbidden:
 INFO:root:90.0:
-INFO:root:('CT Win: 65%', 'Total Kills: 88')
+INFO:root:('CT Win: 62%', 'Total Kills: 85')
 INFO:root:91.0:
-INFO:root:('CT Win: 65%', 'Total Kills: 88')
+INFO:root:('CT Win: 62%', 'Total Kills: 85')
 INFO:root:92.0:
-INFO:root:('CT Win: 65%', 'Total Kills: 88')
+INFO:root:('CT Win: 62%', 'Total Kills: 85')
 INFO:root:93.0:
-INFO:root:('CT Win: 65%', 'Total Kills: 88')
+INFO:root:('CT Win: 62%', 'Total Kills: 85')
 INFO:root:94.0:
-INFO:root:('CT Win: 65%', 'Total Kills: 88')
+INFO:root:('CT Win: 62%', 'Total Kills: 85')
 INFO:root:95.0:
-INFO:root:('CT Win: 65%', 'Total Kills: 88')
+INFO:root:('CT Win: 62%', 'Total Kills: 85')
 INFO:root:96.0:
-INFO:root:('CT Win: 65%', 'Total Kills: 88')
+INFO:root:('CT Win: 62%', 'Total Kills: 85')
 INFO:root:97.0:
-INFO:root:('CT Win: 65%', 'Total Kills: 88')
+INFO:root:('CT Win: 62%', 'Total Kills: 85')
 INFO:root:98.0:
-INFO:root:('CT Win: 65%', 'Total Kills: 88')
+INFO:root:('CT Win: 62%', 'Total Kills: 85')
 INFO:root:99.0:
-INFO:root:('CT Win: 65%', 'Total Kills: 88')
+INFO:root:('CT Win: 62%', 'Total Kills: 85')
 INFO:root:100.0:
-INFO:root:('CT Win: 65%', 'Total Kills: 88')
+INFO:root:('CT Win: 62%', 'Total Kills: 85')
 INFO:root:101.0:
-INFO:root:('CT Win: 65%', 'Total Kills: 78')
+INFO:root:('CT Win: 63%', 'Total Kills: 76')
 INFO:root:102.0:
-INFO:root:('CT Win: 68%', 'Total Kills: 62')
+INFO:root:('CT Win: 65%', 'Total Kills: 60')
 INFO:root:103.0:
-INFO:root:('CT Win: 69%', 'Total Kills: 52')
+INFO:root:('CT Win: 66%', 'Total Kills: 50')
 INFO:root:104.0:
-INFO:root:('CT Win: 74%', 'Total Kills: 42')
+INFO:root:('CT Win: 70%', 'Total Kills: 40')
 INFO:root:105.0:
-INFO:root:('CT Win: 71%', 'Total Kills: 17')
+INFO:root:('CT Win: 64%', 'Total Kills: 14')
 INFO:root:106.0:
 INFO:root:No Kills found!
 INFO:root:107.0:
@@ -163,39 +164,39 @@ INFO:root:No Kills found!
 INFO:root:
 With TRamp allowed:
 INFO:root:90.0:
-INFO:root:('CT Win: 57%', 'Total Kills: 136')
+INFO:root:('CT Win: 53%', 'Total Kills: 148')
 INFO:root:91.0:
-INFO:root:('CT Win: 57%', 'Total Kills: 136')
+INFO:root:('CT Win: 53%', 'Total Kills: 148')
 INFO:root:92.0:
-INFO:root:('CT Win: 57%', 'Total Kills: 136')
+INFO:root:('CT Win: 53%', 'Total Kills: 148')
 INFO:root:93.0:
-INFO:root:('CT Win: 57%', 'Total Kills: 136')
+INFO:root:('CT Win: 53%', 'Total Kills: 148')
 INFO:root:94.0:
-INFO:root:('CT Win: 57%', 'Total Kills: 136')
+INFO:root:('CT Win: 53%', 'Total Kills: 148')
 INFO:root:95.0:
-INFO:root:('CT Win: 57%', 'Total Kills: 136')
+INFO:root:('CT Win: 53%', 'Total Kills: 148')
 INFO:root:96.0:
-INFO:root:('CT Win: 57%', 'Total Kills: 136')
+INFO:root:('CT Win: 53%', 'Total Kills: 148')
 INFO:root:97.0:
-INFO:root:('CT Win: 57%', 'Total Kills: 136')
+INFO:root:('CT Win: 53%', 'Total Kills: 148')
 INFO:root:98.0:
-INFO:root:('CT Win: 57%', 'Total Kills: 136')
+INFO:root:('CT Win: 53%', 'Total Kills: 148')
 INFO:root:99.0:
-INFO:root:('CT Win: 57%', 'Total Kills: 136')
+INFO:root:('CT Win: 53%', 'Total Kills: 148')
 INFO:root:100.0:
-INFO:root:('CT Win: 57%', 'Total Kills: 136')
+INFO:root:('CT Win: 53%', 'Total Kills: 148')
 INFO:root:101.0:
-INFO:root:('CT Win: 57%', 'Total Kills: 123')
+INFO:root:('CT Win: 54%', 'Total Kills: 134')
 INFO:root:102.0:
-INFO:root:('CT Win: 58%', 'Total Kills: 102')
+INFO:root:('CT Win: 55%', 'Total Kills: 109')
 INFO:root:103.0:
-INFO:root:('CT Win: 59%', 'Total Kills: 87')
+INFO:root:('CT Win: 56%', 'Total Kills: 93')
 INFO:root:104.0:
-INFO:root:('CT Win: 64%', 'Total Kills: 72')
+INFO:root:('CT Win: 61%', 'Total Kills: 77')
 INFO:root:105.0:
-INFO:root:('CT Win: 60%', 'Total Kills: 40')
+INFO:root:('CT Win: 55%', 'Total Kills: 40')
 INFO:root:106.0:
-INFO:root:('CT Win: 60%', 'Total Kills: 10')
+INFO:root:('CT Win: 58%', 'Total Kills: 12')
 INFO:root:107.0:
 INFO:root:No Kills found!
 INFO:root:108.0:
