@@ -43,10 +43,16 @@ def CheckSize(dict):
     return length
 
 def EmptyFrames(round):
-    emptyFrames=(round["frames"]==None or len(round["frames"])==0)
-    if emptyFrames:
+    NoneFrames=(round["frames"]==None)
+    if NoneFrames:
+        logging.error(round)
+        logging.error("Found none frames in round "+str(round["roundNum"])+"!")
+        return True
+    EmptyFrames=(len(round["frames"])==0)
+    if EmptyFrames:
         logging.error("Found empty frames in round "+str(round["roundNum"])+"!")
-    return emptyFrames
+        return True
+    return False
 
 def GetPlayerID(player):
     # Bots do not have a steamID.
@@ -62,7 +68,8 @@ def PadToFullLength(round_positions):
             # If the Alive list is completely empty fill it with a dead player
             # If the player left mid round he is considered dead for the time after leaving, so pad it to full length with False
             if len(round_positions[key])==0:
-                logging.error("An alive key has length 0. Padding to length of tick!")
+                logging.debug("An alive key has length 0. Padding to length of tick!")
+                logging.debug("Start tick: "+str(round_positions["Tick"][0]))
                 round_positions[key]=[False]*len(round_positions["Tick"])
             round_positions[key] += [False]*(len(round_positions["Tick"])-len(round_positions[key]))
         elif "Player" in key:
@@ -100,7 +107,7 @@ def main(args):
     parser = argparse.ArgumentParser("Analyze the early mid fight on inferno")
     parser.add_argument("-d", "--debug",  action='store_true', default=False, help="Enable debug output.")
     parser.add_argument("--dir",  default="D:\CSGO\Demos\Maps", help="Path to directory containing the individual map directories.")
-    parser.add_argument("-l", "--log",  default='D:\CSGO\ML\CSGOML\Preperation_Tensorflow.log', help="Path to output log.")
+    parser.add_argument("-l", "--log",  default='D:\CSGO\ML\CSGOML\Preparation_Tensorflow.log', help="Path to output log.")
     options = parser.parse_args(args)
 
     if options.debug:
@@ -160,7 +167,7 @@ def main(args):
                                 for side in ["ct", "t"]:
                                     # If the side does not contain any players for that frame skip it
                                     if f[side]["players"]==None:
-                                        logging.error("Side['players'] is none. Skipping this frame from round "+str(round["roundNum"])+"!")
+                                        logging.debug("Side['players'] is none. Skipping this frame from round "+str(round["roundNum"])+"!")
                                         continue
                                     # Loop over each player in the team.
                                     for n, p in enumerate(f[side]["players"]):
