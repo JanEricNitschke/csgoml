@@ -190,15 +190,15 @@ def CalculateCTWinPercentage(df):
         else:
             return "No Kills found!"
 
-def CheckNumberStart(filename, numberstart):
-    if numberstart:
+def CheckMMStatus(filename, includemm):
+    if includemm:
+        return True
+    else:
         try:
             int(filename[0:3])
             return True
         except ValueError:
             return False
-    else:
-        return True
          
 
 def main(args):
@@ -208,7 +208,7 @@ def main(args):
     parser.add_argument("-j", "--json",  default="D:\CSGO\Demos\Maps\inferno\Analysis\Inferno_kills_damages_mid.json", help="Path of json containting preanalyzed results.")
     parser.add_argument("-f", "--fastcheck",  action='store_true', default=False,  help="When analyzing demos only do the fast check of looking at the victim teams buy status.")
     parser.add_argument("-n", "--number", type=str, default="", help="Only analyze demos that start with this string.")
-    parser.add_argument("--numberstart", action='store_true', default=False,  help="Require demos to start with a number (so exclude mm demos.")
+    parser.add_argument("--includemm", action='store_true', default=False,  help="Require demos to start with a number (so exclude mm demos.")
     parser.add_argument("--starttime", type=int, default=90, help="Lower end of the clock time range that should be analyzed")
     parser.add_argument("--endtime", type=int, default=110, help="Upper end of the clock time range that should be analyzed")
     parser.add_argument("--dir", type=str, default="D:\CSGO\Demos\Maps\inferno", help="Directoy containting the demos to be analyzed.")
@@ -228,8 +228,8 @@ def main(args):
     dir=options.dir
     if options.analyze:
         for filename in os.listdir(dir):
-            NumberStartMatches=CheckNumberStart(filename, options.numberstart)
-            if filename.endswith(".json") and NumberStartMatches and filename.startswith(options.number):
+            PassesIncludeMM=CheckMMStatus(filename, options.includemm)
+            if filename.endswith(".json") and PassesIncludeMM and filename.startswith(options.number):
                 logging.info("Working on file "+filename)
                 f = os.path.join(dir, filename)
                 # checking if it is a file
@@ -246,6 +246,7 @@ def main(args):
         with open(options.json, encoding='utf-8') as PreAnalyzed:
             dataframe=pd.read_json(PreAnalyzed)
 
+    logging.info("Analyzed a total of "+str(NumberOfDemosAnalyzed)+" demos!")
     logging.info(dataframe)
 
     RemoveDamage=(dataframe["type"]=="Kill")
