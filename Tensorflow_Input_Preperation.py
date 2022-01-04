@@ -53,6 +53,27 @@ def GetPlayerID(player):
     else:
         return player["steamID"]
 
+def PadToFullLength(round_positions):
+    for key in round_positions:
+        if "Alive" in key:
+            # If the Alive list is completely empty fill it with a dead player
+            # If the player left mid round he is considered dead for the time after leaving, so pad it to full length with False
+            if len(round_positions[key])==0:
+                logging.error("An alive key has length 0. Padding to length of tick!")
+                round_positions[key]=[False]*len(round_positions["Tick"])
+            round_positions[key] += [False]*(len(round_positions["Tick"])-len(round_positions[key]))
+        elif "Player" in key:
+            # If a player wasnt there for the whole round set his name as Nobody and position as 0,0,0.
+            if len(round_positions[key])==0:
+                if "Name" in key:
+                    round_positions[key]=["Nobody"]*len(round_positions["Tick"])
+                else:
+                    round_positions[key]=[0.0]*len(round_positions["Tick"])
+            #logging.info(key)
+            # If a player left mid round pad his name and position with the last values from when he was there. Exactly like it would be if he had died "normally"
+            round_positions[key] += [round_positions[key][-1]]*(len(round_positions["Tick"])-len(round_positions[key]))
+    length=CheckSize(round_positions)
+
 def AppendToRoundPositions(round_positions,side,id_number_dict,PlayerID,p,map_name):
     # Add the relevant information of this player to the rounds dict.
     # Add name of the player. Mainly for debugging purposes. Will be removed for actual analysis
@@ -169,25 +190,8 @@ def main(args):
                             position_dataset_dict["Round"].append(round["endTScore"]+round["endCTScore"])
                             #logging.info(round_positions)
                             # Pad to full length in case a player left
-                            for key in round_positions:
-                                if "Alive" in key:
-                                    # If the Alive list is completely empy fill it with a dead player
-                                    # If the player left mid round he is considered dead for the time after leaving, so pad it to full length with False
-                                    if len(round_positions[key])==0:
-                                        round_positions[key]=[False]*len(round_positions["Tick"])
-                                    round_positions[key] += [False]*(len(round_positions["Tick"])-len(round_positions[key]))
-                                elif "Player" in key:
-                                    # If a player wasnt there for the whole round set his name as Nobody and position as 0,0,0.
-                                    if len(round_positions[key])==0:
-                                        if "Name" in key:
-                                            round_positions[key]=["Nobody"]*len(round_positions["Tick"])
-                                        else:
-                                            round_positions[key]=[0.0]*len(round_positions["Tick"])
-                                    #logging.info(key)
-                                    # If a player left mid round pad his name and position with the last values from when he was there. Exactly like it would be if he had died "normally"
-                                    round_positions[key] += [round_positions[key][-1]]*(len(round_positions["Tick"])-len(round_positions[key]))
+                            PadToFullLength(round_positions)
                             # Make sure each entry in the round_positions has the same size now. Especially that nothing is longer than the Tick entry which would indicate multiple players filling on player number
-                            length=CheckSize(round_positions)
                             # Transform to dataframe
                             round_positions_df=pd.DataFrame(round_positions)
                             #logging.info(round_positions_df)
