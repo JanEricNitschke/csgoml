@@ -43,7 +43,10 @@ def CheckSize(dict):
     return length
 
 def EmptyFrames(round):
-    return (round["frames"]==None or len(round["frames"])==0)
+    emptyFrames=(round["frames"]==None or len(round["frames"])==0)
+    if emptyFrames:
+        logging.error("Found empty frames in round "+str(round["roundNum"])+"!")
+    return emptyFrames
 
 def GetPlayerID(player):
     # Bots do not have a steamID.
@@ -124,7 +127,7 @@ def main(args):
                 f = os.path.join(directory, filename)
                 # checking if it is a file
                 if os.path.isfile(f):
-                    if filename.endswith(".json") and filename=="123.json":
+                    if filename.endswith(".json"):
                         logging.info("Analyzing file "+filename)
                         MatchID=filename.rsplit(".",1)[0]
                         demo_parser.output_file=MatchID+".json"
@@ -150,13 +153,14 @@ def main(args):
                                 # If that does happen completely skip the round.
                                 # Propagate that information past the loop by setting SkipRound to true
                                 if f["ct"]["alivePlayers"]>5 or f["t"]["alivePlayers"]>5:
+                                    logging.error("Found frame with more than 5 players alive in a team in round "+str(round["roundNum"])+"!")
                                     SkipRound=True
                                     break
                                 # Loop over both sides
                                 for side in ["ct", "t"]:
                                     # If the side does not contain any players for that frame skip it
                                     if f[side]["players"]==None:
-                                        logging.debug("Side['players'] is none. Skipping this frame.")
+                                        logging.error("Side['players'] is none. Skipping this frame from round "+str(round["roundNum"])+"!")
                                         continue
                                     # Loop over each player in the team.
                                     for n, p in enumerate(f[side]["players"]):
