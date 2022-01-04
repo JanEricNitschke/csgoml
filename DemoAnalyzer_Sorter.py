@@ -20,8 +20,9 @@ def getIDs(filename,mmid):
 def clean_rounds(demo_parser):
     try:
         demo_parser.clean_rounds()
+        pass
     except AttributeError:
-        logging.info("This demo has an error while cleaning.")
+        logging.error("This demo has an error while cleaning.")
         logging.exception('')
 
 def getMapName(data):
@@ -32,7 +33,7 @@ def getMapName(data):
 
 def MoveJson(source, destination):
     logging.info("Source: "+source)
-    logging.info("Desitnation: "+destination)
+    logging.info("Destination: "+destination)
     try:
         os.rename(source, destination)
     except FileExistsError:
@@ -65,6 +66,7 @@ def main(args):
     for dir in os.listdir(options.mapsdir):
         existing_maps.append(dir)
     logging.info("Maps considered: "+", ".join(existing_maps))
+    NumberOfDemosAnalyzed=0
 
     for dir in options.dirs:
         os.chdir(dir)
@@ -88,11 +90,13 @@ def main(args):
                         MapName=getMapName(data)
                         logging.debug("Scanned map name: "+MapName)
                         if MapName not in existing_maps:
-                            logging.info("Map name "+MapName+" does not exist. Not moving json file to maps folder.")
+                            logging.error("Map name "+MapName+" does not exist. Not moving json file to maps folder.")
                             continue
                         source=os.path.join(dir,ID+".json")
                         destination=os.path.join(options.mapsdir, MapName,ID+".json")
                         MoveJson(source, destination)
+                        NumberOfDemosAnalyzed+=1
+    logging.info("Analyzed a total of "+str(NumberOfDemosAnalyzed)+" demos!")
 
 if __name__ == '__main__':
     main(sys.argv[1:])
