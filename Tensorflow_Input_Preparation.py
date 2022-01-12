@@ -24,6 +24,7 @@ def Initialize_position_dataset_dict():
     position_dataset_dict["MatchID"]=[]
     position_dataset_dict["MapName"]=[]
     position_dataset_dict["Round"]=[]
+    position_dataset_dict["Winner"]=[]
     position_dataset_dict["position_df"]=[]
     return position_dataset_dict
 
@@ -199,6 +200,7 @@ def main(args):
                             position_dataset_dict["MatchID"].append(MatchID)
                             position_dataset_dict["MapName"].append(map_name)
                             position_dataset_dict["Round"].append(round["endTScore"]+round["endCTScore"])
+                            position_dataset_dict["Winner"].append(round["winningSide"])
                             #logging.info(round_positions)
                             # Pad to full length in case a player left
                             PadToFullLength(round_positions)
