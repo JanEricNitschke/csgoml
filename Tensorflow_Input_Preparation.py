@@ -9,6 +9,7 @@ import argparse
 from csgo.visualization.plot import position_transform
 import pandas as pd
 from csgo.data import MAP_DATA
+import json
 
 def Initialize_round_positions():
     round_positions={}
@@ -80,7 +81,6 @@ def PadToFullLength(round_positions):
                     round_positions[key]=["Nobody"]*len(round_positions["Tick"])
                 else:
                     round_positions[key]=[0.0]*len(round_positions["Tick"])
-            #logging.info(key)
             # If a player left mid round pad his name and position with the last values from when he was there. Exactly like it would be if he had died "normally"
             round_positions[key] += [round_positions[key][-1]]*(len(round_positions["Tick"])-len(round_positions[key]))
     length=CheckSize(round_positions)
@@ -118,17 +118,11 @@ def main(args):
 
     logging.info("Starting")
 
-    dir=options.dir
-    os.chdir(dir)
-
-    demo_parser = DemoParser(parse_rate=128, buy_style="hltv",dmg_rolled=True,parse_frames=True)
-
     # More comments and split stuff into functions
     for directoryname in os.listdir(dir):
         directory=os.path.join(dir,directoryname)
         if os.path.isdir(directory):
             os.chdir(directory)
-            demo_parser.outpath=directory
             logging.info("Looking at directory "+directory)
             position_dataset_dict=Initialize_position_dataset_dict()
             for filename in os.listdir(directory):
@@ -138,8 +132,8 @@ def main(args):
                     if filename.endswith(".json"):
                         logging.info("Analyzing file "+filename)
                         MatchID=filename.rsplit(".",1)[0]
-                        demo_parser.output_file=MatchID+".json"
-                        data = demo_parser._read_json()
+                        with open(f, encoding='utf-8') as f:
+                            data = json.load(f)
                         map_name=data["mapName"]
                         for round in data["gameRounds"]:
                             SkipRound=False
@@ -148,15 +142,13 @@ def main(args):
                                 continue
                             # Dict for mapping players steamID to player number for each round
                             id_number_dict={"t":{},"ct":{}}
-                            # dict to check if mapping has already been initialized this round
+                            # Dict to check if mapping has already been initialized this round
                             dict_initialized={"t": False, "ct": False}
-                            # initialize the dict that tracks player position,status,name for each round
+                            # Initialize the dict that tracks player position,status,name for each round
                             round_positions = Initialize_round_positions()
                             logging.debug("Round number "+str(round["roundNum"]))
-                            #logging.info(round["roundNum"])
                             # Iterate over each frame in the round
                             for f in round["frames"]:
-                                #logging.info(f)
                                 # There should never be more than 5 players alive in a team.
                                 # If that does happen completely skip the round.
                                 # Propagate that information past the loop by setting SkipRound to true
@@ -183,7 +175,6 @@ def main(args):
                                         # do not use him for this round.
                                         if str(PlayerID) not in id_number_dict[side]:
                                             continue
-                                        #logging.info(id_number_dict)
                                         AppendToRoundPositions(round_positions,side,id_number_dict,PlayerID,p,map_name)
                                     # After looping over each player in the team once the steamID matching has been initialized
                                     dict_initialized[side]=True
@@ -192,7 +183,6 @@ def main(args):
                                 # But you do not want to set it for frames where you have no player data which should only ever happen in the first frame of a round at worst.
                                 if True in dict_initialized.values():
                                     round_positions["Tick"].append(f["tick"])
-
                             # Skip the rest of the loop if the whole round should be skipped.
                             if SkipRound:
                                 continue
@@ -201,19 +191,16 @@ def main(args):
                             position_dataset_dict["MapName"].append(map_name)
                             position_dataset_dict["Round"].append(round["endTScore"]+round["endCTScore"])
                             position_dataset_dict["Winner"].append(round["winningSide"])
-                            #logging.info(round_positions)
                             # Pad to full length in case a player left
                             PadToFullLength(round_positions)
                             # Make sure each entry in the round_positions has the same size now. Especially that nothing is longer than the Tick entry which would indicate multiple players filling on player number
                             # Transform to dataframe
                             round_positions_df=pd.DataFrame(round_positions)
-                            #logging.info(round_positions_df)
                             # Add the rounds trajectory information to the overall dataset.
                             position_dataset_dict["position_df"].append(round_positions_df)
                             # Check thateach entry in the dataset has the same length. Especially that for each round there is a trajectory dataframe.
                             length=CheckSize(position_dataset_dict)
                             logging.debug("Finished another round and appended to dataset. Now at size "+str(length))
-                        #logging.info(position_dataset_dict)
             # Transform to dataset and write it to file as json
             position_dataset_df=pd.DataFrame(position_dataset_dict)
             #logging.info(position_dataset_df)
