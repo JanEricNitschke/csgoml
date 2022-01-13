@@ -236,9 +236,9 @@ def main(args):
                 if os.path.isfile(f):
                     with open(f, encoding='utf-8') as f:
                         demo_data = json.load(f)
-                        map=demo_data["mapName"]
-                        AnalyzeMap(demo_data,FastWeaponCheck,Results,map)
-                        NumberOfDemosAnalyzed+=1
+                    map=demo_data["mapName"]
+                    AnalyzeMap(demo_data,FastWeaponCheck,Results,map)
+                    NumberOfDemosAnalyzed+=1
         logging.info("Analyzed a total of "+str(NumberOfDemosAnalyzed)+" demos!")
         dataframe=pd.DataFrame(Results)
         dataframe.to_json(options.json)
