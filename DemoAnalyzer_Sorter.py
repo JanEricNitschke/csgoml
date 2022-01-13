@@ -19,11 +19,11 @@ def getIDs(filename,mmid):
 
 def clean_rounds(demo_parser):
     try:
-        demo_parser.clean_rounds()
-        pass
+        demo_parser.clean_rounds(json_indent=4)
     except AttributeError:
-        logging.error("This demo has an error while cleaning.")
-        logging.exception('')
+        logging.exception("This demo has an attribute error while cleaning.")
+    except TypeError:
+        logging.exception("This demo has a type error while cleaning.")
 
 def getMapName(data):
     if data["mapName"].startswith("de_"):
