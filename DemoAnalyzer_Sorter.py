@@ -19,7 +19,7 @@ def getIDs(filename,mmid):
 
 def clean_rounds(demo_parser):
     try:
-        demo_parser.clean_rounds(json_indent=4)
+        demo_parser.clean_rounds()
     except AttributeError:
         logging.exception("This demo has an attribute error while cleaning.")
     except TypeError:
@@ -48,6 +48,7 @@ def MoveJson(source, destination):
 def main(args):
     parser = argparse.ArgumentParser("Analyze the early mid fight on inferno")
     parser.add_argument("-d", "--debug",  action='store_true', default=False, help="Enable debug output.")
+    parser.add_argument("--noindentation",  action='store_true', default=False, help="Turn off indentation of json file.")
     parser.add_argument('--dirs', nargs='*', default=["D:\CSGO\Demos","C:\Program Files (x86)\Steam\steamapps\common\Counter-Strike Global Offensive\csgo\\replays"], help='All the directories that should be scanned for demos.')
     parser.add_argument("-l", "--log",  default='D:\CSGO\ML\CSGOML\Sorter.log', help="Path to output log.")
     parser.add_argument("--startid", type=int, default=1, help="Analyze demos with a name above this id")
@@ -83,7 +84,7 @@ def main(args):
                         if int(NumberID)>options.endid:
                             logging.info("Parsed last relevant demo.")
                             break
-                        demo_parser = DemoParser(demofile=f,demo_id=ID,parse_rate=128, buy_style="hltv",dmg_rolled=True,parse_frames=True)
+                        demo_parser = DemoParser(demofile=f,demo_id=ID,parse_rate=128, buy_style="hltv",dmg_rolled=True,parse_frames=True,json_indentation=(not options.noindentation))
                         data = demo_parser.parse()
                         clean_rounds(demo_parser)
                         data=demo_parser.json
