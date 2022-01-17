@@ -7,6 +7,7 @@ import logging
 import shutil
 import argparse
 from csgo.visualization.plot import position_transform
+from csgo.analytics.nav import generate_position_token
 import pandas as pd
 from csgo.data import MAP_DATA
 import json
@@ -14,7 +15,9 @@ import json
 def Initialize_round_positions():
     round_positions={}
     round_positions["Tick"]=[]
+    round_positions["token"]=[]
     for side in ["CT","T"]:
+        round_positions[side+"token"]=[]
         for number in range(1,6):
             for feature in ["Alive","Name","x","y","z"]:
                 round_positions[side+"Player"+str(number)+feature]=[]
@@ -85,23 +88,15 @@ def PadToFullLength(round_positions):
             round_positions[key] += [round_positions[key][-1]]*(len(round_positions["Tick"])-len(round_positions[key]))
     length=CheckSize(round_positions)
 
-def AppendToRoundPositions(round_positions,side,id_number_dict,PlayerID,p,map_name):
+def AppendToRoundPositions(round_positions,side,id_number_dict,PlayerID,player):
     # Add the relevant information of this player to the rounds dict.
     # Add name of the player. Mainly for debugging purposes. Will be removed for actual analysis
-    round_positions[side.upper()+"Player"+id_number_dict[side][str(PlayerID)]+"Name"].append(p["name"])
+    round_positions[side.upper()+"Player"+id_number_dict[side][str(PlayerID)]+"Name"].append(player["name"])
     # Is alive status so the model does not have to learn that from stopping trajectories
-    round_positions[side.upper()+"Player"+id_number_dict[side][str(PlayerID)]+"Alive"].append(p["isAlive"])
-    # Transform coordinates, not sure if actually needed or helpful
-    if map_name in MAP_DATA:
-        pos = (
-            position_transform(map_name, p["x"], "x"),
-            position_transform(map_name, p["y"], "y"),
-        )
-    else:
-        pos = (p["x"],p["y"])
-    round_positions[side.upper()+"Player"+id_number_dict[side][str(PlayerID)]+"x"].append(pos[0])
-    round_positions[side.upper()+"Player"+id_number_dict[side][str(PlayerID)]+"y"].append(pos[1])
-    round_positions[side.upper()+"Player"+id_number_dict[side][str(PlayerID)]+"z"].append(p["z"])
+    round_positions[side.upper()+"Player"+id_number_dict[side][str(PlayerID)]+"Alive"].append(player["isAlive"])
+    round_positions[side.upper()+"Player"+id_number_dict[side][str(PlayerID)]+"x"].append(player["x"])
+    round_positions[side.upper()+"Player"+id_number_dict[side][str(PlayerID)]+"y"].append(player["y"])
+    round_positions[side.upper()+"Player"+id_number_dict[side][str(PlayerID)]+"z"].append(player["z"])
 
 
 def main(args):
@@ -117,12 +112,10 @@ def main(args):
         logging.basicConfig(filename=options.log, encoding='utf-8', level=logging.INFO,filemode='w')
 
     logging.info("Starting")
-
     # More comments and split stuff into functions
-    for directoryname in os.listdir(dir):
-        directory=os.path.join(dir,directoryname)
+    for directoryname in os.listdir(options.dir):
+        directory=os.path.join(options.dir,directoryname)
         if os.path.isdir(directory):
-            os.chdir(directory)
             logging.info("Looking at directory "+directory)
             position_dataset_dict=Initialize_position_dataset_dict()
             for filename in os.listdir(directory):
@@ -148,24 +141,24 @@ def main(args):
                             round_positions = Initialize_round_positions()
                             logging.debug("Round number "+str(round["roundNum"]))
                             # Iterate over each frame in the round
-                            for f in round["frames"]:
+                            for frame in round["frames"]:
                                 # There should never be more than 5 players alive in a team.
                                 # If that does happen completely skip the round.
                                 # Propagate that information past the loop by setting SkipRound to true
-                                if f["ct"]["alivePlayers"]>5 or f["t"]["alivePlayers"]>5:
+                                if frame["ct"]["alivePlayers"]>5 or frame["t"]["alivePlayers"]>5:
                                     logging.error("Found frame with more than 5 players alive in a team in round "+str(round["roundNum"])+"!")
                                     SkipRound=True
                                     break
                                 # Loop over both sides
                                 for side in ["ct", "t"]:
                                     # If the side does not contain any players for that frame skip it
-                                    if f[side]["players"]==None:
+                                    if frame[side]["players"]==None:
                                         logging.debug("Side['players'] is none. Skipping this frame from round "+str(round["roundNum"])+"!")
                                         continue
                                     # Loop over each player in the team.
-                                    for n, p in enumerate(f[side]["players"]):
+                                    for n, player in enumerate(frame[side]["players"]):
                                         #logging.info(f)
-                                        PlayerID=GetPlayerID(p)
+                                        PlayerID=GetPlayerID(player)
                                         # If the dict of the team has not been initialized add that player. Should only happen once per player per team per round
                                         # But for each team can happen on different rounds in some rare cases.
                                         if dict_initialized[side]==False:
@@ -175,14 +168,21 @@ def main(args):
                                         # do not use him for this round.
                                         if str(PlayerID) not in id_number_dict[side]:
                                             continue
-                                        AppendToRoundPositions(round_positions,side,id_number_dict,PlayerID,p,map_name)
+                                        AppendToRoundPositions(round_positions,side,id_number_dict,PlayerID,player)
                                     # After looping over each player in the team once the steamID matching has been initialized
                                     dict_initialized[side]=True
                                 # If at least one side has been initialized the round can be used for analysis, so add the tick value used for tracking.
                                 # Will also removed for the eventual analysis.
                                 # But you do not want to set it for frames where you have no player data which should only ever happen in the first frame of a round at worst.
                                 if True in dict_initialized.values():
-                                    round_positions["Tick"].append(f["tick"])
+                                    round_positions["Tick"].append(frame["tick"])
+                                    try:
+                                        tokens=generate_position_token(map_name, frame)
+                                    except ValueError:
+                                        tokens={'tToken': '000000000000000000000000000000','ctToken': '000000000000000000000000000000','token': '000000000000000000000000000000000000000000000000000000000000'}
+                                    round_positions["token"].append(tokens["token"])
+                                    round_positions["CTtoken"].append(tokens["ctToken"])
+                                    round_positions["Ttoken"].append(tokens["tToken"])
                             # Skip the rest of the loop if the whole round should be skipped.
                             if SkipRound:
                                 continue
