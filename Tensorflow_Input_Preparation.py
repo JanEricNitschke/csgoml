@@ -75,8 +75,8 @@ def PadToFullLength(round_positions):
             if len(round_positions[key])==0:
                 logging.debug("An alive key has length 0. Padding to length of tick!")
                 logging.debug("Start tick: "+str(round_positions["Tick"][0]))
-                round_positions[key]=[False]*len(round_positions["Tick"])
-            round_positions[key] += [False]*(len(round_positions["Tick"])-len(round_positions[key]))
+                round_positions[key]=[0]*len(round_positions["Tick"])
+            round_positions[key] += [0]*(len(round_positions["Tick"])-len(round_positions[key]))
         elif "Player" in key:
             # If a player wasnt there for the whole round set his name as Nobody and position as 0,0,0.
             if len(round_positions[key])==0:
@@ -93,10 +93,19 @@ def AppendToRoundPositions(round_positions,side,id_number_dict,PlayerID,player):
     # Add name of the player. Mainly for debugging purposes. Will be removed for actual analysis
     round_positions[side.upper()+"Player"+id_number_dict[side][str(PlayerID)]+"Name"].append(player["name"])
     # Is alive status so the model does not have to learn that from stopping trajectories
-    round_positions[side.upper()+"Player"+id_number_dict[side][str(PlayerID)]+"Alive"].append(player["isAlive"])
+    round_positions[side.upper()+"Player"+id_number_dict[side][str(PlayerID)]+"Alive"].append(int(player["isAlive"]))
     round_positions[side.upper()+"Player"+id_number_dict[side][str(PlayerID)]+"x"].append(player["x"])
     round_positions[side.upper()+"Player"+id_number_dict[side][str(PlayerID)]+"y"].append(player["y"])
     round_positions[side.upper()+"Player"+id_number_dict[side][str(PlayerID)]+"z"].append(player["z"])
+
+def ConvertWinnerToInt(WinnerString):
+    if WinnerString=="CT":
+        return 1
+    elif WinnerString=="T":
+        return 0
+    else:
+        logging.error("Winner has to be either CT or T, but was "+WinnerString)
+        sys.exit
 
 
 def main(args):
@@ -112,11 +121,15 @@ def main(args):
         logging.basicConfig(filename=options.log, encoding='utf-8', level=logging.INFO,filemode='w')
 
     logging.info("Starting")
+    done=["ancient","cache"]
     # More comments and split stuff into functions
     for directoryname in os.listdir(options.dir):
         directory=os.path.join(options.dir,directoryname)
         if os.path.isdir(directory):
             logging.info("Looking at directory "+directory)
+            if directoryname in done:
+                logging.info("Skipping this directory as it has already been analyzed.")
+                continue
             position_dataset_dict=Initialize_position_dataset_dict()
             for filename in os.listdir(directory):
                 f = os.path.join(directory, filename)
@@ -178,7 +191,7 @@ def main(args):
                                     round_positions["Tick"].append(frame["tick"])
                                     try:
                                         tokens=generate_position_token(map_name, frame)
-                                    except ValueError:
+                                    except:
                                         tokens={'tToken': '000000000000000000000000000000','ctToken': '000000000000000000000000000000','token': '000000000000000000000000000000000000000000000000000000000000'}
                                     round_positions["token"].append(tokens["token"])
                                     round_positions["CTtoken"].append(tokens["ctToken"])
@@ -190,7 +203,7 @@ def main(args):
                             position_dataset_dict["MatchID"].append(MatchID)
                             position_dataset_dict["MapName"].append(map_name)
                             position_dataset_dict["Round"].append(round["endTScore"]+round["endCTScore"])
-                            position_dataset_dict["Winner"].append(round["winningSide"])
+                            position_dataset_dict["Winner"].append(ConvertWinnerToInt(round["winningSide"]))
                             # Pad to full length in case a player left
                             PadToFullLength(round_positions)
                             # Make sure each entry in the round_positions has the same size now. Especially that nothing is longer than the Tick entry which would indicate multiple players filling on player number
