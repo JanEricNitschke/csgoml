@@ -118,9 +118,10 @@ def RegularizeCoordinatesdf(position_df,minimum,maximum):
         for number in range(1,6):
             for feature in ["x","y","z"]:
                     position_df[side+"Player"+str(number)+feature]=position_df[side+"Player"+str(number)+feature].apply(RegularizeCoordinates,args=(minimum[feature],maximum[feature]))
+    return position_df
 
 
-def GetMinMaxFromFirst(reference_position_df,team):
+def GetMinMaxFromFirst(reference_position_df):
     minimum={"x":sys.maxsize,"y":sys.maxsize,"z":sys.maxsize}
     maximum={"x":-sys.maxsize,"y":-sys.maxsize,"z":-sys.maxsize}
     for feature in ["x","y","z"]:
@@ -144,7 +145,8 @@ def main(args):
         logging.basicConfig(filename=options.log, encoding='utf-8', level=logging.INFO,filemode='w')
 
     logging.info("Starting")
-    done=["ancient","cache"]
+    done=[]
+    do=[]
     # More comments and split stuff into functions
     for directoryname in os.listdir(options.dir):
         directory=os.path.join(options.dir,directoryname)
@@ -152,6 +154,9 @@ def main(args):
             logging.info("Looking at directory "+directory)
             if directoryname in done:
                 logging.info("Skipping this directory as it has already been analyzed.")
+                continue
+            if  ((len(do) > 0) and (directoryname not in do)):
+                logging.info("Skipping this directory as it not one of those that should be analyzed.")
                 continue
             position_dataset_dict=Initialize_position_dataset_dict()
             for filename in os.listdir(directory):
@@ -241,7 +246,6 @@ def main(args):
             position_dataset_df=pd.DataFrame(position_dataset_dict)
             minimum,maximum=GetMinMaxFromFirst(position_dataset_df.iloc[0]["position_df"])
             position_dataset_df["position_df"]=position_dataset_df["position_df"].apply(RegularizeCoordinatesdf,args=(minimum,maximum))
-            #logging.info(position_dataset_df)
             position_dataset_df.to_json(directory+"\Analysis\Prepared_Input_Tensorflow_"+directoryname+".json")
             logging.info("Wrote output json to: "+directory+"\Analysis\Prepared_Input_Tensorflow_"+directoryname+".json")
             # Has to be read back in like
