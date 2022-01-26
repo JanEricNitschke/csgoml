@@ -107,6 +107,29 @@ def ConvertWinnerToInt(WinnerString):
         logging.error("Winner has to be either CT or T, but was "+WinnerString)
         sys.exit
 
+def RegularizeCoordinates(Coordinate,minimum,maximum):
+    mean=(minimum+maximum)/2
+    dev=(maximum-minimum)/2
+    return (Coordinate-mean)/dev
+
+
+def RegularizeCoordinatesdf(position_df,minimum,maximum):
+    for side in ["CT","T"]:
+        for number in range(1,6):
+            for feature in ["x","y","z"]:
+                    position_df[side+"Player"+str(number)+feature]=position_df[side+"Player"+str(number)+feature].apply(RegularizeCoordinates,args=(minimum[feature],maximum[feature]))
+
+
+def GetMinMaxFromFirst(reference_position_df,team):
+    minimum={"x":sys.maxsize,"y":sys.maxsize,"z":sys.maxsize}
+    maximum={"x":-sys.maxsize,"y":-sys.maxsize,"z":-sys.maxsize}
+    for feature in ["x","y","z"]:
+        for side in ["CT","T"]:
+            for number in range(1,6):
+                maximum[feature]=max(reference_position_df[side+"Player"+str(number)+feature].max(),maximum[feature])
+                minimum[feature]=min(reference_position_df[side+"Player"+str(number)+feature].min(),minimum[feature])
+    return minimum,maximum
+
 
 def main(args):
     parser = argparse.ArgumentParser("Analyze the early mid fight on inferno")
@@ -216,6 +239,8 @@ def main(args):
                             logging.debug("Finished another round and appended to dataset. Now at size "+str(length))
             # Transform to dataset and write it to file as json
             position_dataset_df=pd.DataFrame(position_dataset_dict)
+            minimum,maximum=GetMinMaxFromFirst(position_dataset_df.iloc[0]["position_df"])
+            position_dataset_df["position_df"]=position_dataset_df["position_df"].apply(RegularizeCoordinatesdf,args=(minimum,maximum))
             #logging.info(position_dataset_df)
             position_dataset_df.to_json(directory+"\Analysis\Prepared_Input_Tensorflow_"+directoryname+".json")
             logging.info("Wrote output json to: "+directory+"\Analysis\Prepared_Input_Tensorflow_"+directoryname+".json")
