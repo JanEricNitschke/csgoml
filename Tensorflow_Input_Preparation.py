@@ -123,8 +123,8 @@ def GetExtremesFromNAV(map_name):
         for area in NAV[map_name]:
             for feature in ["x","y","z"]:
                 for corner in ["northWest","southEast"]:
-                    maximum[feature]=max(NAV[map][area][corner+feature.upper()],maximum[feature])
-                    minimum[feature]=min(NAV[map][area][corner+feature.upper()],minimum[feature])
+                    maximum[feature]=max(NAV[map_name][area][corner+feature.upper()],maximum[feature])
+                    minimum[feature]=min(NAV[map_name][area][corner+feature.upper()],minimum[feature])
     return minimum, maximum
 
 
@@ -161,7 +161,7 @@ def main(args):
         logging.basicConfig(filename=options.log, encoding='utf-8', level=logging.INFO,filemode='w')
 
     logging.info("Starting")
-    done=["ancient"]
+    done=["ancient","cache","cbble","cs_rush","dust2","facade","inferno","marquis","mirage","mist","nuke"]
     do=[]
     # More comments and split stuff into functions
     for directoryname in os.listdir(options.dir):
