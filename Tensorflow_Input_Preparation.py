@@ -10,6 +10,7 @@ from csgo.visualization.plot import position_transform
 from csgo.analytics.nav import generate_position_token
 import pandas as pd
 from csgo.data import MAP_DATA
+from csgo.data import NAV
 import json
 
 def Initialize_round_positions():
@@ -107,20 +108,32 @@ def ConvertWinnerToInt(WinnerString):
         logging.error("Winner has to be either CT or T, but was "+WinnerString)
         sys.exit
 
-def RegularizeCoordinates(Coordinate,shift,scaling):
+def RegularizeCoordinates(Coordinate,minimum,maximum):
+    shift=(maximum+minimum)/2
+    scaling=(maximum-minimum)/2
     return (Coordinate-shift)/scaling
+
+def GetExtremesFromNAV(map_name):
+    minimum={"x":sys.maxsize,"y":sys.maxsize,"z":sys.maxsize}
+    maximum={"x":-sys.maxsize,"y":-sys.maxsize,"z":-sys.maxsize}
+    if map_name not in NAV.keys():
+        minimum={"x":-2000,"y":-2000,"z":-200}
+        maximum={"x":2000,"y":2000,"z":200}
+    else:
+        for area in NAV[map_name]:
+            for feature in ["x","y","z"]:
+                for corner in ["northWest","southEast"]:
+                    maximum[feature]=max(NAV[map][area][corner+feature.upper()],maximum[feature])
+                    minimum[feature]=min(NAV[map][area][corner+feature.upper()],minimum[feature])
+    return minimum, maximum
 
 
 def RegularizeCoordinatesdf(position_df,map_name):
-    zoffsets={"vertigo":11500,"cache":1700}
-    shift={"x":0,"y":0,"z":0}
-    scaling={"x":2000,"y":2000,"z":200}
-    if map_name in zoffsets:
-        shift["z"]=zoffsets[map_name]
+    minimum, maximum = GetExtremesFromNAV("de_"+map_name)
     for side in ["CT","T"]:
         for number in range(1,6):
             for feature in ["x","y","z"]:
-                    position_df[side+"Player"+str(number)+feature]=position_df[side+"Player"+str(number)+feature].apply(RegularizeCoordinates,args=(shift[feature],scaling[feature]))
+                    position_df[side+"Player"+str(number)+feature]=position_df[side+"Player"+str(number)+feature].apply(RegularizeCoordinates,args=(minimum[feature],maximum[feature]))
     return position_df
 
 
