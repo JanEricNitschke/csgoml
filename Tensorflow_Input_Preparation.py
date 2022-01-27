@@ -247,7 +247,6 @@ def main(args):
                             logging.debug("Finished another round and appended to dataset. Now at size "+str(length))
             # Transform to dataset and write it to file as json
             position_dataset_df=pd.DataFrame(position_dataset_dict)
-            logging.info(directoryname)
             position_dataset_df["position_df"]=position_dataset_df["position_df"].apply(RegularizeCoordinatesdf,args=(directoryname,))
             position_dataset_df.to_json(directory+"\Analysis\Prepared_Input_Tensorflow_"+directoryname+".json")
             logging.info("Wrote output json to: "+directory+"\Analysis\Prepared_Input_Tensorflow_"+directoryname+".json")
