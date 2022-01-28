@@ -1,15 +1,11 @@
 #!/usr/bin/env python
 
-from csgo.parser import DemoParser
 import os
 import sys
 import logging
-import shutil
 import argparse
-from csgo.visualization.plot import position_transform
 from csgo.analytics.nav import generate_position_token
 import pandas as pd
-from csgo.data import MAP_DATA
 from csgo.data import NAV
 import json
 
@@ -161,7 +157,7 @@ def main(args):
         logging.basicConfig(filename=options.log, encoding='utf-8', level=logging.INFO,filemode='w')
 
     logging.info("Starting")
-    done=["ancient","cache","cbble","cs_rush","dust2","facade","inferno","marquis","mirage","mist","nuke"]
+    done=["ancient","cache","cbble","cs_rush","dust2","facade","inferno","marquis","mirage","mist","nuke","overpass","resort","santorini","santorini_playtest","season"]
     do=[]
     # More comments and split stuff into functions
     for directoryname in os.listdir(options.dir):
