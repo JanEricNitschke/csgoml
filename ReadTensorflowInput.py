@@ -180,15 +180,92 @@ def main(args):
     val_labels, val_features = TransFormDataframeToArrays(val_df)
     train_labels, train_features = TransFormDataframeToArrays(train_df)
 
+    logging.info(test_features)
+    logging.info(test_features.shape)
 
 
-    logging.info("Input preparation done!")
-    logging.info(train_labels.shape)
-    logging.info(train_features.shape)
+
+    # logging.info("Input preparation done!")
+    # logging.info(train_labels.shape)
+    # logging.info(train_features.shape)
+
+    # train_dataset = tf.data.Dataset.from_tensor_slices((train_features, train_labels))
+    # test_dataset = tf.data.Dataset.from_tensor_slices((test_features, test_labels))
+    # val_dataset = tf.data.Dataset.from_tensor_slices((val_features, val_labels))
+
+    # BATCH_SIZE = 64
+    # SHUFFLE_BUFFER_SIZE = 100
+
+    # train_dataset = train_dataset.shuffle(SHUFFLE_BUFFER_SIZE).batch(BATCH_SIZE)
+    # test_dataset = test_dataset.batch(BATCH_SIZE)
+    # val_dataset = val_dataset.batch(BATCH_SIZE)
+
+    # model = tf.keras.Sequential([
+    #     tf.keras.layers.Masking(mask_value=0.,input_shape=train_features[0].shape)
+    #     tf.keras.layers.Dense(16, activation='relu'),
+    #     tf.keras.layers.Dropout(0.5),
+    #     tf.keras.layers.Dense(16, activation='relu'),
+    #     tf.keras.layers.Dropout(0.5),
+    #     #tf.keras.layers.Dense(1, activation="sigmoid")
+    #     tf.keras.layers.Dense(1)
+    # ])
+
+    # model.compile(
+    #     optimizer='adam',
+    #     loss=tf.keras.losses.BinaryCrossentropy(from_logits=True),
+    #     metrics=[
+    #         tf.metrics.BinaryAccuracy(threshold=0.0),
+    #         tf.keras.losses.BinaryCrossentropy(
+    #             from_logits=True, name='binary_crossentropy'),
+    #             ])
+
+    # model.summary()
+
+    # history = model.fit(
+    #     train_dataset,
+    #     epochs=15,
+    #     batch_size=BATCH_SIZE,
+    #     validation_data=val_dataset,
+    #     callbacks=tf.keras.callbacks.EarlyStopping(monitor='val_binary_crossentropy', patience=200),
+    #     )
+
+    # loss, accuracy = model.evaluate(test_dataset)
+
+    # print("Loss: ", loss)
+    # print("Accuracy: ", accuracy)
+
+    # history_dict = history.history
+
+    # acc = history_dict['binary_accuracy']
+    # val_acc = history_dict['val_binary_accuracy']
+    # loss = history_dict['loss']
+    # val_loss = history_dict['val_loss']
+
+    # epochs = range(1, len(acc) + 1)
+
+    # # "bo" is for "blue dot"
+    # plt.plot(epochs, loss, 'bo', label='Training loss')
+    # # b is for "solid blue line"
+    # plt.plot(epochs, val_loss, 'b', label='Validation loss')
+    # plt.title('Training and validation loss')
+    # plt.xlabel('Epochs')
+    # plt.ylabel('Loss')
+    # plt.legend()
+
+    # plt.show()
 
 
-    #input_tensor=tf.convert_to_tensor(dataframe)
-    #logging.info(input_tensor)
+    # plt.plot(epochs, acc, 'bo', label='Training acc')
+    # plt.plot(epochs, val_acc, 'b', label='Validation acc')
+    # plt.title('Training and validation accuracy')
+    # plt.xlabel('Epochs')
+    # plt.ylabel('Accuracy')
+    # plt.legend(loc='lower right')
+
+    # plt.show()
+
+    # #input_tensor=tf.convert_to_tensor(dataframe)
+    # #logging.info(input_tensor)
 
 
 if __name__ == '__main__':
