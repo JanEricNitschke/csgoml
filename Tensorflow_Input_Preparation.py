@@ -132,6 +132,13 @@ def RegularizeCoordinatesdf(position_df,map_name):
                     position_df[side+"Player"+str(number)+feature]=position_df[side+"Player"+str(number)+feature].apply(RegularizeCoordinates,args=(minimum[feature],maximum[feature]))
     return position_df
 
+def GetTokenLength(map):
+    area_names=[]
+    for area in NAV[map]:
+        if NAV[map][area]["areaName"] not in area_names:
+            area_names.append(NAV[map][area]["areaName"])
+    return len(area_names)
+
 
 # def GetMinMaxFromFirst(reference_position_df):
 #     minimum={"x":sys.maxsize,"y":sys.maxsize,"z":sys.maxsize}
@@ -157,8 +164,9 @@ def main(args):
         logging.basicConfig(filename=options.log, encoding='utf-8', level=logging.INFO,filemode='w')
 
     logging.info("Starting")
-    done=["ancient","cache","cbble","cs_rush","dust2","facade","inferno","marquis","mirage","mist","nuke","overpass","resort","santorini","santorini_playtest","season"]
-    do=[]
+    #done=["ancient","cache","cbble","cs_rush","dust2","facade","inferno","marquis","mirage","mist","nuke","overpass","resort","santorini","santorini_playtest","season"]
+    done=[]
+    do=["overpass"]
     # More comments and split stuff into functions
     for directoryname in os.listdir(options.dir):
         directory=os.path.join(options.dir,directoryname)
@@ -181,6 +189,7 @@ def main(args):
                         with open(f, encoding='utf-8') as f:
                             data = json.load(f)
                         map_name=data["mapName"]
+                        tokenlength=GetTokenLength(map_name)
                         for round in data["gameRounds"]:
                             SkipRound=False
                             # If there are no frames in the round skip it.
@@ -231,8 +240,12 @@ def main(args):
                                     round_positions["Tick"].append(frame["tick"])
                                     try:
                                         tokens=generate_position_token(map_name, frame)
-                                    except:
-                                        tokens={'tToken': '000000000000000000000000000000','ctToken': '000000000000000000000000000000','token': '000000000000000000000000000000000000000000000000000000000000'}
+                                    except TypeError:
+                                        tokens={'tToken': tokenlength*'0','ctToken': tokenlength*'0','token': 2*tokenlength*'0'}
+                                        logging.debug("Got TypeError when trying to generate position token. This is due to one sides 'player' entry being none.")
+                                    except KeyError:
+                                        okens={'tToken': tokenlength*'0','ctToken': tokenlength*'0','token': 2*tokenlength*'0'}
+                                        logging.debug("Got KeyError when trying to generate position token. This is due to the map not being supported.")
                                     round_positions["token"].append(tokens["token"])
                                     round_positions["CTtoken"].append(tokens["ctToken"])
                                     round_positions["Ttoken"].append(tokens["tToken"])
