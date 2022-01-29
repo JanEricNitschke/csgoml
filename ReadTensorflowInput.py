@@ -1,36 +1,64 @@
 #!/usr/bin/env python
 
+from ctypes import pointer
 import os
 import logging
+from turtle import pos, position
 import pandas as pd
 import numpy as np
 import argparse
 import sys
-from csgo.data import NAV
 import tensorflow as tf
 from sklearn.model_selection import train_test_split
+import matplotlib.pyplot as plt
 
 def transformToDataFrame(JsonFormatDict):
     return pd.DataFrame(JsonFormatDict)
+
+def PadToLength(position_df,time):
+    if time>len(position_df):
+        # Pad with last entry
+        #idx = np.minimum(np.arange(time), len(position_df) - 1)
+        #position_df=position_df.iloc[idx]
+        # Pad with 0
+        position_df=position_df.reindex(range(time), fill_value=0.0)
+    else:
+        # Cut if the required size is smaller.
+        position_df=position_df.head(time)
+    return position_df
+
+def GenerateArrayForTokens(position_df,token,time):
+    # Split the token strings into a columns so that there is one column for each integer in the token string
+    # Only work with the token entry of the df
+    position_df=position_df[[token]]
+    # Initialize the numpy array
+    return_array=np.zeros(tuple([time,len(position_df.iloc[0][token])]))
+    # Transform the string into a list of the individual letters(ints) in the string
+    position_df=position_df[token].apply(list)
+    # Convert the dataframe to a list and back into a df to have one column for each entry of the string
+    position_df=pd.DataFrame(position_df.tolist())
+    # Convert the individual string into the respective integers
+    position_df.apply(pd.to_numeric)
+    # Pad the df to the specified length
+    position_df=PadToLength(position_df,time)
+    # Convert to numpy array
+    return_array=position_df.to_numpy()
+    # for ind, column in enumerate(position_df.columns):
+    #     return_array[:,ind]=position_df[column].to_numpy()
+    return return_array
 
 
 def modifyDataFrameShape(position_df,team,time,coordinates):
     # Throw away all unneeded columns from the dataframe and then convert it into a numpy array
     # If coordinates is false than it is a 1-D array of the tokens for each timestep
     # If coordinates is true than it is a 4-D array with the first index representing the timestep, the second the team, the third the playernumber in that team and the fourth the feature.
+    position_df.reset_index(drop=True, inplace=True)
     # Set length of dataframe to make sure all have the same size
-    # Pad each column with its last entry if set size is larger than dataframe size
-    if time>len(position_df):
-        idx = np.minimum(np.arange(time), len(position_df) - 1)
-        position_df=position_df.iloc[idx]
-    else:
-        # Cut if the required size is smaller.
-        position_df=position_df.head(time)
-
+    # Pad each column if set size is larger than dataframe size
     # If the full coordinates should be used then for each player their alive status as well as their x,y,z coordinates are kept, everything else (player names and tokens) is discarded.
     if coordinates:
-        #ColumnsToKeep=[]
         dimensions=[time]
+        position_df=PadToLength(position_df,time)
         featurelist=["Alive","x","y","z"]
         if team=="BOTH":
             sides=["CT","T"]
@@ -52,10 +80,11 @@ def modifyDataFrameShape(position_df,team,time,coordinates):
                     return_array[:,sides.index(side),number-1,featurelist.index(feature)]=position_df[side+"Player"+str(number)+feature].to_numpy()
     else:
         # Remove all columns from the dataframe except for the column of interest
+        # Split the token strings into a columns so that there is one column for each integer in the token string
         if team=="BOTH":
-            return_array=position_df["token"].to_numpy()
+            return_array=GenerateArrayForTokens(position_df,"token",time)
         else:
-            return_array=position_df[team+"token"].to_numpy()
+            return_array=GenerateArrayForTokens(position_df,team+"token",time)
     return return_array
 
 def getMaximumLength(position_dfs):
@@ -86,8 +115,6 @@ def main(args):
         logging.basicConfig(filename=options.log, encoding='utf-8', level=logging.DEBUG,filemode='w')
     else:
         logging.basicConfig(filename=options.log, encoding='utf-8', level=logging.INFO,filemode='w')
-
-
 
     ExampleIndex=options.exampleid
     RandomState=options.randomstate
