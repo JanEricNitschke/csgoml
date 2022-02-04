@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-from csgo.parser import DemoParser
+from awpy.parser import DemoParser
 import os
 import sys
 import logging

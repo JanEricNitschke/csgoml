@@ -4,9 +4,9 @@ import os
 import sys
 import logging
 import argparse
-from csgo.analytics.nav import generate_position_token
+from awpy.analytics.nav import generate_position_token
 import pandas as pd
-from csgo.data import NAV
+from awpy.data import NAV
 import json
 
 def Initialize_round_positions():
@@ -166,7 +166,7 @@ def main(args):
     logging.info("Starting")
     #done=["ancient","cache","cbble","cs_rush","dust2","facade","inferno","marquis","mirage","mist","nuke","overpass","resort","santorini","santorini_playtest","season"]
     done=[]
-    do=["overpass"]
+    do=["mirage"]
     # More comments and split stuff into functions
     for directoryname in os.listdir(options.dir):
         directory=os.path.join(options.dir,directoryname)
@@ -244,7 +244,7 @@ def main(args):
                                         tokens={'tToken': tokenlength*'0','ctToken': tokenlength*'0','token': 2*tokenlength*'0'}
                                         logging.debug("Got TypeError when trying to generate position token. This is due to one sides 'player' entry being none.")
                                     except KeyError:
-                                        okens={'tToken': tokenlength*'0','ctToken': tokenlength*'0','token': 2*tokenlength*'0'}
+                                        tokens={'tToken': tokenlength*'0','ctToken': tokenlength*'0','token': 2*tokenlength*'0'}
                                         logging.debug("Got KeyError when trying to generate position token. This is due to the map not being supported.")
                                     round_positions["token"].append(tokens["token"])
                                     round_positions["CTtoken"].append(tokens["ctToken"])

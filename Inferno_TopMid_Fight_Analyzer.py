@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-from csgo.analytics.nav import find_closest_area
+from awpy.analytics.nav import find_closest_area
 import os
 import json
 import logging
@@ -8,7 +8,7 @@ import pandas as pd
 import numpy as np
 import argparse
 import sys
-from csgo.data import NAV
+from awpy.data import NAV
 
 def getAreaFromPos(map,pos):
     if None in pos:
