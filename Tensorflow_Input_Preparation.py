@@ -134,6 +134,8 @@ def RegularizeCoordinatesdf(position_df,map_name):
 
 def GetTokenLength(map):
     area_names=[]
+    if map not in NAV.keys():
+        return 1
     for area in NAV[map]:
         if NAV[map][area]["areaName"] not in area_names:
             area_names.append(NAV[map][area]["areaName"])
@@ -166,7 +168,7 @@ def main(args):
     logging.info("Starting")
     #done=["ancient","cache","cbble","cs_rush","dust2","facade","inferno","marquis","mirage","mist","nuke","overpass","resort","santorini","santorini_playtest","season"]
     done=[]
-    do=["mirage"]
+    do=["cs_rush"]
     # More comments and split stuff into functions
     for directoryname in os.listdir(options.dir):
         directory=os.path.join(options.dir,directoryname)
@@ -244,6 +246,9 @@ def main(args):
                                         tokens={'tToken': tokenlength*'0','ctToken': tokenlength*'0','token': 2*tokenlength*'0'}
                                         logging.debug("Got TypeError when trying to generate position token. This is due to one sides 'player' entry being none.")
                                     except KeyError:
+                                        tokens={'tToken': tokenlength*'0','ctToken': tokenlength*'0','token': 2*tokenlength*'0'}
+                                        logging.debug("Got KeyError when trying to generate position token. This is due to the map not being supported.")
+                                    except ValueError:
                                         tokens={'tToken': tokenlength*'0','ctToken': tokenlength*'0','token': 2*tokenlength*'0'}
                                         logging.debug("Got KeyError when trying to generate position token. This is due to the map not being supported.")
                                     round_positions["token"].append(tokens["token"])
