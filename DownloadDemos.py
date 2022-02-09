@@ -42,5 +42,4 @@ for url in urls:
 #             out.append(data)
 #             print(str(len(out)),end="\r")
 # Only run this line if you are no longer going to run the script, as it takes longer to boot up again next time.
-time.sleep(10)
 gateway.shutdown() 

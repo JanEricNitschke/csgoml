@@ -131,7 +131,7 @@ def main(args):
     parser = argparse.ArgumentParser("Analyze the early mid fight on inferno")
     parser.add_argument("-d", "--debug",  action='store_true', default=False, help="Enable debug output.")
     parser.add_argument("-m", "--map",  default="mirage", help="Map to analyze")
-    parser.add_argument("-l", "--log",  default='D:\CSGO\ML\CSGOML\Test.log', help="Path to output log.")
+    parser.add_argument("-l", "--log",  default='D:\CSGO\ML\CSGOML\ReadTensorflowInput.log', help="Path to output log.")
     parser.add_argument("-s", "--side",  default='BOTH', help="Which side to include in analysis (CT,T,BOTH) .")
     parser.add_argument("--coordinates",  action='store_true', default=False, help="Whether to use full coordinate or just tokens.")
     parser.add_argument("-t", "--time",  default='MAX', help="How many position snapshots should be used. Either an integer or MAX.")

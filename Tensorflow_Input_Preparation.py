@@ -155,7 +155,7 @@ def main(args):
     parser = argparse.ArgumentParser("Analyze the early mid fight on inferno")
     parser.add_argument("-d", "--debug",  action='store_true', default=False, help="Enable debug output.")
     parser.add_argument("--dir",  default="D:\CSGO\Demos\Maps", help="Path to directory containing the individual map directories.")
-    parser.add_argument("-l", "--log",  default='D:\CSGO\ML\CSGOML\Preparation_Tensorflow.log', help="Path to output log.")
+    parser.add_argument("-l", "--log",  default='D:\CSGO\ML\CSGOML\Tensorflow_Input_Preparation.log', help="Path to output log.")
     options = parser.parse_args(args)
 
     if options.debug:

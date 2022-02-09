@@ -50,7 +50,7 @@ def main(args):
     parser.add_argument("-d", "--debug",  action='store_true', default=False, help="Enable debug output.")
     parser.add_argument("--noindentation",  action='store_true', default=False, help="Turn off indentation of json file.")
     parser.add_argument('--dirs', nargs='*', default=["D:\CSGO\Demos","C:\Program Files (x86)\Steam\steamapps\common\Counter-Strike Global Offensive\csgo\\replays"], help='All the directories that should be scanned for demos.')
-    parser.add_argument("-l", "--log",  default='D:\CSGO\ML\CSGOML\Sorter.log', help="Path to output log.")
+    parser.add_argument("-l", "--log",  default='D:\CSGO\ML\CSGOML\DemoAnalyzer_Sorter.log', help="Path to output log.")
     parser.add_argument("--startid", type=int, default=1, help="Analyze demos with a name above this id")
     parser.add_argument("--endid", type=int, default=99999, help="Analyze demos with a name below this id")
     parser.add_argument("--mmid", type=int, default=10000, help="Set id value that should be used for mm demos that normally do not have one.")
