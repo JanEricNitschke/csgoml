@@ -1,0 +1,318 @@
+INFO:root:Starting
+INFO:root:Looking at directory D:\CSGO\Demos\Maps\ancient
+INFO:root:Skipping this directory as it not one of those that should be analyzed.
+INFO:root:Looking at directory D:\CSGO\Demos\Maps\cache
+INFO:root:Skipping this directory as it not one of those that should be analyzed.
+INFO:root:Looking at directory D:\CSGO\Demos\Maps\cbble
+INFO:root:Skipping this directory as it not one of those that should be analyzed.
+INFO:root:Looking at directory D:\CSGO\Demos\Maps\cs_rush
+INFO:root:Skipping this directory as it not one of those that should be analyzed.
+INFO:root:Looking at directory D:\CSGO\Demos\Maps\dust2
+INFO:root:Skipping this directory as it not one of those that should be analyzed.
+INFO:root:Looking at directory D:\CSGO\Demos\Maps\facade
+INFO:root:Skipping this directory as it not one of those that should be analyzed.
+INFO:root:Looking at directory D:\CSGO\Demos\Maps\inferno
+INFO:root:Skipping this directory as it not one of those that should be analyzed.
+INFO:root:Looking at directory D:\CSGO\Demos\Maps\marquis
+INFO:root:Skipping this directory as it not one of those that should be analyzed.
+INFO:root:Looking at directory D:\CSGO\Demos\Maps\mirage
+INFO:root:Analyzing file 013.json
+INFO:root:Analyzing file 015.json
+INFO:root:Analyzing file 016.json
+INFO:root:Analyzing file 025.json
+INFO:root:Analyzing file 028.json
+INFO:root:Analyzing file 044.json
+INFO:root:Analyzing file 061.json
+INFO:root:Analyzing file 068.json
+INFO:root:Analyzing file 070.json
+INFO:root:Analyzing file 079.json
+INFO:root:Analyzing file 087.json
+INFO:root:Analyzing file 104.json
+INFO:root:Analyzing file 107.json
+INFO:root:Analyzing file 116.json
+INFO:root:Analyzing file 117.json
+INFO:root:Analyzing file 118.json
+INFO:root:Analyzing file 124.json
+INFO:root:Analyzing file 128.json
+INFO:root:Analyzing file 133.json
+INFO:root:Analyzing file 136.json
+INFO:root:Analyzing file 138.json
+INFO:root:Analyzing file 141.json
+INFO:root:Analyzing file 142.json
+INFO:root:Analyzing file 147.json
+INFO:root:Analyzing file 155.json
+INFO:root:Analyzing file 163.json
+INFO:root:Analyzing file 175esea.json
+INFO:root:Analyzing file 179esea.json
+INFO:root:Analyzing file 188esea.json
+INFO:root:Analyzing file 189esea.json
+INFO:root:Analyzing file 190esea.json
+INFO:root:Analyzing file 197esea.json
+INFO:root:Analyzing file 201esea.json
+INFO:root:Analyzing file 204esea.json
+INFO:root:Analyzing file 207esea.json
+INFO:root:Analyzing file 208esea.json
+INFO:root:Analyzing file 215esea.json
+INFO:root:Analyzing file 217esea.json
+INFO:root:Analyzing file 224esea.json
+INFO:root:Analyzing file 225esea.json
+INFO:root:Analyzing file 228esea.json
+INFO:root:Analyzing file 230esea.json
+INFO:root:Analyzing file 233esea.json
+INFO:root:Analyzing file 234esea.json
+INFO:root:Analyzing file 236esea.json
+INFO:root:Analyzing file 239esea.json
+INFO:root:Analyzing file 240esea.json
+INFO:root:Analyzing file 243.json
+INFO:root:Analyzing file 248esea.json
+INFO:root:Analyzing file 249esea.json
+INFO:root:Analyzing file 251esea.json
+INFO:root:Analyzing file 252esea.json
+INFO:root:Analyzing file 259esea.json
+INFO:root:Analyzing file 273esea.json
+INFO:root:Analyzing file 274esea.json
+INFO:root:Analyzing file 275esea.json
+INFO:root:Analyzing file 279esea.json
+INFO:root:Analyzing file 284esea.json
+INFO:root:Analyzing file 287.json
+INFO:root:Analyzing file 296.json
+INFO:root:Analyzing file 297.json
+INFO:root:Analyzing file 298.json
+INFO:root:Analyzing file 299.json
+INFO:root:Analyzing file 302.json
+INFO:root:Analyzing file 309esea.json
+INFO:root:Analyzing file 313esea.json
+INFO:root:Analyzing file 316esea.json
+INFO:root:Analyzing file 317esea.json
+INFO:root:Analyzing file 318esea.json
+INFO:root:Analyzing file 322esea.json
+INFO:root:Analyzing file 324esea.json
+INFO:root:Analyzing file 326esea.json
+INFO:root:Analyzing file 327.json
+INFO:root:Analyzing file 328esea.json
+INFO:root:Analyzing file 329esea.json
+INFO:root:Analyzing file 331.json
+INFO:root:Analyzing file 339.json
+INFO:root:Analyzing file 341.json
+INFO:root:Analyzing file 345.json
+INFO:root:Analyzing file 352.json
+INFO:root:Analyzing file 355.json
+INFO:root:Analyzing file 357.json
+INFO:root:Analyzing file 359.json
+INFO:root:Analyzing file 363.json
+INFO:root:Analyzing file 367.json
+INFO:root:Analyzing file 369.json
+INFO:root:Analyzing file 371.json
+INFO:root:Analyzing file 372.json
+INFO:root:Analyzing file 373.json
+INFO:root:Analyzing file 376.json
+INFO:root:Analyzing file 378.json
+INFO:root:Analyzing file 379.json
+INFO:root:Analyzing file 383.json
+INFO:root:Analyzing file 386.json
+INFO:root:Analyzing file 387.json
+INFO:root:Analyzing file 390.json
+INFO:root:Analyzing file 391.json
+INFO:root:Analyzing file 394.json
+INFO:root:Analyzing file 398.json
+INFO:root:Analyzing file 402.json
+INFO:root:Analyzing file 404.json
+INFO:root:Analyzing file 405.json
+INFO:root:Analyzing file 407.json
+INFO:root:Analyzing file 410.json
+INFO:root:Analyzing file 412.json
+INFO:root:Analyzing file 413.json
+INFO:root:Analyzing file 426.json
+INFO:root:Analyzing file 432.json
+INFO:root:Analyzing file 433.json
+INFO:root:Analyzing file 435.json
+INFO:root:Analyzing file 437.json
+INFO:root:Analyzing file 449.json
+INFO:root:Analyzing file 450.json
+INFO:root:Analyzing file 451.json
+INFO:root:Analyzing file 455.json
+INFO:root:Analyzing file 456.json
+INFO:root:Analyzing file 458.json
+INFO:root:Analyzing file 463.json
+INFO:root:Analyzing file 466.json
+INFO:root:Analyzing file 468.json
+INFO:root:Analyzing file 473.json
+INFO:root:Analyzing file 483.json
+INFO:root:Analyzing file 484.json
+INFO:root:Analyzing file 486.json
+INFO:root:Analyzing file 488.json
+INFO:root:Analyzing file 492.json
+INFO:root:Analyzing file 498.json
+INFO:root:Analyzing file 502.json
+INFO:root:Analyzing file 504.json
+INFO:root:Analyzing file 506.json
+INFO:root:Analyzing file 509.json
+INFO:root:Analyzing file 518.json
+INFO:root:Analyzing file 521.json
+INFO:root:Analyzing file 528.json
+INFO:root:Analyzing file 529.json
+INFO:root:Analyzing file 532.json
+INFO:root:Analyzing file 535.json
+INFO:root:Analyzing file 536.json
+INFO:root:Analyzing file 538.json
+INFO:root:Analyzing file 540.json
+INFO:root:Analyzing file 542.json
+INFO:root:Analyzing file 544.json
+INFO:root:Analyzing file 545.json
+INFO:root:Analyzing file 546.json
+INFO:root:Analyzing file 547.json
+INFO:root:Analyzing file 551.json
+INFO:root:Analyzing file 554.json
+INFO:root:Analyzing file 560.json
+INFO:root:Analyzing file 567.json
+INFO:root:Analyzing file 568.json
+INFO:root:Analyzing file 569.json
+INFO:root:Analyzing file 571.json
+INFO:root:Analyzing file 573.json
+INFO:root:Analyzing file 574.json
+INFO:root:Analyzing file 577.json
+INFO:root:Analyzing file 580.json
+INFO:root:Analyzing file 586.json
+INFO:root:Analyzing file 589.json
+INFO:root:Analyzing file 590.json
+INFO:root:Analyzing file 593.json
+INFO:root:Analyzing file 600.json
+INFO:root:Analyzing file 601.json
+INFO:root:Analyzing file 602.json
+INFO:root:Analyzing file 606.json
+INFO:root:Analyzing file 607.json
+INFO:root:Analyzing file 616.json
+INFO:root:Analyzing file 617.json
+INFO:root:Analyzing file 621.json
+INFO:root:Analyzing file 623.json
+INFO:root:Analyzing file 628.json
+INFO:root:Analyzing file 633.json
+INFO:root:Analyzing file 637.json
+INFO:root:Analyzing file 640.json
+INFO:root:Analyzing file 642.json
+INFO:root:Analyzing file 643.json
+INFO:root:Analyzing file 646.json
+INFO:root:Analyzing file 651.json
+INFO:root:Analyzing file 654.json
+INFO:root:Analyzing file 660.json
+INFO:root:Analyzing file 670.json
+INFO:root:Analyzing file 671.json
+INFO:root:Analyzing file 676.json
+INFO:root:Analyzing file 680.json
+INFO:root:Analyzing file 682.json
+INFO:root:Analyzing file 688.json
+INFO:root:Analyzing file 689.json
+INFO:root:Analyzing file 690.json
+INFO:root:Analyzing file 693.json
+INFO:root:Analyzing file 695.json
+INFO:root:Analyzing file 696.json
+INFO:root:Analyzing file 699.json
+INFO:root:Analyzing file match730_003022044398700462098_0218005933_134.json
+INFO:root:Analyzing file match730_003022779478058205221_1547854033_184.json
+INFO:root:Analyzing file match730_003023130306019328030_0031891956_136.json
+INFO:root:Analyzing file match730_003023924305885921320_2121415278_900.json
+INFO:root:Analyzing file match730_003026843000304042065_0761515104_184.json
+INFO:root:Analyzing file match730_003027608253954523170_1417366295_183.json
+INFO:root:Analyzing file match730_003028532286103486576_0352881272_191.json
+INFO:root:Analyzing file match730_003030911891258998824_1037418968_186.json
+INFO:root:Analyzing file match730_003038169488341073990_0463822785_192.json
+INFO:root:Analyzing file match730_003043197202827575362_0426606189_900.json
+INFO:root:Analyzing file match730_003047248913913348114_0911583553_184.json
+INFO:root:Analyzing file match730_003049308760901156973_0298872319_136.json
+INFO:root:Analyzing file match730_003050068746774249474_0963637399_136.json
+INFO:root:Analyzing file match730_003051521729915519044_1354190707_192.json
+INFO:root:Analyzing file match730_003052105188337778704_1617429481_135.json
+INFO:root:Analyzing file match730_003053592535512383682_2093173900_191.json
+INFO:root:Analyzing file match730_003053771770940096659_1808246850_183.json
+INFO:root:Analyzing file match730_003056732412156313851_1308879853_184.json
+INFO:root:Analyzing file match730_003057493969987436744_0988304103_131.json
+INFO:root:Analyzing file match730_003059149956905435349_1462672830_136.json
+INFO:root:Analyzing file match730_003059512297526394964_0950061010_186.json
+INFO:root:Analyzing file match730_003059524344909660252_0050195560_134.json
+INFO:root:Analyzing file match730_003062298045526835355_1961238910_135.json
+INFO:root:Analyzing file match730_003063588655281995784_0189513152_131.json
+INFO:root:Analyzing file match730_003064141282281521262_0217425041_134.json
+INFO:root:Analyzing file match730_003064686182634881111_2118247068_183.json
+INFO:root:Analyzing file match730_003064724167325646902_1930155015_135.json
+INFO:root:Analyzing file match730_003064729243976990774_1295141151_192.json
+INFO:root:Analyzing file match730_003064733399357849621_1990278375_135.json
+INFO:root:Analyzing file match730_003066769042057461780_1634642194_134.json
+INFO:root:Analyzing file match730_003068576095860162594_1316999247_136.json
+INFO:root:Analyzing file match730_003069541089112228024_1383680025_131.json
+INFO:root:Analyzing file match730_003070512181217853650_0768141112_186.json
+INFO:root:Analyzing file match730_003071938376648098009_0398113151_186.json
+INFO:root:Analyzing file match730_003073241302221979736_2129298158_191.json
+INFO:root:Analyzing file match730_003075096528377872397_1892902380_183.json
+INFO:root:Analyzing file match730_003076005762217017442_1595398237_186.json
+INFO:root:Analyzing file match730_003076048157839196378_1955475517_135.json
+INFO:root:Analyzing file match730_003076202443801886846_0165308453_183.json
+INFO:root:Analyzing file match730_003076209262062469384_1951407105_186.json
+INFO:root:Analyzing file match730_003076388168925184147_1059838612_134.json
+INFO:root:Analyzing file match730_003076401848396022028_1610929079_136.json
+INFO:root:Analyzing file match730_003076444390047089039_0663484183_135.json
+INFO:root:Analyzing file match730_003078265013798961401_1625867328_136.json
+INFO:root:Analyzing file match730_003080329357617529084_2116295314_135.json
+INFO:root:Analyzing file match730_003081003600911007830_0110929096_131.json
+INFO:root:Analyzing file match730_003081242933668610288_1164290367_184.json
+INFO:root:Analyzing file match730_003083870244620468318_1903392939_134.json
+INFO:root:Analyzing file match730_003086098117171347627_1791244276_136.json
+INFO:root:Analyzing file match730_003087773210251362366_0272903841_134.json
+INFO:root:Analyzing file match730_003096644228978049325_0383104513_192.json
+INFO:root:Analyzing file match730_003096648562600050989_1212228093_131.json
+INFO:root:Analyzing file match730_003097550623843811563_0412530097_186.json
+INFO:root:Analyzing file match730_003098322244783309053_1085426470_192.json
+INFO:root:Analyzing file match730_003099288030456840409_0195950220_134.json
+INFO:root:Analyzing file match730_003099474333253239056_0428540557_184.json
+INFO:root:Analyzing file match730_003100566150447104495_1702114276_134.json
+INFO:root:Analyzing file match730_003111866282417324190_1552991623_136.json
+INFO:root:Analyzing file match730_003112041772633555228_1039167551_135.json
+INFO:root:Analyzing file match730_003127083160421007582_0426305663_181.json
+INFO:root:Analyzing file match730_003133218594217787471_1004431829_138.json
+INFO:root:Analyzing file match730_003134359807830524121_1479244845_900.json
+INFO:root:Analyzing file match730_003134707382353920325_0774068905_900.json
+INFO:root:Analyzing file match730_003141342009462095943_2068528004_134.json
+INFO:root:Analyzing file match730_003147692223835930880_0786209501_191.json
+INFO:root:Analyzing file match730_003152330309626757128_1954438797_900.json
+INFO:root:Analyzing file match730_003152349759386157278_1629171713_900.json
+INFO:root:Analyzing file match730_003152467338410852497_0623013541_900.json
+INFO:root:Analyzing file match730_003152684951518838921_2013442601_900.json
+INFO:root:Analyzing file match730_003153652676370104344_1938342285_131.json
+INFO:root:Analyzing file match730_003153658539000463483_1466675246_132.json
+INFO:root:Analyzing file match730_003183526456688902302_1131694829_186.json
+INFO:root:Analyzing file match730_003190172091798257712_1646599303_900.json
+INFO:root:Analyzing file match730_003190343920554868912_1897072160_900.json
+INFO:root:Analyzing file match730_003190566704803480062_0927645569_133.json
+INFO:root:Analyzing file match730_003221668308898021587_2026039628_900.json
+INFO:root:Analyzing file match730_003221717033154511028_2022536583_900.json
+INFO:root:Analyzing file match730_003221836931461546076_1291811002_900.json
+INFO:root:Analyzing file match730_003222024267197579357_1063447127_900.json
+INFO:root:Analyzing file match730_003222035842134442164_1430938929_900.json
+INFO:root:Analyzing file match730_003222229588109164741_1019298551_900.json
+INFO:root:Analyzing file match730_003222258445994426442_0734156713_900.json
+INFO:root:Analyzing file match730_003257014448782573731_1042449019_900.json
+INFO:root:Analyzing file match730_003257031532014993518_0708980032_900.json
+INFO:root:Analyzing file match730_003257728527897723013_0548599065_900.json
+INFO:root:Analyzing file match730_003257746897472847969_0847485121_900.json
+INFO:root:Analyzing file match730_003257943362161868862_1464464886_900.json
+INFO:root:Analyzing file match730_003258100594472124446_0369364199_900.json
+INFO:root:Analyzing file match730_003265326112443465761_2112904667_133.json
+INFO:root:Analyzing file match730_003265875417285787902_1294797958_183.json
+INFO:root:Wrote output json to: D:\CSGO\Demos\Maps\mirage\Analysis\Prepared_Input_Tensorflow_mirage.json
+INFO:root:Looking at directory D:\CSGO\Demos\Maps\mist
+INFO:root:Skipping this directory as it not one of those that should be analyzed.
+INFO:root:Looking at directory D:\CSGO\Demos\Maps\nuke
+INFO:root:Skipping this directory as it not one of those that should be analyzed.
+INFO:root:Looking at directory D:\CSGO\Demos\Maps\overpass
+INFO:root:Skipping this directory as it not one of those that should be analyzed.
+INFO:root:Looking at directory D:\CSGO\Demos\Maps\resort
+INFO:root:Skipping this directory as it not one of those that should be analyzed.
+INFO:root:Looking at directory D:\CSGO\Demos\Maps\santorini
+INFO:root:Skipping this directory as it not one of those that should be analyzed.
+INFO:root:Looking at directory D:\CSGO\Demos\Maps\santorini_playtest
+INFO:root:Skipping this directory as it not one of those that should be analyzed.
+INFO:root:Looking at directory D:\CSGO\Demos\Maps\season
+INFO:root:Skipping this directory as it not one of those that should be analyzed.
+INFO:root:Looking at directory D:\CSGO\Demos\Maps\train
+INFO:root:Skipping this directory as it not one of those that should be analyzed.
+INFO:root:Looking at directory D:\CSGO\Demos\Maps\vertigo
+INFO:root:Skipping this directory as it not one of those that should be analyzed.

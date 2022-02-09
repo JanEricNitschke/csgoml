@@ -101,7 +101,6 @@ INFO:root:Working on file 669.json
 INFO:root:Working on file 677.json
 INFO:root:Working on file 684.json
 INFO:root:Working on file 687.json
-INFO:root:Number of demos analyzed: 103
 INFO:root:Analyzed a total of 103 demos!
 INFO:root:    Weapon  Round    type  DamageTaken WinnerSide  Time AttackerArea VictimArea MatchID
 0     M4A1      3    Kill            0         CT   103     TopofMid     Middle     008
