@@ -1,0 +1,27 @@
+2022-02-09 15:25:11 INFO     D:\Downloads\Demos\69809.rar has been created!
+2022-02-09 15:28:04 INFO     D:\Downloads\Demos\69809.rar has been modified!
+2022-02-09 15:28:05 INFO     D:\Downloads\Demos\69809\
+2022-02-09 15:28:09 INFO     python d:/CSGO/ML/CSGOML/DemoAnalyzer_Sorter.py -l None --dirs D:\Downloads\Demos\69809\ -m "D:\CSGO\Demos\Pro\Maps" --jsonending _69809
+2022-02-09 15:28:16 INFO     got line from subprocess: b'INFO:root:Maps considered: \r'
+2022-02-09 15:28:16 INFO     got line from subprocess: b'INFO:root:Scanning directory: D:\\Downloads\\Demos\\69809\\\r'
+2022-02-09 15:28:16 INFO     got line from subprocess: b'INFO:root:At file: g2-vs-nip-inferno.dem\r'
+2022-02-09 15:28:16 INFO     got line from subprocess: b'INFO:CSGODemoParser:Initialized CSGODemoParser with demofile D:\\Downloads\\Demos\\69809\\g2-vs-nip-inferno.dem\r'
+2022-02-09 15:28:16 INFO     got line from subprocess: b'INFO:CSGODemoParser:Setting demo id to g2-vs-nip-inferno\r'
+2022-02-09 15:28:16 INFO     got line from subprocess: b'INFO:CSGODemoParser:Setting parse rate to 128\r'
+2022-02-09 15:28:16 INFO     got line from subprocess: b'INFO:CSGODemoParser:Setting trade time to 5\r'
+2022-02-09 15:28:16 INFO     got line from subprocess: b'INFO:CSGODemoParser:Setting buy style to hltv\r'
+2022-02-09 15:28:16 INFO     got line from subprocess: b'INFO:CSGODemoParser:Rollup damages set to True\r'
+2022-02-09 15:28:16 INFO     got line from subprocess: b'INFO:CSGODemoParser:Parse frames set to True\r'
+2022-02-09 15:28:16 INFO     got line from subprocess: b'INFO:CSGODemoParser:Output json indentation set to True\r'
+2022-02-09 15:28:16 INFO     got line from subprocess: b'INFO:CSGODemoParser:Go version>=1.14.0\r'
+2022-02-09 15:28:16 INFO     got line from subprocess: b'INFO:CSGODemoParser:Running Golang parser from D:\\CSGO\\ML\\csgo\\awpy\\parser\\\r'
+2022-02-09 15:28:16 INFO     got line from subprocess: b'INFO:CSGODemoParser:Looking for file at D:\\Downloads\\Demos\\69809\\g2-vs-nip-inferno.dem\r'
+2022-02-09 15:28:16 INFO     got line from subprocess: b'INFO:CSGODemoParser:Wrote demo parse output to g2-vs-nip-inferno.json\r'
+2022-02-09 15:28:16 INFO     got line from subprocess: b'INFO:CSGODemoParser:JSON data loaded, available in the `json` attribute to parser\r'
+2022-02-09 15:28:16 INFO     got line from subprocess: b'INFO:CSGODemoParser:JSON output found\r'
+2022-02-09 15:28:16 INFO     got line from subprocess: b'INFO:root:Source: D:\\Downloads\\Demos\\69809\\g2-vs-nip-inferno.json\r'
+2022-02-09 15:28:16 INFO     got line from subprocess: b'INFO:root:Destination: D:\\CSGO\\Demos\\Pro\\Maps\\inferno\\g2-vs-nip-inferno_69809.json\r'
+2022-02-09 15:28:16 INFO     got line from subprocess: b'INFO:root:Moved json to: D:\\CSGO\\Demos\\Pro\\Maps\\inferno\\g2-vs-nip-inferno_69809.json\r'
+2022-02-09 15:28:16 INFO     got line from subprocess: b'INFO:root:Analyzed a total of 1 demos!\r'
+2022-02-09 15:28:16 INFO     got line from subprocess: b''
+2022-02-09 15:28:16 INFO     D:\Downloads\Demos\69809.rar has been deleted!
