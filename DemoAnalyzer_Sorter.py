@@ -41,7 +41,7 @@ def MoveJson(source, destination):
         os.rename(source, destination)
     except OSError:
         shutil.move(source, destination)
-        logging.info("Moved json to: "+destination)
+    logging.info("Moved json to: "+destination)
     return
 
 
@@ -55,8 +55,11 @@ def main(args):
     parser.add_argument("--endid", type=int, default=99999, help="Analyze demos with a name below this id")
     parser.add_argument("--mmid", type=int, default=10000, help="Set id value that should be used for mm demos that normally do not have one.")
     parser.add_argument("-m", "--mapsdir", default="D:\CSGO\Demos\Maps", help="Path to directory that contains the folders for the maps that should be included in the analysis.")
+    parser.add_argument("--jsonending", default="", help="What should be added at the end of the name of the produced json files (between the id and the .json). Default is nothing.")
     options = parser.parse_args(args)
 
+    if options.log == "None":
+        options.log=None
     if options.debug:
         logging.basicConfig(filename=options.log, encoding='utf-8', level=logging.DEBUG,filemode='w')
     else:
@@ -90,11 +93,13 @@ def main(args):
                         data=demo_parser.json
                         MapName=getMapName(data)
                         logging.debug("Scanned map name: "+MapName)
-                        if MapName not in existing_maps:
-                            logging.error("Map name "+MapName+" does not exist. Not moving json file to maps folder.")
-                            continue
+                        #if MapName not in existing_maps:
+                        #    logging.error("Map name "+MapName+" does not exist. Not moving json file to maps folder.")
+                        #    continue
                         source=os.path.join(dir,ID+".json")
-                        destination=os.path.join(options.mapsdir, MapName,ID+".json")
+                        if not os.path.exists(os.path.join(options.mapsdir, MapName)):
+                            os.makedirs(os.path.join(options.mapsdir, MapName))
+                        destination=os.path.join(options.mapsdir, MapName,ID+options.jsonending+".json")
                         MoveJson(source, destination)
                         NumberOfDemosAnalyzed+=1
     logging.info("Analyzed a total of "+str(NumberOfDemosAnalyzed)+" demos!")
