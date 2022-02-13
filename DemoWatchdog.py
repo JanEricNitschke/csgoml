@@ -32,15 +32,20 @@ def on_deleted(event):
  
 def on_modified(event):
     logging.info(f"{event.src_path} has been modified!")
+    if not os.path.isfile(event.src_path):
+        return
     wait_till_file_is_created(event.src_path)
     path=event.src_path[:-4]+"\\"
-    logging.info(path)
     if not os.path.exists(path):
         os.makedirs(path)
         ending="_"+os.path.basename(os.path.normpath(path))
-        patoolib.extract_archive(event.src_path, outdir=path, interactive=False)
+        try:
+            patoolib.extract_archive(event.src_path, outdir=path, interactive=False)
+        except:
+            logging.info("Could not extract from archive. Skipping!")
+            return
         os.remove(event.src_path)
-        cmd = 'python d:/CSGO/ML/CSGOML/DemoAnalyzer_Sorter.py -l None --dirs {} -m "D:\CSGO\Demos\Pro\Maps" --jsonending {}'.format(path, ending)
+        cmd = 'python d:/CSGO/ML/CSGOML/DemoAnalyzer_Sorter.py -l None --dirs {} -m "E:\PhD\MachineLearning\CSGOData\ParsedDemos" --jsonending {}'.format(path, ending)
         logging.info(cmd)
         p = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, shell=True)
         out, _ = p.communicate() 
@@ -55,7 +60,7 @@ def on_moved(event):
 def main(args):
     parser = argparse.ArgumentParser("Analyze the early mid fight on inferno")
     parser.add_argument("-d", "--debug",  action='store_true', default=False, help="Enable debug output.")
-    parser.add_argument('--dir', nargs='*', default="D:\Downloads\Demos", help='All the directories that should be scanned for demos.')
+    parser.add_argument('--dir', default="D:\Downloads\Demos", help='Directory to monitor for changes')
     parser.add_argument("-l", "--log",  default='D:\CSGO\ML\CSGOML\DemoWatchdog.log', help="Path to output log.")
     options = parser.parse_args(args)
 
