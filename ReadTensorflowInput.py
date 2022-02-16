@@ -15,7 +15,10 @@ from sklearn.model_selection import train_test_split
 import matplotlib.pyplot as plt
 
 def transformToDataFrame(JsonFormatDict):
-    return pd.DataFrame(JsonFormatDict)
+    returnDF=pd.DataFrame(JsonFormatDict)
+    FirstTick=int(returnDF.iloc[0]["Tick"])
+    returnDF["Tick"].apply(lambda x: int((x-FirstTick))/128)
+    return returnDF
 
 def PadToLength(position_df,time):
     if time>len(position_df):
@@ -174,7 +177,7 @@ def main(args):
     logging.debug(dataframe)
 
 
-    # Only keep the laben (Winner) and training feature (position_df) and discard the MatchID, Map_name and round number.
+    # Only keep the label (Winner) and training feature (position_df) and discard the MatchID, Map_name and round number.
     dataframe=dataframe[["Winner","position_df"]]
     dataframe["position_df"]=dataframe["position_df"].apply(transformToDataFrame)
 
