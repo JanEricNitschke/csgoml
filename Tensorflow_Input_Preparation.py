@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 
+from curses import pair_content
 import os
 import sys
 import logging
@@ -85,15 +86,20 @@ def PadToFullLength(round_positions):
             round_positions[key] += [round_positions[key][-1]]*(len(round_positions["Tick"])-len(round_positions[key]))
     length=CheckSize(round_positions)
 
-def AppendToRoundPositions(round_positions,side,id_number_dict,PlayerID,player):
+
+def PartialStep(current,previous,secondDifference,stepValue):
+    return ((current-previous)/secondDifference*(secondDifference-stepValue+1)+previous)
+
+def AppendToRoundPositions(round_positions,side,id_number_dict,PlayerID,player,secondDifference):
     # Add the relevant information of this player to the rounds dict.
     # Add name of the player. Mainly for debugging purposes. Will be removed for actual analysis
-    round_positions[side.upper()+"Player"+id_number_dict[side][str(PlayerID)]+"Name"].append(player["name"])
-    # Is alive status so the model does not have to learn that from stopping trajectories
-    round_positions[side.upper()+"Player"+id_number_dict[side][str(PlayerID)]+"Alive"].append(int(player["isAlive"]))
-    round_positions[side.upper()+"Player"+id_number_dict[side][str(PlayerID)]+"x"].append(player["x"])
-    round_positions[side.upper()+"Player"+id_number_dict[side][str(PlayerID)]+"y"].append(player["y"])
-    round_positions[side.upper()+"Player"+id_number_dict[side][str(PlayerID)]+"z"].append(player["z"])
+    for i in range(secondDifference,0,-1):
+        round_positions[side.upper()+"Player"+id_number_dict[side][str(PlayerID)]+"Name"].append(player["name"] if i==1 else round_positions[side.upper()+"Player"+id_number_dict[side][str(PlayerID)]+"Name"][-1])
+        # Is alive status so the model does not have to learn that from stopping trajectories
+        round_positions[side.upper()+"Player"+id_number_dict[side][str(PlayerID)]+"Alive"].append(int(player["isAlive"]) if i==1 else round_positions[side.upper()+"Player"+id_number_dict[side][str(PlayerID)]+"Alive"][-1])
+        round_positions[side.upper()+"Player"+id_number_dict[side][str(PlayerID)]+"x"].append(PartialStep(player["x"],round_positions[side.upper()+"Player"+id_number_dict[side][str(PlayerID)]+"x"][-1],secondDifference,i))
+        round_positions[side.upper()+"Player"+id_number_dict[side][str(PlayerID)]+"y"].append(PartialStep(player["y"],round_positions[side.upper()+"Player"+id_number_dict[side][str(PlayerID)]+"y"][-1],secondDifference,i))
+        round_positions[side.upper()+"Player"+id_number_dict[side][str(PlayerID)]+"z"].append(PartialStep(player["z"],round_positions[side.upper()+"Player"+id_number_dict[side][str(PlayerID)]+"z"][-1],secondDifference,i))
 
 def ConvertWinnerToInt(WinnerString):
     if WinnerString=="CT":
@@ -205,6 +211,8 @@ def main(args):
                             round_positions = Initialize_round_positions()
                             logging.debug("Round number "+str(round["roundNum"]))
                             # Iterate over each frame in the round
+                            currentTick=0
+                            lastTick=0
                             for frame in round["frames"]:
                                 # There should never be more than 5 players alive in a team.
                                 # If that does happen completely skip the round.
@@ -214,6 +222,11 @@ def main(args):
                                     SkipRound=True
                                     break
                                 # Loop over both sides
+                                currentTick=int(frame["tick"])
+                                if lastTick==0:
+                                    secondDifference=1
+                                else:
+                                    secondDifference=int((currentTick-lastTick)/128)
                                 for side in ["ct", "t"]:
                                     # If the side does not contain any players for that frame skip it
                                     if frame[side]["players"]==None:
@@ -232,28 +245,32 @@ def main(args):
                                         # do not use him for this round.
                                         if str(PlayerID) not in id_number_dict[side]:
                                             continue
-                                        AppendToRoundPositions(round_positions,side,id_number_dict,PlayerID,player)
+                                        AppendToRoundPositions(round_positions,side,id_number_dict,PlayerID,player,secondDifference)
                                     # After looping over each player in the team once the steamID matching has been initialized
                                     dict_initialized[side]=True
                                 # If at least one side has been initialized the round can be used for analysis, so add the tick value used for tracking.
                                 # Will also removed for the eventual analysis.
                                 # But you do not want to set it for frames where you have no player data which should only ever happen in the first frame of a round at worst.
                                 if True in dict_initialized.values():
-                                    round_positions["Tick"].append(frame["tick"])
-                                    try:
-                                        tokens=generate_position_token(map_name, frame)
-                                    except TypeError:
-                                        tokens={'tToken': tokenlength*'0','ctToken': tokenlength*'0','token': 2*tokenlength*'0'}
-                                        logging.debug("Got TypeError when trying to generate position token. This is due to one sides 'player' entry being none.")
-                                    except KeyError:
-                                        tokens={'tToken': tokenlength*'0','ctToken': tokenlength*'0','token': 2*tokenlength*'0'}
-                                        logging.debug("Got KeyError when trying to generate position token. This is due to the map not being supported.")
-                                    except ValueError:
-                                        tokens={'tToken': tokenlength*'0','ctToken': tokenlength*'0','token': 2*tokenlength*'0'}
-                                        logging.debug("Got KeyError when trying to generate position token. This is due to the map not being supported.")
-                                    round_positions["token"].append(tokens["token"])
-                                    round_positions["CTtoken"].append(tokens["ctToken"])
-                                    round_positions["Ttoken"].append(tokens["tToken"])
+                                    for i in range(secondDifference,0,-1):
+                                        round_positions["Tick"].append(PartialStep(currentTick,lastTick,secondDifference,i))
+                                        try:
+                                            tokens=generate_position_token(map_name, frame)
+                                        except TypeError:
+                                            tokens={'tToken': tokenlength*'0','ctToken': tokenlength*'0','token': 2*tokenlength*'0'}
+                                            logging.debug("Got TypeError when trying to generate position token. This is due to one sides 'player' entry being none.")
+                                        except KeyError:
+                                            tokens={'tToken': tokenlength*'0','ctToken': tokenlength*'0','token': 2*tokenlength*'0'}
+                                            logging.debug("Got KeyError when trying to generate position token. This is due to the map not being supported.")
+                                        except ValueError:
+                                            tokens={'tToken': tokenlength*'0','ctToken': tokenlength*'0','token': 2*tokenlength*'0'}
+                                            logging.debug("Got KeyError when trying to generate position token. This is due to the map not being supported.")
+                                        round_positions["token"].append(tokens["token"] if i==1 else round_positions["token"][-1])
+                                        round_positions["CTtoken"].append(tokens["ctToken"] if i==1 else round_positions["ctToken"][-1])
+                                        round_positions["Ttoken"].append(tokens["tToken"] if i==1 else round_positions["tToken"][-1])
+                                    else:
+                                        pass
+                                    lastTick=currentTick
                             # Skip the rest of the loop if the whole round should be skipped.
                             if SkipRound:
                                 continue
