@@ -1,6 +1,5 @@
 #!/usr/bin/env python
 
-from curses import pair_content
 import os
 import sys
 import logging
@@ -9,17 +8,48 @@ from awpy.analytics.nav import generate_position_token
 import pandas as pd
 from awpy.data import NAV
 import json
+import copy
 
 def Initialize_round_positions():
     round_positions={}
     round_positions["Tick"]=[]
     round_positions["token"]=[]
+    round_positions["interpolated"]=[]
     for side in ["CT","T"]:
         round_positions[side+"token"]=[]
         for number in range(1,6):
             for feature in ["Alive","Name","x","y","z"]:
                 round_positions[side+"Player"+str(number)+feature]=[]
     return round_positions
+
+def BuildIntermediateFrames(currentframe,previousframe,secondDifference):
+    IntermdiateFrames=[]
+    for i in range(secondDifference,0,-1):
+        thisframe=copy.deepcopy(currentframe)
+        for side in ["t","ct"]:
+            for index, player in enumerate(currentframe[side]["players"]):
+                for prevplayer in previousframe[side]["players"]:
+                    if prevplayer["steamID"]==player["steamID"]:
+                        thisframe[side]["players"][index]["isAlive"]=int(player["isAlive"]) if i==1 else int(prevplayer["isAlive"])
+                        thisframe[side]["players"][index]["x"]=PartialStep(player["x"],prevplayer["x"],secondDifference,i)
+                        thisframe[side]["players"][index]["y"]=PartialStep(player["y"],prevplayer["y"],secondDifference,i)
+                        thisframe[side]["players"][index]["z"]=PartialStep(player["z"],prevplayer["z"],secondDifference,i)
+        IntermdiateFrames.append(thisframe)
+    return IntermdiateFrames
+
+def get_postion_token(frame,map_name,tokenlength):
+    try:
+        tokens=generate_position_token(map_name, frame)
+    except TypeError:
+        tokens={'tToken': tokenlength*'0','ctToken': tokenlength*'0','token': 2*tokenlength*'0'}
+        logging.debug("Got TypeError when trying to generate position token. This is due to one sides 'player' entry being none.")
+    except KeyError:
+        tokens={'tToken': tokenlength*'0','ctToken': tokenlength*'0','token': 2*tokenlength*'0'}
+        logging.debug("Got KeyError when trying to generate position token. This is due to the map not being supported.")
+    except ValueError:
+        tokens={'tToken': tokenlength*'0','ctToken': tokenlength*'0','token': 2*tokenlength*'0'}
+        logging.debug("Got KeyError when trying to generate position token. This is due to the map not being supported.")
+    return tokens
 
 def Initialize_position_dataset_dict():
     position_dataset_dict={}
@@ -97,9 +127,9 @@ def AppendToRoundPositions(round_positions,side,id_number_dict,PlayerID,player,s
         round_positions[side.upper()+"Player"+id_number_dict[side][str(PlayerID)]+"Name"].append(player["name"] if i==1 else round_positions[side.upper()+"Player"+id_number_dict[side][str(PlayerID)]+"Name"][-1])
         # Is alive status so the model does not have to learn that from stopping trajectories
         round_positions[side.upper()+"Player"+id_number_dict[side][str(PlayerID)]+"Alive"].append(int(player["isAlive"]) if i==1 else round_positions[side.upper()+"Player"+id_number_dict[side][str(PlayerID)]+"Alive"][-1])
-        round_positions[side.upper()+"Player"+id_number_dict[side][str(PlayerID)]+"x"].append(PartialStep(player["x"],round_positions[side.upper()+"Player"+id_number_dict[side][str(PlayerID)]+"x"][-1],secondDifference,i))
-        round_positions[side.upper()+"Player"+id_number_dict[side][str(PlayerID)]+"y"].append(PartialStep(player["y"],round_positions[side.upper()+"Player"+id_number_dict[side][str(PlayerID)]+"y"][-1],secondDifference,i))
-        round_positions[side.upper()+"Player"+id_number_dict[side][str(PlayerID)]+"z"].append(PartialStep(player["z"],round_positions[side.upper()+"Player"+id_number_dict[side][str(PlayerID)]+"z"][-1],secondDifference,i))
+        round_positions[side.upper()+"Player"+id_number_dict[side][str(PlayerID)]+"x"].append(player["x"] if i==1 else PartialStep(player["x"],round_positions[side.upper()+"Player"+id_number_dict[side][str(PlayerID)]+"x"][-1],secondDifference,i))
+        round_positions[side.upper()+"Player"+id_number_dict[side][str(PlayerID)]+"y"].append(player["y"] if i==1 else PartialStep(player["y"],round_positions[side.upper()+"Player"+id_number_dict[side][str(PlayerID)]+"y"][-1],secondDifference,i))
+        round_positions[side.upper()+"Player"+id_number_dict[side][str(PlayerID)]+"z"].append(player["z"] if i==1 else PartialStep(player["z"],round_positions[side.upper()+"Player"+id_number_dict[side][str(PlayerID)]+"z"][-1],secondDifference,i))
 
 def ConvertWinnerToInt(WinnerString):
     if WinnerString=="CT":
@@ -158,23 +188,23 @@ def GetTokenLength(map):
 #                 minimum[feature]=min(reference_position_df[side+"Player"+str(number)+feature].min(),minimum[feature])
 #     return minimum,maximum
 
-
+#"D:\CSGO\Demos\Maps"
 def main(args):
     parser = argparse.ArgumentParser("Analyze the early mid fight on inferno")
     parser.add_argument("-d", "--debug",  action='store_true', default=False, help="Enable debug output.")
-    parser.add_argument("--dir",  default="D:\CSGO\Demos\Maps", help="Path to directory containing the individual map directories.")
+    parser.add_argument("--dir",  default="E:\PhD\MachineLearning\CSGOData\ParsedDemos", help="Path to directory containing the individual map directories.")
     parser.add_argument("-l", "--log",  default='D:\CSGO\ML\CSGOML\Tensorflow_Input_Preparation.log', help="Path to output log.")
     options = parser.parse_args(args)
 
     if options.debug:
-        logging.basicConfig(filename=options.log, encoding='utf-8', level=logging.DEBUG,filemode='w')
+        logging.basicConfig(filename=options.log, encoding='utf-8', level=logging.DEBUG,filemode='w',format='%(asctime)s %(levelname)-8s %(message)s',datefmt='%Y-%m-%d %H:%M:%S')
     else:
-        logging.basicConfig(filename=options.log, encoding='utf-8', level=logging.INFO,filemode='w')
+        logging.basicConfig(filename=options.log, encoding='utf-8', level=logging.INFO,filemode='w',format='%(asctime)s %(levelname)-8s %(message)s',datefmt='%Y-%m-%d %H:%M:%S')
 
     logging.info("Starting")
     #done=["ancient","cache","cbble","cs_rush","dust2","facade","inferno","marquis","mirage","mist","nuke","overpass","resort","santorini","santorini_playtest","season"]
     done=[]
-    do=["cs_rush"]
+    do=["ancient"]
     # More comments and split stuff into functions
     for directoryname in os.listdir(options.dir):
         directory=os.path.join(options.dir,directoryname)
@@ -213,7 +243,7 @@ def main(args):
                             # Iterate over each frame in the round
                             currentTick=0
                             lastTick=0
-                            for frame in round["frames"]:
+                            for index, frame in enumerate(round["frames"]):
                                 # There should never be more than 5 players alive in a team.
                                 # If that does happen completely skip the round.
                                 # Propagate that information past the loop by setting SkipRound to true
@@ -252,22 +282,14 @@ def main(args):
                                 # Will also removed for the eventual analysis.
                                 # But you do not want to set it for frames where you have no player data which should only ever happen in the first frame of a round at worst.
                                 if True in dict_initialized.values():
+                                    TokenFrames = [frame] if secondDifference==1 else BuildIntermediateFrames(frame,round["frames"][index-1],secondDifference)
                                     for i in range(secondDifference,0,-1):
+                                        tokens=get_postion_token(TokenFrames[secondDifference-i],map_name,tokenlength)
                                         round_positions["Tick"].append(PartialStep(currentTick,lastTick,secondDifference,i))
-                                        try:
-                                            tokens=generate_position_token(map_name, frame)
-                                        except TypeError:
-                                            tokens={'tToken': tokenlength*'0','ctToken': tokenlength*'0','token': 2*tokenlength*'0'}
-                                            logging.debug("Got TypeError when trying to generate position token. This is due to one sides 'player' entry being none.")
-                                        except KeyError:
-                                            tokens={'tToken': tokenlength*'0','ctToken': tokenlength*'0','token': 2*tokenlength*'0'}
-                                            logging.debug("Got KeyError when trying to generate position token. This is due to the map not being supported.")
-                                        except ValueError:
-                                            tokens={'tToken': tokenlength*'0','ctToken': tokenlength*'0','token': 2*tokenlength*'0'}
-                                            logging.debug("Got KeyError when trying to generate position token. This is due to the map not being supported.")
                                         round_positions["token"].append(tokens["token"] if i==1 else round_positions["token"][-1])
-                                        round_positions["CTtoken"].append(tokens["ctToken"] if i==1 else round_positions["ctToken"][-1])
-                                        round_positions["Ttoken"].append(tokens["tToken"] if i==1 else round_positions["tToken"][-1])
+                                        round_positions["CTtoken"].append(tokens["ctToken"] if i==1 else round_positions["CTtoken"][-1])
+                                        round_positions["Ttoken"].append(tokens["tToken"] if i==1 else round_positions["Ttoken"][-1])
+                                        round_positions["interpolated"].append(0 if i==1 else 1)
                                     else:
                                         pass
                                     lastTick=currentTick
