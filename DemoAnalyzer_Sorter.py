@@ -61,9 +61,9 @@ def main(args):
     if options.log == "None":
         options.log=None
     if options.debug:
-        logging.basicConfig(filename=options.log, encoding='utf-8', level=logging.DEBUG,filemode='w')
+        logging.basicConfig(filename=options.log, encoding='utf-8', level=logging.DEBUG,filemode='w',format='%(asctime)s %(levelname)-8s %(message)s',datefmt='%Y-%m-%d %H:%M:%S')
     else:
-        logging.basicConfig(filename=options.log, encoding='utf-8', level=logging.INFO,filemode='w')
+        logging.basicConfig(filename=options.log, encoding='utf-8', level=logging.INFO,filemode='w',format='%(asctime)s %(levelname)-8s %(message)s',datefmt='%Y-%m-%d %H:%M:%S')
 
     # Build list of maps that are considered.
     existing_maps=[]
