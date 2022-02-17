@@ -1,9 +1,7 @@
 #!/usr/bin/env python
 
-from ctypes import pointer
 import os
 import logging
-from turtle import pos, position
 import pandas as pd
 import numpy as np
 import argparse
@@ -14,10 +12,14 @@ from tensorflow.keras import layers
 from sklearn.model_selection import train_test_split
 import matplotlib.pyplot as plt
 
+def TransformTicksToSeconds(tick,firsttick):
+    result=int((int(tick)-int(firsttick))/128)
+    return result
+
 def transformToDataFrame(JsonFormatDict):
     returnDF=pd.DataFrame(JsonFormatDict)
     FirstTick=int(returnDF.iloc[0]["Tick"])
-    returnDF["Tick"].apply(lambda x: int((x-FirstTick))/128)
+    returnDF["Tick"]=returnDF["Tick"].apply(TransformTicksToSeconds,args=(FirstTick,))
     return returnDF
 
 def PadToLength(position_df,time):
@@ -133,7 +135,7 @@ def GetCoordinateModel(NodesPerLayer,input_shape):
 def main(args):
     parser = argparse.ArgumentParser("Analyze the early mid fight on inferno")
     parser.add_argument("-d", "--debug",  action='store_true', default=False, help="Enable debug output.")
-    parser.add_argument("-m", "--map",  default="mirage", help="Map to analyze")
+    parser.add_argument("-m", "--map",  default="ancient", help="Map to analyze")
     parser.add_argument("-l", "--log",  default='D:\CSGO\ML\CSGOML\ReadTensorflowInput.log', help="Path to output log.")
     parser.add_argument("-s", "--side",  default='BOTH', help="Which side to include in analysis (CT,T,BOTH) .")
     parser.add_argument("--coordinates",  action='store_true', default=False, help="Whether to use full coordinate or just tokens.")
@@ -143,9 +145,9 @@ def main(args):
     options = parser.parse_args(args)
 
     if options.debug:
-        logging.basicConfig(filename=options.log, encoding='utf-8', level=logging.DEBUG,filemode='w')
+        logging.basicConfig(filename=options.log, encoding='utf-8', level=logging.DEBUG,filemode='w',format='%(asctime)s %(levelname)-8s %(message)s',datefmt='%Y-%m-%d %H:%M:%S')
     else:
-        logging.basicConfig(filename=options.log, encoding='utf-8', level=logging.INFO,filemode='w')
+        logging.basicConfig(filename=options.log, encoding='utf-8', level=logging.INFO,filemode='w',format='%(asctime)s %(levelname)-8s %(message)s',datefmt='%Y-%m-%d %H:%M:%S')
 
     ExampleIndex=options.exampleid
     RandomState=options.randomstate
@@ -166,7 +168,8 @@ def main(args):
             sys.exit
 
     # Read in the prepared json file.
-    File="D:\CSGO\Demos\Maps\\"+options.map+"\Analysis\Prepared_Input_Tensorflow_"+options.map+".json"
+    # File="D:\CSGO\Demos\Maps\\"+options.map+"\Analysis\Prepared_Input_Tensorflow_"+options.map+".json"
+    File="E:\PhD\MachineLearning\CSGOData\ParsedDemos\\"+options.map+"\Analysis\Prepared_Input_Tensorflow_"+options.map+".json"
     if os.path.isfile(File):
         with open(File, encoding='utf-8') as PreAnalyzed:
             dataframe=pd.read_json(PreAnalyzed)
@@ -187,6 +190,8 @@ def main(args):
     # Get the time length to be used.
     if options.time =="MAX":
         time=getMaximumLength(dataframe)
+        if time > 160:
+            time=160
     else:
         time=int(options.time)
     logging.debug("Time has been set to "+str(time)+"!")
