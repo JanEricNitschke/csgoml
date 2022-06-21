@@ -116,8 +116,8 @@ class DemoAnalyzerSorter:
         Args:
             demo_parser: Awpy demo parser object.
 
-        Returns:format{}
-            None
+        Returns:
+            None (Rounds are cleaned in place)
         """
         try:
             demo_parser.clean_rounds()
@@ -138,7 +138,6 @@ class DemoAnalyzerSorter:
 
         Returns:
             A string corresponding to the (shortend) name of the map of the parsed game.
-
         """
         if data["mapName"].startswith("de_"):
             return data["mapName"].split("_")[1]
@@ -153,7 +152,6 @@ class DemoAnalyzerSorter:
 
         Returns:
             None
-
         """
         logging.info("Source: %s", source)
         logging.info("Destination: %s", destination)
@@ -167,7 +165,14 @@ class DemoAnalyzerSorter:
         logging.info("Moved json to: %s", destination)
 
     def parse_demos(self):
-        """Run awpy demo parser on all demos in dirs and move them to their corresponding directory in map_dirs."""
+        """Run awpy demo parser on all demos in dirs and move them to their corresponding directory in map_dirs.
+
+        Args:
+            None (Everything is taken from class variables)
+
+        Returns:
+            None
+        """
         for directory in self.dirs:
             os.chdir(directory)
             logging.debug("Changing directoy now.")

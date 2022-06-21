@@ -101,7 +101,7 @@ class FightAnalyzer:
 
         Return:
             A string of the name of the area that contains pos on map "map"
-            If None can be found returns "No area found"
+            If None can be found returns None
         """
         if None in pos:
             logging.debug("No area found for pos:")
@@ -127,7 +127,6 @@ class FightAnalyzer:
 
         Return:
             A boolean indicating whether or not the event is of relevance for the analysis
-
         """
         logging.debug("Checking Position")
         if not self.positions:
@@ -226,6 +225,9 @@ class FightAnalyzer:
             results: A dictionaory if lists holding the information of all relevant engagements
             match_id: A string containing the name of the demo file
             map_name: The name of the map that the current game was played on
+
+        Returns:
+            None (lists in dictionary are appended to in place)
         """
         results["Weapon"].append(event["weapon"])
         results["Round"].append(
@@ -247,6 +249,9 @@ class FightAnalyzer:
 
     def initialize_results(self):
         """Initializes the results dictionary
+
+        The dictionary contains the following keys:
+        Weapons, Round, WinnerSide, Time, AttackerArea, VictimArea, MatchID
 
         Args:
             None
@@ -274,7 +279,6 @@ class FightAnalyzer:
 
         Returns:
             None (results is modified in place)
-
         """
         # Loop over rounds and each event in them and check if they fulfill all criteria
         match_id = data["matchID"]
@@ -368,7 +372,7 @@ class FightAnalyzer:
             dataframe: A dataframe containing the time and winner of each kill event
 
         Returns:
-            Nothing, just prints
+            None (just prints)
         """
         game_times = np.linspace(
             self.times[0], self.times[1], self.times[1] - self.times[0] + 1
