@@ -43,11 +43,11 @@ class DemoAnalyzerSorter:
         self,
         indentation=False,
         dirs=None,
-        log="D:\CSGO\ML\CSGOML\DemoAnalyzerSorter.log",
+        log=r"D:\CSGO\ML\CSGOML\DemoAnalyzerSorter.log",
         start_id=1,
         end_id=99999,
         mm_id=10000,
-        maps_dir="D:\CSGO\Demos\Maps",
+        maps_dir=r"D:\CSGO\Demos\Maps",
         json_ending="",
         debug=False,
     ):
@@ -74,8 +74,8 @@ class DemoAnalyzerSorter:
         self.indentation = indentation
         if not dirs:
             self.dirs = [
-                "D:\CSGO\Demos",
-                "C:\Program Files (x86)\Steam\steamapps\common\Counter-Strike Global Offensive\csgo\\replays",
+                r"D:\CSGO\Demos",
+                r"C:\Program Files (x86)\Steam\steamapps\common\Counter-Strike Global Offensive\csgo\replays",
             ]
         else:
             self.dirs = dirs
@@ -179,9 +179,9 @@ class DemoAnalyzerSorter:
             logging.info("Scanning directory: %s", directory)
             for filename in os.listdir(directory):
                 if filename.endswith(".dem"):
-                    f = os.path.join(directory, filename)
+                    file_path = os.path.join(directory, filename)
                     # checking if it is a file
-                    if os.path.isfile(f):
+                    if os.path.isfile(file_path):
                         logging.info("At file: %s", filename)
                         name, number_id = self.get_ids(filename)
                         if int(number_id) >= self.start_id:
@@ -189,7 +189,7 @@ class DemoAnalyzerSorter:
                                 logging.info("Parsed last relevant demo.")
                                 break
                             demo_parser = DemoParser(
-                                demofile=f,
+                                demofile=file_path,
                                 demo_id=name,
                                 parse_rate=128,
                                 buy_style="hltv",
@@ -220,6 +220,7 @@ class DemoAnalyzerSorter:
 
 
 def main(args):
+    """Runs awpy demo parser on multiple demo files and organizes the results by map."""
     parser = argparse.ArgumentParser("Analyze the early mid fight on inferno")
     parser.add_argument(
         "-d", "--debug", action="store_true", default=False, help="Enable debug output."
@@ -234,15 +235,15 @@ def main(args):
         "--dirs",
         nargs="*",
         default=[
-            # "D:\CSGO\Demos",
-            "C:\Program Files (x86)\Steam\steamapps\common\Counter-Strike Global Offensive\csgo\\replays",
+            r"D:\CSGO\Demos",
+            r"C:\Program Files (x86)\Steam\steamapps\common\Counter-Strike Global Offensive\csgo\replays",
         ],
         help="All the directories that should be scanned for demos.",
     )
     parser.add_argument(
         "-l",
         "--log",
-        default="D:\CSGO\ML\CSGOML\DemoAnalyzerSorter.log",
+        default=r"D:\CSGO\ML\CSGOML\DemoAnalyzerSorter.log",
         help="Path to output log.",
     )
     parser.add_argument(
@@ -254,7 +255,7 @@ def main(args):
     parser.add_argument(
         "--endid",
         type=int,
-        default=999999,
+        default=2,
         help="Analyze demos with a name below this id",
     )
     parser.add_argument(
@@ -266,7 +267,7 @@ def main(args):
     parser.add_argument(
         "-m",
         "--mapsdir",
-        default="D:\CSGO\Demos\Maps",
+        default=r"D:\CSGO\Demos\Maps",
         help="Path to directory that contains the folders for the maps that should be included in the analysis.",
     )
     parser.add_argument(

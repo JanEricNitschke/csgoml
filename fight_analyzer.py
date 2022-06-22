@@ -40,9 +40,9 @@ class FightAnalyzer:
         self,
         debug=False,
         times=None,
-        my_json="D:\CSGO\Demos\Maps\inferno\Analysis\Inferno_kills_mid.json",
-        directory="D:\CSGO\Demos\Maps\inferno",
-        log="D:\CSGO\ML\CSGOML\FightAnalyzer.log",
+        my_json=r"D:\CSGO\Demos\Maps\inferno\Analysis\Inferno_kills_mid.json",
+        directory=r"D:\CSGO\Demos\Maps\inferno",
+        log=r"D:\CSGO\ML\CSGOML\FightAnalyzer.log",
         positions=None,
         weapons=None,
     ):
@@ -335,11 +335,11 @@ class FightAnalyzer:
         for filename in os.listdir(self.directory):
             if filename.endswith(".json"):
                 logging.info("Working on file %s", filename)
-                f = os.path.join(self.directory, filename)
+                file_path = os.path.join(self.directory, filename)
                 # checking if it is a file
-                if os.path.isfile(f):
-                    with open(f, encoding="utf-8") as f:
-                        demo_data = json.load(f)
+                if os.path.isfile(file_path):
+                    with open(file_path, encoding="utf-8") as demo_json:
+                        demo_data = json.load(demo_json)
                     map_name = demo_data["mapName"]
                     self.analyze_map(demo_data, results, map_name)
                     self.n_analyzed += 1
@@ -348,18 +348,18 @@ class FightAnalyzer:
         dataframe.to_json(self.json)
         return dataframe
 
-    def calculate_CT_win_percentage(self, df):
+    def calculate_CT_win_percentage(self, dataframe):
         """Calculates CT win percentage from CT and T kills
 
         Args:
-            df: dataframe containing winner side of each kill event
+            dataframe: dataframe containing winner side of each kill event
 
         Returns:
             Tuples consisting of total number of kills and CT win percentage.
             If not kills happend then return (0, 0)
         """
-        CTWin = (df.WinnerSide == "CT").sum()
-        TWin = (df.WinnerSide == "T").sum()
+        CTWin = (dataframe.WinnerSide == "CT").sum()
+        TWin = (dataframe.WinnerSide == "T").sum()
         if (CTWin + TWin) > 0:
             return (CTWin + TWin, round(100 * CTWin / (CTWin + TWin)))
         else:
@@ -390,6 +390,7 @@ class FightAnalyzer:
 
 
 def main(args):
+    """Determine whether the early inferno mid fight on a buy round is favourable to the T or CT side."""
     parser = argparse.ArgumentParser("Analyze the early mid fight on inferno")
     parser.add_argument(
         "-d", "--debug", action="store_true", default=False, help="Enable debug output."
@@ -404,28 +405,8 @@ def main(args):
     parser.add_argument(
         "-j",
         "--json",
-        default="D:\CSGO\Demos\Maps\inferno\Analysis\Inferno_kills_mid.json",
+        default=r"D:\CSGO\Demos\Maps\inferno\Analysis\Inferno_kills_mid.json",
         help="Path of json containting preanalyzed results.",
-    )
-    parser.add_argument(
-        "-f",
-        "--fastcheck",
-        action="store_true",
-        default=False,
-        help="When analyzing demos only do the fast check of looking at the victim teams buy status.",
-    )
-    parser.add_argument(
-        "-n",
-        "--number",
-        type=str,
-        default="",
-        help="Only analyze demos that start with this string.",
-    )
-    parser.add_argument(
-        "--includemm",
-        action="store_true",
-        default=False,
-        help="Require demos to start with a number (so exclude mm demos.",
     )
     parser.add_argument(
         "--starttime",
@@ -442,13 +423,13 @@ def main(args):
     parser.add_argument(
         "--dir",
         type=str,
-        default="D:\CSGO\Demos\Maps\inferno",
+        default=r"D:\CSGO\Demos\Maps\inferno",
         help="Directoy containting the demos to be analyzed.",
     )
     parser.add_argument(
         "-l",
         "--log",
-        default="D:\CSGO\ML\CSGOML\FightAnalyzer.log",
+        default=r"D:\CSGO\ML\CSGOML\FightAnalyzer.log",
         help="Path to output log.",
     )
     options = parser.parse_args(args)
