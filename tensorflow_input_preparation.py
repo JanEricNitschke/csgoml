@@ -8,7 +8,7 @@ The dataframe is finally exported to a json file.
 
 
     Typical usage example:
-        python tensorflow_input_preparation --dir "E:\PhD\MachineLearning\CSGOData\ParsedDemos"
+        python tensorflow_input_preparation --dir 'E:\\PhD\\MachineLearning\\CSGOData\\ParsedDemos'
 
 """
 
@@ -62,12 +62,17 @@ def build_intermediate_frames(current_frame, previous_frame, second_difference):
         second_difference: Difference in the number of seconds between the previous and current frames
 
     Returns:
-        A list of frames from after previous_frame to including current_frame
+        A list of intermediate frames from after previous_frame to including current_frame
     """
     intermdiate_frames = []
     for i in range(second_difference, 0, -1):
         this_frame = copy.deepcopy(current_frame)
         for side in ["t", "ct"]:
+            if current_frame[side]["players"] is None:
+                logging.debug(
+                    "Side['players'] is none. Skipping this side for frame interpolation !",
+                )
+                continue
             for index, player in enumerate(current_frame[side]["players"]):
                 for prev_player in previous_frame[side]["players"]:
                     if prev_player["steamID"] == player["steamID"]:
@@ -89,7 +94,7 @@ def build_intermediate_frames(current_frame, previous_frame, second_difference):
     return intermdiate_frames
 
 
-def get_postion_token(frame, map_name, tokenlength):
+def get_postion_token(frame, map_name, token_length):
     """Generate a dictionary of position tokens from frame dictionary and map_name.
 
     The position token is a string of integers representing the number of players in a given unique named area.
@@ -98,7 +103,7 @@ def get_postion_token(frame, map_name, tokenlength):
     Args:
         frame: Dictionary containing all information about both teams status and each players position and status
         map_name: A string of the maps name
-        tokenlength: An integer of the length of one sides position token on the played map
+        token_length: An integer of the length of one sides position token on the played map
 
     Returns:
         Dictionary of three position tokens. One for each side and aditionally a combined one
@@ -107,27 +112,27 @@ def get_postion_token(frame, map_name, tokenlength):
         tokens = generate_position_token(map_name, frame)
     except TypeError:
         tokens = {
-            "tToken": tokenlength * "0",
-            "ctToken": tokenlength * "0",
-            "token": 2 * tokenlength * "0",
+            "tToken": token_length * "0",
+            "ctToken": token_length * "0",
+            "token": 2 * token_length * "0",
         }
         logging.debug(
             "Got TypeError when trying to generate position token. This is due to one sides 'player' entry being none."
         )
     except KeyError:
         tokens = {
-            "tToken": tokenlength * "0",
-            "ctToken": tokenlength * "0",
-            "token": 2 * tokenlength * "0",
+            "tToken": token_length * "0",
+            "ctToken": token_length * "0",
+            "token": 2 * token_length * "0",
         }
         logging.debug(
             "Got KeyError when trying to generate position token. This is due to the map not being supported."
         )
     except ValueError:
         tokens = {
-            "tToken": tokenlength * "0",
-            "ctToken": tokenlength * "0",
-            "token": 2 * tokenlength * "0",
+            "tToken": token_length * "0",
+            "ctToken": token_length * "0",
+            "token": 2 * token_length * "0",
         }
         logging.debug(
             "Got KeyError when trying to generate position token. This is due to the map not being supported."
@@ -206,10 +211,10 @@ def frame_is_empty(current_round):
     """
     if current_round["frames"] is None:
         logging.error(current_round)
-        logging.error("Found none frames in round %s !", current_round["roundNum"])
+        logging.error("Found none frames in round %s!", current_round["roundNum"])
         return True
     if len(current_round["frames"]) == 0:
-        logging.error("Found empty frames in round %s !", current_round["roundNum"])
+        logging.error("Found empty frames in round %s!", current_round["roundNum"])
         return True
     return False
 
@@ -272,7 +277,7 @@ def pad_to_full_length(round_positions):
             round_positions[key] += [round_positions[key][-1]] * (
                 len(round_positions["Tick"]) - len(round_positions[key])
             )
-    length = check_size(round_positions)
+    _ = check_size(round_positions)
 
 
 def partial_step(current, previous, second_difference, step_value):
@@ -388,18 +393,17 @@ def convert_winner_to_int(winner_string):
         winner_string: String indicating the winner of a round
 
     Returns:
-        A boolean indicating the winner of a round
-
-    Raises:
-        sys.exit() if winner_string is neither CT nor T
+        A boolean indicating the winner of a round. If the input was invalid then None is returned instead
     """
     if winner_string == "CT":
         return 1
     elif winner_string == "T":
         return 0
     else:
-        logging.error("Winner has to be either CT or T, but was %s", winner_string)
-        sys.exit()
+        logging.error(
+            "Winner has to be either CT or T, but was %s instead!", winner_string
+        )
+        return None
 
 
 def regularize_coordinates(coordinate, minimum, maximum):
@@ -498,6 +502,152 @@ def get_token_length(map_name):
     return len(area_names)
 
 
+def analyze_rounds(data, position_dataset_dict, match_id):
+    """Analyzes all rounds in a game and adds their relevant data to position_dataset_dict.
+
+    Loops over every round in "data, every frame in each rounds, every side in each frame and every player in each side
+    and adds their position as well as auxilliary information to dictionary. This dictionary and more auxilliary information
+    is then appended to the overall dictionary containing all information about matches on this map.
+
+    Args:
+        data: Dictionary containing all information about a CS:GO game
+        position_dataset_dict: Dictionary containing trajectory information about rounds on a given map
+        match_id: String representing the name of an input demo file
+
+    Returns:
+        None position_dataset_dict is modified inplace
+    """
+    map_name = data["mapName"]
+    token_length = get_token_length(map_name)
+    for current_round in data["gameRounds"]:
+        skip_round = False
+        # If there are no frames in the round skip it.
+        if frame_is_empty(current_round):
+            continue
+        # Dict for mapping players steamID to player number for each round
+        id_number_dict = {"t": {}, "ct": {}}
+        # Dict to check if mapping has already been initialized this round
+        dict_initialized = {"t": False, "ct": False}
+        # Initialize the dict that tracks player position, status and name for each round
+        round_positions = initialize_round_positions()
+        logging.debug("Round number %s", current_round["roundNum"])
+        # Iterate over each frame in the round
+        # current_tick, last_tick
+        ticks = [0, 0]
+        # Convert the winning side into a boolean. 1 for CT and 0 for T
+        winner_id = convert_winner_to_int(current_round["winningSide"])
+        # If winner is neither then None is returned and the round should be skipped.
+        if winner_id is None:
+            continue
+        for index, frame in enumerate(current_round["frames"]):
+            # There should never be more than 5 players alive in a team.
+            # If that does happen completely skip the round.
+            # Propagate that information past the loop by setting skip_round to true
+            if frame["ct"]["alivePlayers"] > 5 or frame["t"]["alivePlayers"] > 5:
+                logging.error(
+                    "Found frame with more than 5 players alive in a team in round %s !",
+                    current_round["roundNum"],
+                )
+                skip_round = True
+                break
+            # Loop over both sides
+            ticks[0] = int(frame["tick"])
+            if ticks[1] == 0:
+                second_difference = 1
+            else:
+                second_difference = int((ticks[0] - ticks[1]) / 128)
+            for side in ["ct", "t"]:
+                # If the side does not contain any players for that frame skip it
+                if frame[side]["players"] is None:
+                    logging.debug(
+                        "Side['players'] is none. Skipping this frame from round %s !",
+                        current_round["roundNum"],
+                    )
+                    continue
+                # Loop over each player in the team.
+                for player_index, player in enumerate(frame[side]["players"]):
+                    # logging.info(f)
+                    player_id = get_player_id(player)
+                    # If the dict of the team has not been initialized add that player. Should only happen once per player per team per round
+                    # But for each team can happen on different rounds in some rare cases.
+                    if dict_initialized[side] is False:
+                        id_number_dict[side][str(player_id)] = str(player_index + 1)
+                    # logging.debug(id_number_dict[side])
+                    # If a player joins mid round (either a bot due to player leaving or player (re)joining)
+                    # do not use him for this round.
+                    if str(player_id) not in id_number_dict[side]:
+                        continue
+                    append_to_round_positions(
+                        round_positions,
+                        side,
+                        id_number_dict,
+                        player_id,
+                        player,
+                        second_difference,
+                    )
+                # After looping over each player in the team once the steamID matching has been initialized
+                dict_initialized[side] = True
+            # If at least one side has been initialized the round can be used for analysis, so add the tick value used for tracking.
+            # Will also removed for the eventual analysis.
+            # But you do not want to set it for frames where you have no player data which should only ever happen in the first frame of a round at worst.
+            if True in dict_initialized.values():
+                token_frames = (
+                    [frame]
+                    if second_difference == 1
+                    else build_intermediate_frames(
+                        frame,
+                        current_round["frames"][index - 1],
+                        second_difference,
+                    )
+                )
+                for i in range(second_difference, 0, -1):
+                    tokens = get_postion_token(
+                        token_frames[second_difference - i],
+                        map_name,
+                        token_length,
+                    )
+                    round_positions["Tick"].append(
+                        partial_step(
+                            *ticks,
+                            second_difference,
+                            i,
+                        )
+                    )
+                    round_positions["token"].append(
+                        tokens["token"] if i == 1 else round_positions["token"][-1]
+                    )
+                    round_positions["CTtoken"].append(
+                        tokens["ctToken"] if i == 1 else round_positions["CTtoken"][-1]
+                    )
+                    round_positions["Ttoken"].append(
+                        tokens["tToken"] if i == 1 else round_positions["Ttoken"][-1]
+                    )
+                    round_positions["interpolated"].append(0 if i == 1 else 1)
+                ticks[1] = ticks[0]
+        # Skip the rest of the loop if the whole round should be skipped.
+        if skip_round:
+            continue
+        # Append demo id, map name and round number to the final dataset dict.
+        position_dataset_dict["MatchID"].append(match_id)
+        position_dataset_dict["MapName"].append(map_name)
+        position_dataset_dict["Round"].append(
+            current_round["endTScore"] + current_round["endCTScore"]
+        )
+        position_dataset_dict["Winner"].append(winner_id)
+        # Pad to full length in case a player left
+        pad_to_full_length(round_positions)
+        # Make sure each entry in the round_positions has the same size now. Especially that nothing is longer than the Tick entry which would indicate multiple players filling on player number
+        # Transform to dataframe
+        round_positions_df = pd.DataFrame(round_positions)
+        # Add the rounds trajectory information to the overall dataset.
+        position_dataset_dict["position_df"].append(round_positions_df)
+        # Check that each entry in the dataset has the same length. Especially that for each round there is a trajectory dataframe.
+        logging.debug(
+            "Finished another round and appended to dataset. Now at size %s",
+            check_size(position_dataset_dict),
+        )
+
+
 # def GetMinMaxFromFirst(reference_position_df):
 #     minimum={"x":sys.maxsize,"y":sys.maxsize,"z":sys.maxsize}
 #     maximum={"x":-sys.maxsize,"y":-sys.maxsize,"z":-sys.maxsize}
@@ -510,20 +660,28 @@ def get_token_length(map_name):
 
 # "D:\CSGO\Demos\Maps"
 def main(args):
+    """Runs over each demo separated by map and produces a dataframe tracking player positions."""
     parser = argparse.ArgumentParser("Analyze the early mid fight on inferno")
     parser.add_argument(
         "-d", "--debug", action="store_true", default=False, help="Enable debug output."
     )
     parser.add_argument(
         "--dir",
-        default="E:\PhD\MachineLearning\CSGOData\ParsedDemos",
+        default=r"E:\PhD\MachineLearning\CSGOData\ParsedDemos",
         help="Path to directory containing the individual map directories.",
     )
     parser.add_argument(
         "-l",
         "--log",
-        default="D:\CSGO\ML\CSGOML\Tensorflow_Input_Preparation.log",
+        default=r"D:\CSGO\ML\CSGOML\Tensorflow_Input_Preparation.log",
         help="Path to output log.",
+    )
+    parser.add_argument(
+        "-r",
+        "--reanalyze",
+        default=False,
+        action="store_true",
+        help="Reanalyze all demos for each map. Otherwise only analyze those created after the existing results json has been created and append those.",
     )
     options = parser.parse_args(args)
 
@@ -551,7 +709,7 @@ def main(args):
     # List of maps already done -> Do not do them again
     done = []
     # List of maps to specifically do -> only do those
-    do = ["ancient"]
+    to_do = ["ancient"]
     for directoryname in os.listdir(options.dir):
         directory = os.path.join(options.dir, directoryname)
         if os.path.isdir(directory):
@@ -559,178 +717,51 @@ def main(args):
             if directoryname in done:
                 logging.info("Skipping this directory as it has already been analyzed.")
                 continue
-            if (len(do) > 0) and (directoryname not in do):
+            if (len(to_do) > 0) and (directoryname not in to_do):
                 logging.info(
                     "Skipping this directory as it not one of those that should be analyzed."
                 )
                 continue
+            output_json_path = (
+                directory
+                + r"\Analysis\Prepared_Input_Tensorflow_"
+                + directoryname
+                + ".json"
+            )
+            seen_match_ids = set()
+            if not options.reanalyze:
+                with open(output_json_path, encoding="utf-8") as pre_analyzed:
+                    prev_dataframe = pd.read_json(pre_analyzed)
+                seen_match_ids = set(prev_dataframe["MatchID"].unique())
+            logging.info(
+                "The following %s MatchIDs are already included in the existing json file and will be skipped: %s",
+                len(seen_match_ids),
+                seen_match_ids,
+            )
             position_dataset_dict = initialize_position_dataset_dict()
             for filename in os.listdir(directory):
-                f = os.path.join(directory, filename)
+                file_path = os.path.join(directory, filename)
+                match_id = filename.rsplit(".", 1)[0]
                 # checking if it is a file
-                if os.path.isfile(f):
-                    if filename.endswith(".json"):
-                        logging.info("Analyzing file %s", filename)
-                        match_id = filename.rsplit(".", 1)[0]
-                        with open(f, encoding="utf-8") as f:
-                            data = json.load(f)
-                        map_name = data["mapName"]
-                        tokenlength = get_token_length(map_name)
-                        for current_round in data["gameRounds"]:
-                            skip_round = False
-                            # If there are no frames in the round skip it.
-                            if frame_is_empty(current_round):
-                                continue
-                            # Dict for mapping players steamID to player number for each round
-                            id_number_dict = {"t": {}, "ct": {}}
-                            # Dict to check if mapping has already been initialized this round
-                            dict_initialized = {"t": False, "ct": False}
-                            # Initialize the dict that tracks player position, status and name for each round
-                            round_positions = initialize_round_positions()
-                            logging.debug("Round number %s", current_round["roundNum"])
-                            # Iterate over each frame in the round
-                            current_tick = 0
-                            last_tick = 0
-                            for index, frame in enumerate(current_round["frames"]):
-                                # There should never be more than 5 players alive in a team.
-                                # If that does happen completely skip the round.
-                                # Propagate that information past the loop by setting skip_round to true
-                                if (
-                                    frame["ct"]["alivePlayers"] > 5
-                                    or frame["t"]["alivePlayers"] > 5
-                                ):
-                                    logging.error(
-                                        "Found frame with more than 5 players alive in a team in round %s !",
-                                        current_round["roundNum"],
-                                    )
-                                    skip_round = True
-                                    break
-                                # Loop over both sides
-                                current_tick = int(frame["tick"])
-                                if last_tick == 0:
-                                    second_difference = 1
-                                else:
-                                    second_difference = int(
-                                        (current_tick - last_tick) / 128
-                                    )
-                                for side in ["ct", "t"]:
-                                    # If the side does not contain any players for that frame skip it
-                                    if frame[side]["players"] is None:
-                                        logging.debug(
-                                            "Side['players'] is none. Skipping this frame from round %s !",
-                                            current_round["roundNum"],
-                                        )
-                                        continue
-                                    # Loop over each player in the team.
-                                    for n, player in enumerate(frame[side]["players"]):
-                                        # logging.info(f)
-                                        player_id = get_player_id(player)
-                                        # If the dict of the team has not been initialized add that player. Should only happen once per player per team per round
-                                        # But for each team can happen on different rounds in some rare cases.
-                                        if dict_initialized[side] is False:
-                                            id_number_dict[side][str(player_id)] = str(
-                                                n + 1
-                                            )
-                                        # logging.debug(id_number_dict[side])
-                                        # If a player joins mid round (either a bot due to player leaving or player (re)joining)
-                                        # do not use him for this round.
-                                        if str(player_id) not in id_number_dict[side]:
-                                            continue
-                                        append_to_round_positions(
-                                            round_positions,
-                                            side,
-                                            id_number_dict,
-                                            player_id,
-                                            player,
-                                            second_difference,
-                                        )
-                                    # After looping over each player in the team once the steamID matching has been initialized
-                                    dict_initialized[side] = True
-                                # If at least one side has been initialized the round can be used for analysis, so add the tick value used for tracking.
-                                # Will also removed for the eventual analysis.
-                                # But you do not want to set it for frames where you have no player data which should only ever happen in the first frame of a round at worst.
-                                if True in dict_initialized.values():
-                                    token_frames = (
-                                        [frame]
-                                        if second_difference == 1
-                                        else build_intermediate_frames(
-                                            frame,
-                                            current_round["frames"][index - 1],
-                                            second_difference,
-                                        )
-                                    )
-                                    for i in range(second_difference, 0, -1):
-                                        tokens = get_postion_token(
-                                            token_frames[second_difference - i],
-                                            map_name,
-                                            tokenlength,
-                                        )
-                                        round_positions["Tick"].append(
-                                            partial_step(
-                                                current_tick,
-                                                last_tick,
-                                                second_difference,
-                                                i,
-                                            )
-                                        )
-                                        round_positions["token"].append(
-                                            tokens["token"]
-                                            if i == 1
-                                            else round_positions["token"][-1]
-                                        )
-                                        round_positions["CTtoken"].append(
-                                            tokens["ctToken"]
-                                            if i == 1
-                                            else round_positions["CTtoken"][-1]
-                                        )
-                                        round_positions["Ttoken"].append(
-                                            tokens["tToken"]
-                                            if i == 1
-                                            else round_positions["Ttoken"][-1]
-                                        )
-                                        round_positions["interpolated"].append(
-                                            0 if i == 1 else 1
-                                        )
-                                    last_tick = current_tick
-                            # Skip the rest of the loop if the whole round should be skipped.
-                            if skip_round:
-                                continue
-                            # Append demo id, map name and round number to the final dataset dict.
-                            position_dataset_dict["MatchID"].append(match_id)
-                            position_dataset_dict["MapName"].append(map_name)
-                            position_dataset_dict["Round"].append(
-                                current_round["endTScore"] + current_round["endCTScore"]
-                            )
-                            position_dataset_dict["Winner"].append(
-                                convert_winner_to_int(current_round["winningSide"])
-                            )
-                            # Pad to full length in case a player left
-                            pad_to_full_length(round_positions)
-                            # Make sure each entry in the round_positions has the same size now. Especially that nothing is longer than the Tick entry which would indicate multiple players filling on player number
-                            # Transform to dataframe
-                            round_positions_df = pd.DataFrame(round_positions)
-                            # Add the rounds trajectory information to the overall dataset.
-                            position_dataset_dict["position_df"].append(
-                                round_positions_df
-                            )
-                            # Check that each entry in the dataset has the same length. Especially that for each round there is a trajectory dataframe.
-                            length = check_size(position_dataset_dict)
-                            logging.debug(
-                                "Finished another round and appended to dataset. Now at size %s",
-                                length,
-                            )
+                if (
+                    os.path.isfile(file_path)
+                    and filename.endswith(".json")
+                    and match_id not in seen_match_ids
+                ):
+                    logging.info("Analyzing file %s", filename)
+                    with open(file_path, encoding="utf-8") as demo_json:
+                        data = json.load(demo_json)
+                    analyze_rounds(data, position_dataset_dict, match_id)
             # Transform to dataset and write it to file as json
             position_dataset_df = pd.DataFrame(position_dataset_dict)
             position_dataset_df["position_df"] = position_dataset_df[
                 "position_df"
             ].apply(regularize_coordinatesdf, args=(directoryname,))
-            output_json_path = (
-                directory
-                + "\Analysis\Prepared_Input_Tensorflow_"
-                + directoryname
-                + ".json"
-            )
-            position_dataset_df.to_json(output_json_path)
+            if not options.reanalyze:
+                position_dataset_df = pd.concat(
+                    [prev_dataframe, position_dataset_df], ignore_index=True
+                )
+            position_dataset_df.to_json(output_json_path)  # , indent=2)
             logging.info("Wrote output json to: %s", output_json_path)
             # Has to be read back in like
             # with open("D:\CSGO\Demos\Maps\vertigo\Analysis\Prepared_Input_Tensorflow_vertigo.json", encoding='utf-8') as PreAnalyzed:
