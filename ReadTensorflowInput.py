@@ -46,6 +46,7 @@ class TrajectoryPredictor:
             self.random_state = random.randint(1, 10**8)
         else:
             self.random_state = random_state
+
         if times is None:
             self.times = [10, 160, 10]
         else:
@@ -57,6 +58,7 @@ class TrajectoryPredictor:
                 sides.remove(side)
         if sides:
             self.sides = sides
+
         self.input = prepared_input
         if os.path.isfile(self.input):
             with open(self.input, encoding="utf-8") as pre_analyzed:
@@ -74,17 +76,19 @@ class TrajectoryPredictor:
 
             return the_tree()
 
+        # Todo: Store this in a proper database (spanner?)
+        # Todo: Also save models to file and read already existing models back in
         self.datasets = tree()
         self.models = tree()
+
         self.example_id = example_id
 
     def __get_configurations(self):
-        sides = ["BOTH"]  #
         coordinates = ["tokens", "positions"]
         time = np.arange(
             self.times[0], self.times[1] + self.times[2] // 2, self.times[2]
         )
-        return itertools.product(sides, time, coordinates)
+        return itertools.product(self.sides, time, coordinates)
 
     def __transform_ticks_to_seconds(self, tick, first_tick):
         """Transforms a tick value to a corresponding second value given a start_tick
@@ -319,6 +323,7 @@ class TrajectoryPredictor:
         Returns:
             The sequantial tf.keras LSTM model
         """
+        # Todo more flexibility when defining models
         model = tf.keras.Sequential(
             [
                 layers.LSTM(nodes_per_layer, input_shape=input_shape),
@@ -345,6 +350,7 @@ class TrajectoryPredictor:
         Returns:
             The sequantial tf.keras CONV2D + LSTM model
         """
+        # Todo more flexibility when defining models
         pooling_size = (2, 1)
         model = tf.keras.Sequential(
             [
@@ -449,18 +455,21 @@ class TrajectoryPredictor:
         logging.info(train_labels.shape)
         logging.info(train_features.shape)
 
-        train_dataset = tf.data.Dataset.from_tensor_slices(
-            (train_features, train_labels)
+        self.datasets[side][time][coordinate]["val"][
+            "dataset"
+        ] = tf.data.Dataset.from_tensor_slices((val_features, val_labels)).batch(
+            batch_size
         )
-        test_dataset = tf.data.Dataset.from_tensor_slices((test_features, test_labels))
-        val_dataset = tf.data.Dataset.from_tensor_slices((val_features, val_labels))
-
-        train_dataset = train_dataset.batch(batch_size)
-        test_dataset = test_dataset.batch(batch_size)
-        val_dataset = val_dataset.batch(batch_size)
-        self.datasets[side][time][coordinate]["val"]["dataset"] = val_dataset
-        self.datasets[side][time][coordinate]["train"]["dataset"] = train_dataset
-        self.datasets[side][time][coordinate]["test"]["dataset"] = test_dataset
+        self.datasets[side][time][coordinate]["train"][
+            "dataset"
+        ] = tf.data.Dataset.from_tensor_slices((train_features, train_labels)).batch(
+            batch_size
+        )
+        self.datasets[side][time][coordinate]["test"][
+            "dataset"
+        ] = tf.data.Dataset.from_tensor_slices((test_features, test_labels)).batch(
+            batch_size
+        )
 
     def get_model(self, configuration, nodes_per_layer=32, override=False):
         """Grabs or generates a model usable for the specified configuration.
@@ -476,6 +485,7 @@ class TrajectoryPredictor:
         Returns:
             LSTM network model that is applicable to datasets produced according to the given configuration
         """
+        # Todo: More flexibility when defining models
         side, time, coordinate = configuration
         if coordinate in self.models[side][time] and not override:
             model = self.models[side][time][coordinate]
@@ -491,6 +501,7 @@ class TrajectoryPredictor:
                     self.datasets[side][time][coordinate]["train"]["features"][0].shape,
                 )
             self.models[side][time][coordinate] = model
+        # Todo: Also save model to file
         return model
 
     def compile_fit_and_evaluate_model(self, configuration, epochs=50, patience=5):
@@ -614,6 +625,7 @@ class TrajectoryPredictor:
             logging.debug("Example for position_df dataframe entry before cleaning.")
             logging.debug(dataframe.iloc[self.example_id]["position_df"])
 
+        # Todo: Do this completely separately for train, test and validation datasets
         max_time = min(self.__get_maximum_length(dataframe), 160)
         self.times[0] = min(self.times[0], max_time)
         self.times[1] = min(self.times[1], max_time)
@@ -657,7 +669,7 @@ def main(args):
     """Read input prepared by tensorflow_input_preparation.py and builds/trains DNNs to predict the round winner based on player trajectory data."""
     parser = argparse.ArgumentParser("Analyze the early mid fight on inferno")
     parser.add_argument(
-        "-d", "--debug", action="store_true", default=True, help="Enable debug output."
+        "-d", "--debug", action="store_true", default=False, help="Enable debug output."
     )
     parser.add_argument("-m", "--map", default="ancient", help="Map to analyze")
     parser.add_argument(
