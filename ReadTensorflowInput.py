@@ -30,13 +30,18 @@ class TrajectoryPredictor:
 
     Attributes:
         input: Path to the json input file containing all the trajectory data for every round on a given map.
-        datasets: dictionary of datasets derived from input. split by Pos/Token, CT,T,Both, time, train/test/val. Todo: supervised or unsupervised and move this to a proper database
-        models: dictionary of models. split by Pos/Token, CT,T,Both, time Todo: supervised or unsupervised and move this to a proper database
-        times: tuple of time information. (lowest, highest, stepsize) Default is (10,160,10)
+        datasets: Dictionary of datasets derived from input. split by Pos/Token, CT,T,Both, time, train/test/val. Todo: supervised or unsupervised and move this to a proper database
+        models: Dictionary of models. split by Pos/Token, CT,T,Both, time Todo: supervised or unsupervised and move this to a proper database
+        times: List of time information. (lowest, highest, stepsize) Default is (10,160,10)
+        sides: List of side configurations to consider. Possible are BOTH, CT and T
         random_state: Integer for random_states
+        complete_dataframe: Pandas dataframe generated from input.
+        example_id: Integer used for debugging output.
     """
 
-    def __init__(self, prepared_input, times=None, random_state=None):
+    def __init__(
+        self, prepared_input, times=None, sides=None, random_state=None, example_id=None
+    ):
         if random_state is None:
             self.random_state = random.randint(1, 10**8)
         else:
@@ -45,15 +50,40 @@ class TrajectoryPredictor:
             self.times = [10, 160, 10]
         else:
             self.times = times
+
+        self.sides = ["CT", "T", "BOTH"]
+        for side in list(sides):
+            if side not in self.sides:
+                sides.remove(side)
+        if sides:
+            self.sides = sides
         self.input = prepared_input
-        nested_dict = lambda: defaultdict(nested_dict)
-        self.datasets = nested_dict()
-        self.models = nested_dict()
+        if os.path.isfile(self.input):
+            with open(self.input, encoding="utf-8") as pre_analyzed:
+                self.complete_dataframe = pd.read_json(pre_analyzed)
+        else:
+            logging.error("File %s does not exist!", self.input)
+            raise FileNotFoundError("File does not exist!")
+
+        logging.debug("Initial dataframe:")
+        logging.debug(self.complete_dataframe)
+
+        def tree():
+            def the_tree():
+                return defaultdict(the_tree)
+
+            return the_tree()
+
+        self.datasets = tree()
+        self.models = tree()
+        self.example_id = example_id
 
     def __get_configurations(self):
-        sides = ["CT", "T", "BOTH"]
-        coordinates = [True, False]
-        time = np.arange(self.times[0], self.times[1], self.times[2])
+        sides = ["BOTH"]  #
+        coordinates = ["tokens", "positions"]
+        time = np.arange(
+            self.times[0], self.times[1] + self.times[2] // 2, self.times[2]
+        )
         return itertools.product(sides, time, coordinates)
 
     def __transform_ticks_to_seconds(self, tick, first_tick):
@@ -202,7 +232,7 @@ class TrajectoryPredictor:
         # Set length of dataframe to make sure all have the same size
         # Pad each column if set size is larger than dataframe size
         # If the full coordinates should be used then for each player their alive status as well as their x,y,z coordinates are kept, everything else (player names and tokens) is discarded.
-        if coordinates:
+        if coordinates == "positions":
             featurelist = ["x", "y", "z"]
             # featurelist=["Alive","x","y","z"]
             dimensions = [
@@ -295,11 +325,11 @@ class TrajectoryPredictor:
                 layers.Dense(
                     nodes_per_layer, activation="relu"
                 ),  # ,kernel_regularizer=tf.keras.regularizers.l2(0.001)
-                layers.Dropout(0.4),
+                layers.Dropout(0.2),
                 layers.Dense(
                     nodes_per_layer, activation="relu"
                 ),  # ,kernel_regularizer=tf.keras.regularizers.l2(0.001)
-                layers.Dropout(0.4),
+                layers.Dropout(0.2),
                 layers.Dense(1),
             ]
         )
@@ -344,159 +374,290 @@ class TrajectoryPredictor:
                 layers.Dense(
                     nodes_per_layer, activation="relu"
                 ),  # ,kernel_regularizer=tf.keras.regularizers.l2(0.001)
-                layers.Dropout(0.4),
+                layers.Dropout(0.2),
                 layers.Dense(
                     nodes_per_layer, activation="relu"
                 ),  # ,kernel_regularizer=tf.keras.regularizers.l2(0.001)
-                layers.Dropout(0.4),
+                layers.Dropout(0.2),
                 layers.Dense(1),
             ]
         )
         return model
 
-    def generate_data_sets(self):
-        """Perform generation of different datasets. Currently also build the models and train them. but that will be moved to a new function soon."""
-        if os.path.isfile(self.input):
-            with open(self.input, encoding="utf-8") as pre_analyzed:
-                complete_dataframe = pd.read_json(pre_analyzed)
+    def generate_train_test_val_datasets(
+        self, this_dataframe, configuration, batch_size=32
+    ):
+        """Generate the train, test and validation sub datasets from the total dataset based on which features, side and time window should be considered.
+
+        Args:
+            this_dataframe: A pandas dataframe containing a row for each round and columns for the winning side and a dataframe of player/token trajectories
+            configuration: A tuple of (side,time,coordinate) determining what should be in the output dataframe.
+                Side: A string clarifying about which side information should be included: CT, T, or BOTH
+                time: An integer determining up to which second in the round trajectory information should be included
+                coordinates: A string determining if individual players positions ("positions") or aggregate tokens ("tokens) should be used
+            batch_size: An integer determining the size that the datasets should be batched to
+
+        Returns:
+            None (datasets are added to self.datasets nested dict)
+        """
+        logging.debug("Generating dataset for configuration %s.", configuration)
+        # Shuffle and split dataframe into training, test and validation set
+        # set aside 20% of train and test data for evaluation
+        side, time, coordinate = configuration
+        train_df, test_df = train_test_split(
+            this_dataframe,
+            test_size=0.2,
+            shuffle=True,
+            random_state=self.random_state,
+        )
+        # Use the same function above for the validation set  0.25 x 0.8 = 0.2
+        train_df, val_df = train_test_split(
+            train_df, test_size=0.25, shuffle=True, random_state=self.random_state
+        )
+
+        train_df["position_df"] = train_df["position_df"].apply(
+            self.__modify_data_frame_shape, args=(configuration,)
+        )
+        val_df["position_df"] = val_df["position_df"].apply(
+            self.__modify_data_frame_shape, args=(configuration,)
+        )
+        test_df["position_df"] = test_df["position_df"].apply(
+            self.__modify_data_frame_shape, args=(configuration,)
+        )
+
+        logging.debug("Dataframe after cleanup")
+        logging.debug(train_df)
+        if self.example_id is not None:
+            logging.debug("Example for position_df dataframe entry after cleaning.")
+            logging.debug(train_df.iloc[self.example_id]["position_df"])
+
+        train_df.reset_index(drop=True, inplace=True)
+        val_df.reset_index(drop=True, inplace=True)
+        test_df.reset_index(drop=True, inplace=True)
+
+        test_labels, test_features = self.__transform_dataframe_to_arrays(test_df)
+        val_labels, val_features = self.__transform_dataframe_to_arrays(val_df)
+        train_labels, train_features = self.__transform_dataframe_to_arrays(train_df)
+        self.datasets[side][time][coordinate]["val"]["features"] = val_features
+        self.datasets[side][time][coordinate]["train"]["features"] = train_features
+        self.datasets[side][time][coordinate]["test"]["features"] = test_features
+        self.datasets[side][time][coordinate]["val"]["labels"] = val_labels
+        self.datasets[side][time][coordinate]["train"]["labels"] = train_labels
+        self.datasets[side][time][coordinate]["test"]["labels"] = test_labels
+
+        logging.info("Input preparation done for configuration %s", configuration)
+        logging.info(train_labels.shape)
+        logging.info(train_features.shape)
+
+        train_dataset = tf.data.Dataset.from_tensor_slices(
+            (train_features, train_labels)
+        )
+        test_dataset = tf.data.Dataset.from_tensor_slices((test_features, test_labels))
+        val_dataset = tf.data.Dataset.from_tensor_slices((val_features, val_labels))
+
+        train_dataset = train_dataset.batch(batch_size)
+        test_dataset = test_dataset.batch(batch_size)
+        val_dataset = val_dataset.batch(batch_size)
+        self.datasets[side][time][coordinate]["val"]["dataset"] = val_dataset
+        self.datasets[side][time][coordinate]["train"]["dataset"] = train_dataset
+        self.datasets[side][time][coordinate]["test"]["dataset"] = test_dataset
+
+    def get_model(self, configuration, nodes_per_layer=32, override=False):
+        """Grabs or generates a model usable for the specified configuration.
+
+        Args:
+            configuration: configuration: A tuple of (side,time,coordinate) determining what dataset the model should be applicable to.
+                Side: A string clarifying about which side information is included in the dataset: CT, T, or BOTH
+                time: An integer determining up to which second in the round trajectory information is included
+                coordinates: A string determining if individual players positions ("positions") or aggregate tokens ("tokens) were used
+            nodes_per_layer: An integer specifying how many nodes each layer in the LSTM should have. Currently the same for all layers
+            override: A boolean that determines if a new model should be created even though one already exists for the given configuration.
+                      Usefull when nodes_per_layer should be updated.
+        Returns:
+            LSTM network model that is applicable to datasets produced according to the given configuration
+        """
+        side, time, coordinate = configuration
+        if coordinate in self.models[side][time] and not override:
+            model = self.models[side][time][coordinate]
         else:
-            logging.error("File %s does not exist!", self.input)
-            raise FileNotFoundError("File does not exist!")
+            if coordinate == "positions":
+                model = self.get_coordinate_model(
+                    nodes_per_layer,
+                    self.datasets[side][time][coordinate]["train"]["features"][0].shape,
+                )
+            else:
+                model = self.get_token_model(
+                    nodes_per_layer,
+                    self.datasets[side][time][coordinate]["train"]["features"][0].shape,
+                )
+            self.models[side][time][coordinate] = model
+        return model
+
+    def compile_fit_and_evaluate_model(self, configuration, epochs=50, patience=5):
+        """Compiles, fits and evaluates a LSTM network model useable on a dataset generated according to the configuration
+
+        Args:
+            configuration: configuration: A tuple of (side,time,coordinate) determining what dataset the model should be applicable to.
+                Side: A string clarifying about which side information is included in the dataset: CT, T, or BOTH
+                time: An integer determining up to which second in the round trajectory information is included
+                coordinates: A string determining if individual players positions ("positions") or aggregate tokens ("tokens) were used
+            epochs: An integer indicating for how many epochs the model should be trained
+            patience: An integer indicating the early stopping patience that should be used during training
+
+        Returns:
+            A tuple of (History, loss, accuracy, entropy)
+                History: History object from model.fit
+                loss: A float of the loss from model.evaluate on the test dataset
+                accuracy: A float of the accuracy from model.evaluate on the test dataset
+                entropy: A float of binary crossentropy from model.evaluate on the test dataset
+        """
+        logging.debug(
+            "Compiling, fitting and evaluating model for configuration %s.",
+            configuration,
+        )
+        side, time, coordinate = configuration
+        model = self.get_model(configuration)
+        model.compile(
+            optimizer=tf.keras.optimizers.Adam(learning_rate=0.00007),
+            loss=tf.keras.losses.BinaryCrossentropy(from_logits=True),
+            metrics=[
+                "accuracy",
+                tf.keras.losses.BinaryCrossentropy(
+                    from_logits=True, name="binary_crossentropy"
+                ),
+            ],
+        )
+
+        model.summary()
+
+        history = model.fit(
+            self.datasets[side][time][coordinate]["train"]["dataset"],
+            epochs=epochs,
+            validation_data=self.datasets[side][time][coordinate]["val"]["dataset"],
+            callbacks=tf.keras.callbacks.EarlyStopping(
+                monitor="val_binary_crossentropy", patience=patience
+            ),
+        )
+
+        loss, accuracy, entropy = model.evaluate(
+            self.datasets[side][time][coordinate]["test"]["dataset"]
+        )
+        return (history, loss, accuracy, entropy)
+
+    def plot_model(self, configuration, plot_path=r"D:\CSGO\ML\CSGOML\Plots"):
+        """Plots and logs results for training and evaluating the model corresponding to the configuration
+
+        Args:
+            configuration: configuration: A tuple of (side,time,coordinate) determining which model should be used.
+                Side: A string clarifying about which side information is included in the dataset that the model is applicable to: CT, T, or BOTH
+                time: An integer determining up to which second in the round trajectory information is included in the dataset that the model is applicable to
+                coordinates: A string determining if individual players positions ("positions") or aggregate tokens ("tokens) were used in the dataset that the model is applicable to
+            plot_path: A string of the path of the directory where the resultant plots should be saved to
+        Returns:
+            None (Logs evaluation loss and accuarcy from the test set and produces plots of training vs val loss and accuracy during training)
+        """
+        history, loss, accuracy, _ = self.compile_fit_and_evaluate_model(configuration)
+        logging.info("Loss: %s", loss)
+        logging.info("Accuracy: %s", accuracy)
+
+        history_dict = history.history
+
+        acc = history_dict["accuracy"]
+        val_acc = history_dict["val_accuracy"]
+        loss = history_dict["loss"]
+        val_loss = history_dict["val_loss"]
+
+        epochs = range(1, len(acc) + 1)
+
+        # "bo" is for "blue dot"
+        plt.plot(epochs, loss, "bo", label="Training loss")
+        # b is for "solid blue line"
+        plt.plot(epochs, val_loss, "b", label="Validation loss")
+        plt.title("Training and validation loss")
+        plt.xlabel("Epochs")
+        plt.ylabel("Loss")
+        plt.legend()
+        plt.savefig(
+            f"{plot_path}\\train_val_loss_{configuration[0]}_{configuration[1]}_{configuration[2]}.png"
+        )
+        plt.show()
+
+        plt.plot(epochs, acc, "bo", label="Training acc")
+        plt.plot(epochs, val_acc, "b", label="Validation acc")
+        plt.title("Training and validation accuracy")
+        plt.xlabel("Epochs")
+        plt.ylabel("Accuracy")
+        plt.legend(loc="lower right")
+        plt.savefig(
+            f"{plot_path}\\train_val_acc_{configuration[0]}_{configuration[1]}_{configuration[2]}.png"
+        )
+        plt.show()
+
+    def generate_data_sets(self, batch_size=32):
+        """Generate datasets for each possible combination of side, time and coordinates settings and add them to self.datasets
+
+        For each configuration entries for val,train,test x labels,features,dataset are created and added to the self.datasets entry of the given configuration.
+
+        Args:
+            batch_size: An integer determining the batch_size of the resultant fitting ready dataset.
+
+        Returns:
+            None (datasets are directly added to self.datasets)
+        """
         # Only keep the label (Winner) and training feature (position_df) and discard the MatchID, Map_name and round number.
-        dataframe = complete_dataframe[["Winner", "position_df"]]
+        dataframe = self.complete_dataframe[["Winner", "position_df"]]
         # Transform the position_df from a json dict to df and also transform ticks to seconds
         dataframe["position_df"] = dataframe["position_df"].apply(
             self.__transform_to_data_frame
         )
-        max_time = self.__get_maximum_length(dataframe)
-        if max_time > 160:
-            max_time = 160
-        self.times[1] = max_time
+        if self.example_id is not None:
+            logging.debug("Example for position_df dataframe entry before cleaning.")
+            logging.debug(dataframe.iloc[self.example_id]["position_df"])
+
+        max_time = min(self.__get_maximum_length(dataframe), 160)
+        self.times[0] = min(self.times[0], max_time)
+        self.times[1] = min(self.times[1], max_time)
         for configuration in self.__get_configurations():
-            side, time, coordinate = configuration
             this_dataframe = dataframe.copy()
-            # Shuffle and split dataframe into training, test and validation set
-            # set aside 20% of train and test data for evaluation
-            train_df, test_df = train_test_split(
-                this_dataframe,
-                test_size=0.2,
-                shuffle=True,
-                random_state=self.random_state,
+            self.generate_train_test_val_datasets(
+                this_dataframe, configuration, batch_size
             )
-            # Use the same function above for the validation set  0.25 x 0.8 = 0.2
-            train_df, val_df = train_test_split(
-                train_df, test_size=0.25, shuffle=True, random_state=self.random_state
-            )
+        logging.info("Done generating all possible datasets.")
+        logging.debug(self.datasets)
 
-            train_df["position_df"] = train_df["position_df"].apply(
-                self.__modify_data_frame_shape, args=(configuration,)
-            )
-            val_df["position_df"] = val_df["position_df"].apply(
-                self.__modify_data_frame_shape, args=(configuration,)
-            )
-            test_df["position_df"] = test_df["position_df"].apply(
-                self.__modify_data_frame_shape, args=(configuration,)
+    def generate_all_models(self, nodes_per_layer=32, override=False):
+        """Add models for all possible configurations to self.models
+
+        Args:
+            nodes_per_layer: An interger indicating how many nodes each layer of the models should have.
+            override: A boolean indicating whether already existing models should be overriden. (Used when changing nodes_per_layer)
+
+        Returns:
+            None (models are directly added to self.models)
+        """
+        for configuration in self.__get_configurations():
+            _ = self.get_model(
+                configuration, nodes_per_layer=nodes_per_layer, override=override
             )
 
-            train_df.reset_index(drop=True, inplace=True)
-            val_df.reset_index(drop=True, inplace=True)
-            test_df.reset_index(drop=True, inplace=True)
+    def plot_all_models(self):
+        """Calls self.plot_model for each possible configuration
 
-            test_labels, test_features = self.__transform_dataframe_to_arrays(test_df)
-            val_labels, val_features = self.__transform_dataframe_to_arrays(val_df)
-            train_labels, train_features = self.__transform_dataframe_to_arrays(
-                train_df
-            )
+        Args:
+            None (configratuions are taken from self.__get_configurations)
 
-            train_dataset = tf.data.Dataset.from_tensor_slices(
-                (train_features, train_labels)
-            )
-            test_dataset = tf.data.Dataset.from_tensor_slices(
-                (test_features, test_labels)
-            )
-            val_dataset = tf.data.Dataset.from_tensor_slices((val_features, val_labels))
-            BATCH_SIZE = 32
-            SHUFFLE_BUFFER_SIZE = 40
-
-            train_dataset = train_dataset.batch(BATCH_SIZE)
-            test_dataset = test_dataset.batch(BATCH_SIZE)
-            val_dataset = val_dataset.batch(BATCH_SIZE)
-
-            nodes_per_layer = 32
-
-            self.datasets[side][time][coordinate]["val"] = val_dataset
-            self.datasets[side][time][coordinate]["train"] = train_dataset
-            self.datasets[side][time][coordinate]["test"] = test_dataset
-            if coordinate:
-                model = self.get_coordinate_model(
-                    nodes_per_layer, train_features[0].shape
-                )
-            else:
-                model = self.get_token_model(nodes_per_layer, train_features[0].shape)
-
-            model.compile(
-                optimizer=tf.keras.optimizers.Adam(learning_rate=0.00007),
-                loss=tf.keras.losses.BinaryCrossentropy(from_logits=True),
-                metrics=[
-                    "accuracy",
-                    tf.keras.losses.BinaryCrossentropy(
-                        from_logits=True, name="binary_crossentropy"
-                    ),
-                ],
-            )
-
-            model.summary()
-
-            history = model.fit(
-                train_dataset,
-                epochs=50,
-                batch_size=BATCH_SIZE,
-                validation_data=val_dataset,
-                callbacks=tf.keras.callbacks.EarlyStopping(
-                    monitor="val_binary_crossentropy", patience=5
-                ),
-            )
-
-            loss, accuracy, entropy = model.evaluate(test_dataset)
-
-            print("Loss: ", loss)
-            print("Accuracy: ", accuracy)
-
-            history_dict = history.history
-
-            acc = history_dict["accuracy"]
-            val_acc = history_dict["val_accuracy"]
-            loss = history_dict["loss"]
-            val_loss = history_dict["val_loss"]
-
-            epochs = range(1, len(acc) + 1)
-
-            # "bo" is for "blue dot"
-            plt.plot(epochs, loss, "bo", label="Training loss")
-            # b is for "solid blue line"
-            plt.plot(epochs, val_loss, "b", label="Validation loss")
-            plt.title("Training and validation loss")
-            plt.xlabel("Epochs")
-            plt.ylabel("Loss")
-            plt.legend()
-
-            plt.show()
-
-            plt.plot(epochs, acc, "bo", label="Training acc")
-            plt.plot(epochs, val_acc, "b", label="Validation acc")
-            plt.title("Training and validation accuracy")
-            plt.xlabel("Epochs")
-            plt.ylabel("Accuracy")
-            plt.legend(loc="lower right")
-
-            plt.show()
+        Returns:
+            None (Only logs and produces plots)
+        """
+        for configuration in self.__get_configurations():
+            self.plot_model(configuration)
 
 
 def main(args):
     """Read input prepared by tensorflow_input_preparation.py and builds/trains DNNs to predict the round winner based on player trajectory data."""
     parser = argparse.ArgumentParser("Analyze the early mid fight on inferno")
     parser.add_argument(
-        "-d", "--debug", action="store_true", default=False, help="Enable debug output."
+        "-d", "--debug", action="store_true", default=True, help="Enable debug output."
     )
     parser.add_argument("-m", "--map", default="ancient", help="Map to analyze")
     parser.add_argument(
@@ -504,24 +665,6 @@ def main(args):
         "--log",
         default=r"D:\CSGO\ML\CSGOML\ReadTensorflowInput.log",
         help="Path to output log.",
-    )
-    parser.add_argument(
-        "-s",
-        "--side",
-        default="BOTH",
-        help="Which side to include in analysis (CT,T,BOTH) .",
-    )
-    parser.add_argument(
-        "--coordinates",
-        action="store_true",
-        default=False,
-        help="Whether to use full coordinate or just tokens.",
-    )
-    parser.add_argument(
-        "-t",
-        "--time",
-        default="MAX",
-        help="How many position snapshots should be used. Either an integer or MAX.",
     )
     parser.add_argument(
         "--exampleid",
@@ -556,12 +699,6 @@ def main(args):
     example_index = options.exampleid
     random_state = options.randomstate
 
-    if options.side not in ["CT", "T", "BOTH"]:
-        logging.error(
-            "Side %s unknown. Has to be one of 'CT','T','BOTH'!", options.side
-        )
-        sys.exit()
-
     # Time should either an integer or MAX.
     # If it is an integer n that means that the first n timesteps will be considered for each round and the rest discarded.
     # If it is 'MAX' then we look what the longest round in the dataset is and pad all other rounds to that length.
@@ -569,7 +706,7 @@ def main(args):
 
     # Read in the prepared json file.
     # File="D:\CSGO\Demos\Maps\\"+options.map+"\Analysis\Prepared_Input_Tensorflow_"+options.map+".json"
-    File = (
+    file = (
         r"E:\PhD\MachineLearning\CSGOData\ParsedDemos\\"
         + options.map
         + r"\Analysis\Prepared_Input_Tensorflow_"
@@ -577,8 +714,15 @@ def main(args):
         + ".json"
     )
 
-    predictor = TrajectoryPredictor(File, random_state=random_state)
+    predictor = TrajectoryPredictor(
+        file,
+        times=[160, 160, 10],
+        sides=["BOTH"],
+        random_state=random_state,
+        example_id=example_index,
+    )
     predictor.generate_data_sets()
+    predictor.plot_all_models()
 
 
 if __name__ == "__main__":
