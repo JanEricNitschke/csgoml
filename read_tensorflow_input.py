@@ -6,10 +6,10 @@
 
     predictor = TrajectoryPredictor(
         file,
-        times=[160, 160, 10],
-        sides=["BOTH"],
-        random_state=random_state,
-        example_id=example_index,
+        times=[10, 160, 10],
+        sides=["CT","T","BOTH"],
+        random_state=123,
+        example_id=22,
     )
     predictor.generate_data_sets()
     predictor.plot_all_models()

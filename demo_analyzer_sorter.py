@@ -4,13 +4,13 @@
 
     analyzer = DemoAnalyzerSorter(
         indentation=False,
-        dirs=options.dirs,
-        log=options.log,
-        start_id=options.startid,
-        end_id=options.endid,
-        mm_id=options.mmid,
-        maps_dir=options.mapsdir,
-        json_ending=options.jsonending,
+        dirs=["D:\\CSGO\\Demos",r"C:\\Program Files (x86)\\Steam\\steamapps\\common\\Counter-Strike Global Offensive\\csgo\\replays"],
+        log=None
+        start_id=1,
+        end_id=999999,
+        mm_id=10000,
+        maps_dir="D:\\CSGO\\Demos\\Maps",
+        json_ending="",
     )
     analyzer.parse_demos()
 """

@@ -3,10 +3,10 @@
     Typical usage example:
 
     analyzer = FightAnalyzer(
-    options.debug,
-    times=[options.starttime, options.endtime],
-    directory=options.dir,
-    log=options.log,
+    debug=False,
+    times=[5, 25],
+    directory="D:\\CSGO\\Demos\\Maps\\inferno",
+    log="D:\\CSGO\\ML\\CSGOML\\logs\\FightAnalyzer.log",
     )
     dataframe = analyzer.analyze_demos()
     analyzer.print_ct_win_percentage_for_time_cutoffs(dataframe)
@@ -444,7 +444,7 @@ def main(args):
             filename=options.log, encoding="utf-8", level=logging.INFO, filemode="w"
         )
     analyzer = FightAnalyzer(
-        options.debug,
+        debug=options.debug,
         times=[options.starttime, options.endtime],
         directory=options.dir,
         log=options.log,
