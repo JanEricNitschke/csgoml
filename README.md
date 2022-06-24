@@ -1,5 +1,5 @@
 # CSGOML
-`CSGOML` is a collection of [python](https://www.python.org/downloads/) of scripts to do [CS:GO](https://store.steampowered.com/app/730/CounterStrike_Global_Offensive/?l=german) data analysis utilizing the [awpy(]https://github.com/pnxenopoulos/awpy) package for data parsing.
+`CSGOML` is a collection of [python](https://www.python.org/downloads/) of scripts to do [CS:GO](https://store.steampowered.com/app/730/CounterStrike_Global_Offensive/?l=german) data analysis utilizing the [awpy](https://github.com/pnxenopoulos/awpy) package for data parsing.
 
 # demo_analyzer_sort.py
 Contains a class automating the parsing of multi files in succession with awpy and sorting the resulting json files by map.
