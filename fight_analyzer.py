@@ -374,6 +374,7 @@ class FightAnalyzer:
         Returns:
             None (just prints)
         """
+        # Todo: Also plot
         game_times = np.linspace(
             self.times[0], self.times[1], self.times[1] - self.times[0] + 1
         )

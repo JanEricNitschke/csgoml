@@ -4,7 +4,15 @@
 
     Typical usage example:
 
-    todo
+    predictor = TrajectoryPredictor(
+        file,
+        times=[160, 160, 10],
+        sides=["BOTH"],
+        random_state=random_state,
+        example_id=example_index,
+    )
+    predictor.generate_data_sets()
+    predictor.plot_all_models()
 """
 #!/usr/bin/env python
 
