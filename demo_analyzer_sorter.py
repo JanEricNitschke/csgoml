@@ -174,8 +174,6 @@ class DemoAnalyzerSorter:
             None
         """
         for directory in self.dirs:
-            os.chdir(directory)
-            logging.debug("Changing directoy now.")
             logging.info("Scanning directory: %s", directory)
             for filename in os.listdir(directory):
                 if filename.endswith(".dem"):
@@ -196,6 +194,7 @@ class DemoAnalyzerSorter:
                                 dmg_rolled=True,
                                 parse_frames=True,
                                 json_indentation=self.indentation,
+                                outpath=directory,
                             )
                             data = demo_parser.parse(clean=False)
                             self.clean_rounds(demo_parser)
