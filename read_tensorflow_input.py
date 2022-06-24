@@ -683,7 +683,7 @@ def main(args):
     parser.add_argument(
         "-l",
         "--log",
-        default=r"D:\CSGO\ML\CSGOML\ReadTensorflowInput.log",
+        default=r"D:\CSGO\ML\CSGOML\logs\ReadTensorflowInput.log",
         help="Path to output log.",
     )
     parser.add_argument(

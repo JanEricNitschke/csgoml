@@ -43,7 +43,7 @@ class DemoAnalyzerSorter:
         self,
         indentation=False,
         dirs=None,
-        log=r"D:\CSGO\ML\CSGOML\DemoAnalyzerSorter.log",
+        log=r"D:\CSGO\ML\CSGOML\logs\DemoAnalyzerSorter.log",
         start_id=1,
         end_id=99999,
         mm_id=10000,
@@ -242,7 +242,7 @@ def main(args):
     parser.add_argument(
         "-l",
         "--log",
-        default=r"D:\CSGO\ML\CSGOML\DemoAnalyzerSorter.log",
+        default=r"D:\CSGO\ML\CSGOML\logs\DemoAnalyzerSorter.log",
         help="Path to output log.",
     )
     parser.add_argument(

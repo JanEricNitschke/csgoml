@@ -87,7 +87,7 @@ def on_modified(event):
             indentation=True,
             dirs=[path],
             log=None,
-            maps_dir=r"E:\PhD\MachineLearning\CSGOData\test",
+            maps_dir=r"E:\PhD\MachineLearning\CSGOData\ParsedDemos",
             json_ending=ending,
         )
         logging.info(
@@ -120,7 +120,7 @@ def main(args):
     parser.add_argument(
         "-l",
         "--log",
-        default=r"D:\CSGO\ML\CSGOML\DemoWatchdog.log",
+        default=r"D:\CSGO\ML\CSGOML\logs\DemoWatchdog.log",
         help="Path to output log.",
     )
     options = parser.parse_args(args)

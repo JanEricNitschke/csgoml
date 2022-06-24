@@ -42,7 +42,7 @@ class FightAnalyzer:
         times=None,
         my_json=r"D:\CSGO\Demos\Maps\inferno\Analysis\Inferno_kills_mid.json",
         directory=r"D:\CSGO\Demos\Maps\inferno",
-        log=r"D:\CSGO\ML\CSGOML\FightAnalyzer.log",
+        log=r"D:\CSGO\ML\CSGOML\logs\FightAnalyzer.log",
         positions=None,
         weapons=None,
     ):
@@ -430,7 +430,7 @@ def main(args):
     parser.add_argument(
         "-l",
         "--log",
-        default=r"D:\CSGO\ML\CSGOML\FightAnalyzer.log",
+        default=r"D:\CSGO\ML\CSGOML\logs\FightAnalyzer.log",
         help="Path to output log.",
     )
     options = parser.parse_args(args)

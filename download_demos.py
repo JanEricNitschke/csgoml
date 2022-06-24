@@ -42,24 +42,24 @@ def main(args):
     parser.add_argument(
         "-l",
         "--log",
-        default=r"D:\CSGO\ML\CSGOML\DownloadDemos.log",
+        default=r"D:\CSGO\ML\CSGOML\logs\DownloadDemos.log",
         help="Path to output log.",
     )
     parser.add_argument(
         "--startid",
         type=int,
-        default=68899,
+        default=69900,
         help="Analyze demos with a name above this id",
     )
     parser.add_argument(
         "--endid",
         type=int,
-        default=68799,
+        default=69909,
         help="Analyze demos with a name below this id",
     )
     options = parser.parse_args(args)
 
-    # Done are: 68900-69899;
+    # Done are: 68900-69908;
 
     if options.debug:
         logging.basicConfig(
@@ -113,7 +113,7 @@ def main(args):
     ]
 
     logging.info(urls)
-    logging.info("Will download demos for %s match.", len(urls))
+    logging.info("Will download demos for %s matches.", len(urls))
     timeout = 100
     for url in urls:
         filename = options.dir + url.split("/")[-1] + ".rar"
