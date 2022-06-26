@@ -288,7 +288,7 @@ def plot_map_areas(output_path, map_name="de_ancient", map_type="original", dark
     Returns:
         None, saves .png
     """
-    logging.info(f"Plotting areas for {map_name}")
+    logging.info("Plotting areas for %s", map_name)
     area_points = collections.defaultdict(list)
     fig, axis = plot_map(map_name=map_name, map_type=map_type, dark=dark)
     fig.set_size_inches(19.2, 10.8)
@@ -332,7 +332,7 @@ def plot_map_tiles(output_path, map_name="de_ancient", map_type="original", dark
     Returns:
         None, saves .png
     """
-    logging.info(f"Plotting tiles for {map_name}")
+    logging.info("Plotting tiles for %s", map_name)
     fig, axis = plot_map(map_name=map_name, map_type=map_type, dark=dark)
     fig.set_size_inches(19.2, 10.8)
     # Loop over each nav mesh tile
