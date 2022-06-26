@@ -210,7 +210,7 @@ class TrajectoryPredictor:
         position_df = pd.DataFrame(position_df.tolist())
         # Convert the individual string into the respective integers
         # Divide numbers by 5 so they are all from 0 to 1
-        position_df.applymap(lambda x: float(x) / 5)
+        position_df = position_df.applymap(lambda x: float(x) / 5)
         # Pad the df to the specified length
         position_df = self.__pad_to_length(position_df, time)
         # Convert to numpy array
