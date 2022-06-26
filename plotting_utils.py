@@ -1,7 +1,5 @@
 """Collection of functions to extend awpy plotting capabilites
 
-
-
     Typical usage example:
 
     plot_round_tokens(
