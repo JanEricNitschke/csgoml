@@ -234,8 +234,7 @@ def get_player_id(player):
     """
     if player["steamID"] == 0:
         return player["name"]
-    else:
-        return player["steamID"]
+    return player["steamID"]
 
 
 def pad_to_full_length(round_positions):
