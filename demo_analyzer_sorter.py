@@ -72,7 +72,7 @@ class DemoAnalyzerSorter:
             )
         DemoAnalyzerSorter.logger = logging.getLogger("DemoAnalyzerSorter")
         self.indentation = indentation
-        if not dirs:
+        if dirs is None:
             self.dirs = [
                 r"D:\CSGO\Demos",
                 r"C:\Program Files (x86)\Steam\steamapps\common\Counter-Strike Global Offensive\csgo\replays",
