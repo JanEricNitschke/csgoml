@@ -48,18 +48,18 @@ def main(args):
     parser.add_argument(
         "--startid",
         type=int,
-        default=69900,
+        default=70101,
         help="Analyze demos with a name above this id",
     )
     parser.add_argument(
         "--endid",
         type=int,
-        default=69909,
+        default=70001,
         help="Analyze demos with a name below this id",
     )
     options = parser.parse_args(args)
 
-    # Done are: 68900-69908;
+    # Done are: 68900-70000;
 
     if options.debug:
         logging.basicConfig(
