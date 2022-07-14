@@ -3,46 +3,49 @@
     Typical usage example:
 
     analyzer = FightAnalyzer(
-    debug=False,
-    times=[5, 25],
-    directory="D:\\CSGO\\Demos\\Maps\\inferno",
-    log="D:\\CSGO\\ML\\CSGOML\\logs\\FightAnalyzer.log",
+        debug=options.debug,
+        directories=options.dirs,
+        log=options.log,
+        connection=connection,
+        cursor=cursor,
     )
-    dataframe = analyzer.analyze_demos()
-    analyzer.print_ct_win_percentage_for_time_cutoffs(dataframe)
+    analyzer.analyze_demos()
+    analyzer.print_ct_win_percentage_for_time_cutoffs(times, positions, weapons, classes, use_weapons_classes, options.map)
 """
 #!/usr/bin/env python
 
-from dataclasses import dataclass
 import os
 import argparse
 import sys
+import math
 import json
 import logging
-import pandas as pd
 import numpy as np
+import boto3
 from awpy.analytics.nav import find_closest_area
 from awpy.data import NAV
+import pymysql
+import mysql.connector
 
 
 class FightAnalyzer:
     """Determine whether a given engagement is favourable to the T or CT side.
 
     Attributes:
-        json: Path to save the resulting dataframe to
-        positions: A list [CTPositions, TPositions] where CT- and TPositions are lists of map locations that should be considered for the analysis.
-        times: A list containing the time window (start- and endtime) to consider for the analysis.
-        directory: A path to the directory where the demos to be analyzed reside.
-        weapons: A set of weapon names. Both sides should have had at least one of these weapons.
+        directories: A list of paths to the directories where the demos to be analyzed reside.
         n_analyzed: An integer of the number of demos that have been analyzed
+        current_frame_index: An integer of the index of the current frame in the current round
+        connection: Connection to a mysql database
+        cursor: A mysql cursor to the connection
     """
 
     def __init__(
         self,
         debug=False,
-        my_json=r"D:\CSGO\ML\CSGOML\Analysis\FightAnalyzer.json",
-        directory=r"D:\CSGO\Demos\Maps",
+        directories=None,
         log=r"D:\CSGO\ML\CSGOML\logs\FightAnalyzer.log",
+        connection=None,
+        cursor=None,
     ):
         if debug:
             logging.basicConfig(
@@ -64,60 +67,17 @@ class FightAnalyzer:
             )
         FightAnalyzer.logger = logging.getLogger("FightAnalyzer")
 
-        self.directory = directory
+        if directories is None:
+            self.directories = [
+                r"E:\PhD\MachineLearning\CSGOData\ParsedDemos",
+                r"D:\CSGO\Demos\Maps",
+            ]
+        else:
+            self.directories = directories
         self.current_frame_index = 0
         self.n_analyzed = 0
-        self.json = my_json
-        # Pistols = [
-        #    "CZ75 Auto",
-        #    "Desert Eagle",
-        #    "Dual Berettas",
-        #    "Five-SeveN",
-        #    "Glock-18",
-        #    "P2000",
-        #    "P250",
-        #    "R8 Revolver",
-        #    "Tec-9",
-        #    "USP-S",
-        # ]
-        # Heavy = ["MAG-7", "Nova", "Sawed-Off", "XM1014", "M249", "Negev"]
-        # SMG = ["MAC-10", "MP5-SD", "MP7", "MP9", "P90", "PP-Bizon", "UMP-45"]
-        # Rifles = [
-        #    "AK-47",
-        #    "AUG",
-        #    "FAMAS",
-        #    "Galil AR",
-        #    "M4A1",
-        #    "M4A4",
-        #    "SG 553",
-        #    "AWP",
-        #    "G3SG1",
-        #    "SCAR-20",
-        #    "SSG 08",
-        # ]
-        # Grenades = [
-        #    "Smoke Grenade",
-        #    "Flashbang",
-        #    "HE Grenade",
-        #    "Incendiary Grenade",
-        #    "Molotov",
-        #    "Decoy Grenade",
-        # ]
-        # Equipment = ["Knife", "Zeus x27"]
-        # WeaponNames = Pistols + Heavy + SMG + Rifles + Grenades + Equipment
-        # WeaponClasses = (
-        #    ["Pistols"] * len(Pistols)
-        #    + ["Heavy"] * len(Heavy)
-        #    + ["SMG"] * len(SMG)
-        #    + ["Rifle"] * len(Rifles)
-        #    + ["Grenade"] * len(Grenades)
-        #    + ["Equipment"] * len(Equipment)
-        # )
-        # self.weapon_df = pd.DataFrame(
-        #    list(zip(WeaponNames, WeaponClasses)), columns=["Name", "Class"]
-        # )
-        # weapon_dict = self.weapon_df["Name"].to_dict()
-        # self.weapon_dict = dict((v, k) for k, v in weapon_dict.items())
+        self.cursor = cursor
+        self.connection = connection
 
     def get_area_from_pos(self, map_name, pos):
         """Determine the area name for a given position.
@@ -235,86 +195,68 @@ class FightAnalyzer:
         CT_position,
         T_position,
         current_round,
-        results,
         match_id,
         map_name,
+        is_pro_game,
     ):
-        """Appends information of the round to the lists of the results dictionary
+        """Appends information of the round to MYSQL database
 
         Args:
             event: A dictionary containg all the information about the kill/damage event in question.
             game_time: An integer indicating how many seconds have passed since the start of the round
+            attacker_weapon: A string of the weapon used by the attacker of the event
+            victim_weapons: A list of strings of the weapons the victim of the event had in their inventory
+            CT_position: A string of the position of the CT in the event
+            T_position: A string of the position of the T in the event
             current_round: A dictionary containing all the information about the round the event occured in.
-            results: A dictionaory if lists holding the information of all relevant engagements
             match_id: A string containing the name of the demo file
             map_name: The name of the map that the current game was played on
+            is_pro_game: A boolean indicating whether the current round is from a pro game or not
 
         Returns:
-            None (lists in dictionary are appended to in place)
+            None (DB is appended to in place)
         """
-
-        EventID = (
+        event_id = (
             match_id
             + "-"
             + str(current_round["endTScore"] + current_round["endCTScore"])
             + "-"
             + str(game_time)
         )
-        results["EventID"].append(EventID)
-        results["AttackerWeapon"].append(attacker_weapon)
-        for weapon in victim_weapons:
-            results["VictimWeapons"]["EventID"].append(EventID)
-            results["VictimWeapons"]["VictimWeapon"].append(weapon)
-        results["Round"].append(
-            current_round["endTScore"] + current_round["endCTScore"]
+        sql = "INSERT INTO Events (EventID, MatchID, Round, Pro, MapName, Time, CTWon, CTArea, TArea, AttackerWeapon) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)"
+        val = (
+            event_id,
+            match_id,
+            current_round["endTScore"] + current_round["endCTScore"],
+            int(is_pro_game),
+            map_name,
+            game_time,
+            int(event["attackerSide"] == "CT"),
+            CT_position,
+            T_position,
+            attacker_weapon,
         )
-        results["CTWon"].append(int(event["attackerSide"] == "CT"))
-        results["Time"].append(game_time)
-        results["TArea"].append(T_position)
-        results["CTArea"].append(CT_position)
-        results["MatchID"].append(match_id)
-        results["Pro"].append(False)
-        results["MapName"].append(map_name)
+        logging.debug(sql, *val)
+        self.cursor.execute(sql, val)
+        for weapon in victim_weapons:
+            sql = "INSERT INTO VictimWeapons (EventID, VictimWeapon) VALUES (%s, %s)"
+            val = (event_id, weapon)
+            logging.debug(sql, *val)
+            self.cursor.execute(sql, val)
 
-    def initialize_results(self):
-        """Initializes the results dictionary
-
-        The dictionary contains the following keys:
-        AttackerWeapon, VictimWeapons, Round, CTWon, Time, CTArea, TArea, MatchID, Pro, MapName
-
-        Args:
-            None
-
-        Returns:
-            Empty results dictionary
-        """
-        results = {}
-        results["EventID"] = []
-        results["MatchID"] = []
-        results["Round"] = []
-        results["Pro"] = []
-        results["MapName"] = []
-        results["Time"] = []
-        results["CTWon"] = []
-        results["CTArea"] = []
-        results["TArea"] = []
-        results["AttackerWeapon"] = []
-        results["VictimWeapons"] = {"EventID": [], "VictimWeapon": []}
-        return results
-
-    def analyze_map(self, data, results, map_name):
-        """Loop over all rounds and their events and add those that fullfill all criteria to the results dict.
+    def analyze_map(self, data, map_name, match_id, is_pro_game):
+        """Loop over all rounds and their events and add them to a MYSQL database.
 
         Args:
             data: Json object of the parsed demo file
-            results: Dict of lists containing all relevant events
             map_name: String of the name of the map
+            match_id: String of the demo file name
+            is_pro_game: A boolean indicating whether the current map is from a pro game
 
         Returns:
-            None (results is modified in place)
+            None (DB is modified in place)
         """
         # Loop over rounds and each event in them and check if they fulfill all criteria
-        match_id = data["matchID"]
         ticks = {}
         # Round tickrate to power of two that is equal or larger
         ticks["tickRate"] = 1 << (data["tickRate"] - 1).bit_length()
@@ -324,8 +266,8 @@ class FightAnalyzer:
             logging.debug("Round:")
             logging.debug(current_round)
             # Go through all kill events
-            logging.debug("kills of that round:")
-            logging.debug(current_round["kills"])
+            # logging.debug("kills of that round:")
+            # logging.debug(current_round["kills"])
             if current_round["kills"] is None:
                 logging.debug("Round does not have kills recorded")
                 continue
@@ -345,96 +287,237 @@ class FightAnalyzer:
                     CT_position,
                     T_position,
                     current_round,
-                    results,
                     match_id,
                     map_name,
+                    is_pro_game,
                 )
+
+    def check_exists(self, match_id):
+        """Checks if the MYSQL DB already contains events from this match
+        Args:
+            match_id: String of the demo file name
+
+        Returns:
+            A boolean indicating whether there are already events from this match in the DB
+        """
+        sql = (
+            f"""SELECT COUNT(e.MatchID) FROM Events e WHERE e.MatchID = "{match_id}" """
+        )
+        logging.debug(sql)
+        self.cursor.execute(sql)
+        result = list(self.cursor.fetchone())
+        logging.debug(result)
+        return int(result[0]) > 0
 
     def analyze_demos(self):
         """Loops over the specified directory and analyzes each demo file.
 
-        Builds a dictionary of lists containing information about each kill event.
-        This information is written to a json file and returned in form of a dataframe.
+        Collects information about each kill event.
+        This information is written to a MYSQL DB
 
         Args:
             None
 
         Returns:
-            dataframe containing "Weapon", "Winner", "Round", "Time", "AttackerArea", "VictimArea", "MatchID" for each kill event
+            None (Modifies external MYSQL DB)
         """
-        results = self.initialize_results()
-        for directory in os.listdir(self.directory):
-            if "de_" + directory not in NAV and directory not in NAV:
-                logging.info(
-                    "Map %s|%s is not in supplied navigation files. Skipping it.",
-                    "de_" + directory,
-                    directory,
-                )
-                continue
-            directory = os.path.join(self.directory, directory)
-            logging.info("Scanning directory: %s", directory)
-            for filename in os.listdir(directory):
-                if filename.endswith(".json"):
-                    logging.debug("Working on file %s", filename)
-                    file_path = os.path.join(directory, filename)
-                    # checking if it is a file
-                    if os.path.isfile(file_path):
-                        with open(file_path, encoding="utf-8") as demo_json:
-                            demo_data = json.load(demo_json)
-                        map_name = demo_data["mapName"]
-                        self.analyze_map(demo_data, results, map_name)
-                        self.n_analyzed += 1
+        for maps_dir in self.directories:
+            for map_dir in os.listdir(maps_dir):
+                if "de_" + map_dir not in NAV and map_dir not in NAV:
+                    logging.info(
+                        "Map %s|%s is not in supplied navigation files. Skipping it.",
+                        "de_" + map_dir,
+                        map_dir,
+                    )
+                    continue
+                map_dir = os.path.join(maps_dir, map_dir)
+                logging.info("Scanning directory: %s", map_dir)
+                for filename in os.listdir(map_dir):
+                    if filename.endswith(".json"):
+                        logging.debug("Working on file %s", filename)
+                        file_path = os.path.join(map_dir, filename)
+                        # checking if it is a file
+                        if os.path.isfile(file_path):
+                            with open(file_path, encoding="utf-8") as demo_json:
+                                demo_data = json.load(demo_json)
+                            match_id = os.path.splitext(filename)[0]
+                            if self.check_exists(match_id):
+                                logging.info(
+                                    "There are already events from the file with the matchid %s in the database. Skipping it.",
+                                )
+                                continue
+                            is_pro_game = maps_dir != r"D:\CSGO\Demos\Maps"
+                            map_name = demo_data["mapName"]
+                            self.analyze_map(demo_data, map_name, match_id, is_pro_game)
+                            self.n_analyzed += 1
+                self.connection.commit()
         logging.info("Analyzed a total of %s demos!", self.n_analyzed)
-        event_weapon_mapping = pd.DataFrame(results["VictimWeapons"])
-        del results["VictimWeapons"]
-        dataframe = pd.DataFrame(results)
-        dict_dataframe = dataframe.to_dict()
-        dict_event_weapon_mapping = event_weapon_mapping.to_dict()
-        # dict_weapon_df = self.weapon_df.to_dict()
-        result_dict = {
-            "Events": dict_dataframe,
-            "Mapping": dict_event_weapon_mapping,
-            # "Weapons": dict_weapon_df,
-        }
-        dataframe.to_json(self.json)
-        with open(self.json, "w", encoding="utf-8") as outfile:
-            json.dump(result_dict, outfile)
-        return dataframe, event_weapon_mapping
 
-    def calculate_CT_win_percentage(self, dataframe):
+    def calculate_CT_win_percentage(
+        self, times, positions, weapons, classes, use_weapons_classes, map_name
+    ):
         """Calculates CT win percentage from CT and T kills
+
+        Queries information from a database to determine CT win percentage of events fitting the criteria
 
         Args:
             dataframe: dataframe containing winner side of each kill event
+            times: A a float indicating before which time the event should have happend
+            positions: A dicitionary of positions that are allowed/forbidden for each side of an event
+            weapons: A dictionary of weapons that are allowed/forbidden for each side of an event
+            classes: A dictionary of weapon classes that are allowed/forbidden for each side of an event
+            use_weapons_classes: A dictionary determining if weapons or classes should be used for each side
+            map_name: A string of the map that should be used for the query
 
         Returns:
             Tuples consisting of total number of kills and CT win percentage.
             If not kills happend then return (0, 0)
         """
-        logging.debug(dataframe)
-        if len(dataframe) > 0:
-            return len(dataframe), round(100 * dataframe["CTWon"].mean())
+        ct_pos = ", ".join(f'"{val}"' for val in positions["CT"]["Allowed"])
+        t_pos = ", ".join(f'"{val}"' for val in positions["T"]["Allowed"])
+        attacker_weapon = ", ".join(
+            f'"{val}"' for val in weapons["Attacker"]["Allowed"]
+        )
+        victim_weapon = ", ".join(f'"{val}"' for val in weapons["Victim"]["Allowed"])
+
+        not_ct_pos = ", ".join(f'"{val}"' for val in positions["CT"]["Forbidden"])
+        not_t_pos = ", ".join(f'"{val}"' for val in positions["T"]["Forbidden"])
+        not_attacker_weapon = ", ".join(
+            f'"{val}"' for val in weapons["Attacker"]["Forbidden"]
+        )
+        not_victim_weapon = ", ".join(
+            f'"{val}"' for val in weapons["Victim"]["Forbidden"]
+        )
+        attacker_classes = ", ".join(
+            f'"{val}"' for val in classes["Attacker"]["Allowed"]
+        )
+        victim_classes = ", ".join(f'"{val}"' for val in classes["Victim"]["Allowed"])
+        not_attacker_classes = ", ".join(
+            f'"{val}"' for val in classes["Attacker"]["Forbidden"]
+        )
+        not_victim_classes = ", ".join(
+            f'"{val}"' for val in classes["Victim"]["Forbidden"]
+        )
+
+        sql = (
+            f"""SELECT AVG(t.CTWon), COUNT(t.CTWon) """
+            f"""FROM ( """
+            f"""SELECT DISTINCT e.EventID, e.CTWon """
+            f"""FROM Events e JOIN VictimWeapons vw """
+            f"""ON e.EventID = vw.EventID """
+            f"""JOIN WeaponClasses wca """
+            f"""ON e.AttackerWeapon = wca.WeaponName """
+            f"""JOIN WeaponClasses wcv """
+            f"""ON vw.VictimWeapon = wcv.WeaponName """
+            f"""WHERE e.MapName = '{map_name}' """
+            f"""AND e.Time BETWEEN {times[0]} AND {times[1]} """
+        )
+        if ct_pos != "":
+            sql += f"""AND e.CTArea in ({ct_pos}) """
+        if t_pos != "":
+            sql += f"""AND e.TArea in ({t_pos}) """
+        if not_ct_pos != "":
+            sql += f"""AND e.CTArea NOT in ({not_ct_pos}) """
+        if not_t_pos != "":
+            sql += f"""AND e.TArea NOT in ({not_t_pos}) """
+
+        if use_weapons_classes["Attacker"] == "weapons":
+            if attacker_weapon != "":
+                sql += f"""AND e.AttackerWeapon in ({attacker_weapon}) """
+            if not_attacker_weapon != "":
+                sql += f"""AND e.AttackerWeapon NOT in ({not_attacker_weapon}) """
+        elif use_weapons_classes["Attacker"] == "classes":
+            if attacker_classes != "":
+                sql += f"""AND wca.Class in ({attacker_classes}) """
+            if not_attacker_classes != "":
+                sql += f"""AND wca.Class NOT in ({not_attacker_classes}) """
+        else:
+            logging.error(
+                "use_weapons_classes['Attacker'] has to be either 'weapons' or 'classes'. Was %s",
+                use_weapons_classes["Attacker"],
+            )
+            sys.exit(
+                "use_weapons_classes['Attacker'] has to be either 'weapons' or 'classes'. Was %s",
+                use_weapons_classes["Attacker"],
+            )
+        if use_weapons_classes["Victim"] == "weapons":
+            if victim_weapon != "":
+                sql += f"""AND vw.VictimWeapon in ({victim_weapon}) """
+            if not_victim_weapon != "":
+                sql += f"""AND vw.VictimWeapon NOT in ({not_victim_weapon}) """
+        elif use_weapons_classes["Victim"] == "classes":
+            if victim_classes != "":
+                sql += f"""AND wcv.Class in ({victim_classes}) """
+            if not_victim_classes != "":
+                sql += f"""AND wcv.Class NOT in ({not_victim_classes}) """
+        else:
+            logging.error(
+                "use_weapons_classes['Victim'] has to be either 'weapons' or 'classes'. Was %s",
+                use_weapons_classes["Victim"],
+            )
+            sys.exit(
+                "use_weapons_classes['Victim'] has to be either 'weapons' or 'classes'. Was %s",
+                use_weapons_classes["Victim"],
+            )
+
+        sql += """) t"""
+
+        logging.debug(sql)
+        self.cursor.execute(sql)
+        result = list(self.cursor.fetchone())
+
+        if result[1] > 0:
+            return result[1], round(100 * result[0])
         return 0, 0
 
-    def print_ct_win_percentage_for_time_cutoffs(self, dataframe, times):
+    def print_ct_win_percentage_for_time_cutoffs(
+        self, edge_times, positions, weapons, classes, use_weapons_classes, map_name
+    ):
         """Prints the total number of kills and CT win percentage for time slices starting from the lowest and always going to the lates
 
-        Args:
-            dataframe: A dataframe containing the time and winner of each kill event
+         Args:
+            dataframe: dataframe containing winner side of each kill event
+            edge_times: A list of two floats determining the times that should be considered for the event
+            positions: A dicitionary of positions that are allowed/forbidden for each side of an event
+            weapons: A dictionary of weapons that are allowed/forbidden for each side of an event
+            classes: A dictionary of weapon classes that are allowed/forbidden for each side of an event
+            use_weapons_classes: A dictionary determining if weapons or classes should be used for each side
+            map_name: A string of the map that should be used for the query
 
         Returns:
             None (just prints)
         """
         # Todo: Also plot
-        game_times = np.linspace(times[0], times[1], times[1] - times[0] + 1)
-
+        if edge_times[0] == 0 and edge_times[1] == 175:
+            game_times = [edge_times]
+        elif edge_times[0] == 0:
+            game_times = zip(
+                [0] * (edge_times[1] - edge_times[0]),
+                np.linspace(1, edge_times[1], edge_times[1] - edge_times[0]),
+            )
+        elif edge_times[1] == 175:
+            game_times = zip(
+                np.linspace(edge_times[0], 174, edge_times[1] - edge_times[0]),
+                [175] * (edge_times[1] - edge_times[0]),
+            )
+        else:
+            mean = (edge_times[1] + edge_times[0]) / 2
+            diff = edge_times[1] - edge_times[0]
+            if diff % 2:
+                game_times = zip(
+                    np.linspace(edge_times[0], math.floor(mean), math.ceil(diff / 2)),
+                    np.linspace(edge_times[1], math.ceil(mean), math.ceil(diff / 2)),
+                )
+            else:
+                game_times = zip(
+                    np.linspace(edge_times[0], int(mean - 1), int(diff / 2)),
+                    np.linspace(edge_times[1], int(mean + 1), int(diff / 2)),
+                )
         logging.info("CTWinPercentages:")
-        for time in game_times:
-            time_allowed = dataframe["Time"] < time
-
-            logging.info("Event times less than %s:", time)
+        for times in game_times:
+            logging.info("Event times less than %s:", times)
             kills, ct_win_perc = self.calculate_CT_win_percentage(
-                dataframe[time_allowed]
+                times, positions, weapons, classes, use_weapons_classes, map_name
             )
             logging.info("CT Win: %s %% Total Kills: %s", ct_win_perc, kills)
 
@@ -453,15 +536,9 @@ def main(args):
         help="Reanalyze demos instead of reading from existing json file.",
     )
     parser.add_argument(
-        "-j",
-        "--json",
-        default=r"D:\CSGO\ML\CSGOML\Analysis\FightAnalyzer.json",
-        help="Path of json containting preanalyzed results.",
-    )
-    parser.add_argument(
         "--starttime",
         type=int,
-        default=5,
+        default=0,
         help="Lower end of the clock time range that should be analyzed",
     )
     parser.add_argument(
@@ -471,10 +548,13 @@ def main(args):
         help="Upper end of the clock time range that should be analyzed",
     )
     parser.add_argument(
-        "--dir",
-        type=str,
-        default=r"D:\CSGO\Demos\Maps",
-        help="Directoy containting the demos to be analyzed.",
+        "--dirs",
+        nargs="*",
+        default=[
+            r"E:\PhD\MachineLearning\CSGOData\ParsedDemos",
+            r"D:\CSGO\Demos\Maps",
+        ],
+        help="All the directories that should be scanned for demos.",
     )
     parser.add_argument(
         "-l",
@@ -489,98 +569,113 @@ def main(args):
         help="Path to output log.",
     )
     options = parser.parse_args(args)
-
-    # if options.debug:
-    #    logging.basicConfig(
-    #        filename=options.log, encoding="utf-8", level=logging.DEBUG, filemode="w"
-    #    )
-    # else:
-    #    logging.basicConfig(
-    #        filename=options.log, encoding="utf-8", level=logging.INFO, filemode="w"
-    #    )
+    if options.debug:
+        logging.basicConfig(
+            filename=options.log, encoding="utf-8", level=logging.DEBUG, filemode="w"
+        )
+    else:
+        logging.basicConfig(
+            filename=options.log, encoding="utf-8", level=logging.INFO, filemode="w"
+        )
     times = [options.starttime, options.endtime]
-    positions = {"CT": {"TopofMid", "Middle"}, "T": {"Middle", "TRamp"}}
+    positions = {
+        "CT": {"Allowed": {"TopofMid", "Middle"}, "Forbidden": {}},
+        "T": {"Allowed": {"Middle", "TRamp"}, "Forbidden": {}},
+    }
+    use_weapons_classes = {"Attacker": "weapons", "Victim": "weapons"}
     weapons = {
         "Attacker": {
-            "M4A4",
-            "AWP",
-            "AK-47",
-            "Galil AR",
-            "M4A1",
-            "SG 553",
-            "SSG 08",
-            "G3SG1",
-            "SCAR-20",
-            "FAMAS",
+            "Allowed": {
+                "M4A4",
+                "AWP",
+                "AK-47",
+                "Galil AR",
+                "M4A1",
+                "SG 553",
+                "SSG 08",
+                "G3SG1",
+                "SCAR-20",
+                "FAMAS",
+                "AUG",
+            },
+            "Forbidden": {},
         },
         "Victim": {
-            "M4A4",
-            "AWP",
-            "AK-47",
-            "Galil AR",
-            "M4A1",
-            "SG 553",
-            "SSG 08",
-            "G3SG1",
-            "SCAR-20",
-            "FAMAS",
+            "Allowed": {
+                "M4A4",
+                "AWP",
+                "AK-47",
+                "Galil AR",
+                "M4A1",
+                "SG 553",
+                "SSG 08",
+                "G3SG1",
+                "SCAR-20",
+                "FAMAS",
+                "AUG",
+            },
+            "Forbidden": {},
         },
     }
+
+    classes = {
+        "Attacker": {
+            "Allowed": {
+                "Rifle",
+                "Heavy",
+                "SMG",
+                "Pistols",
+            },
+            "Forbidden": {},
+        },
+        "Victim": {
+            "Allowed": {
+                "Rifle",
+                "Heavy",
+            },
+            "Forbidden": {},
+        },
+    }
+
+    host = "fightanalyzer.ctox3zthjpph.eu-central-1.rds.amazonaws.com"
+    user = "IAM_USER"
+    database = "FightAnalyzerDB"
+    port = 3306
+    region = "eu-central-1"
+    os.environ["LIBMYSQL_ENABLE_CLEARTEXT_PLUGIN"] = "1"
+    session = boto3.Session()
+    client = session.client("rds")
+    token = client.generate_db_auth_token(
+        DBHostname=host, Port=port, DBUsername=user, Region=region
+    )
+    connection = pymysql.connect(
+        host=host,
+        user=user,
+        password=token,
+        database=database,
+        ssl_ca=r"D:\\CSGO\\ML\\CSGOML\AWS_Steps\\global-bundle.pem",
+    )
+
+    cursor = connection.cursor()
+
     analyzer = FightAnalyzer(
         debug=options.debug,
-        directory=options.dir,
+        directories=options.dirs,
         log=options.log,
-        my_json=options.json,
+        connection=connection,
+        cursor=cursor,
     )
+
     if options.analyze:
-        dataframe, mapping_df = analyzer.analyze_demos()
-    else:
-        with open(options.json, encoding="utf-8") as pre_analyzed:
-            data = json.load(pre_analyzed)
-        dataframe = pd.DataFrame(data["Events"])
-        mapping_df = pd.DataFrame(data["Mapping"])
-        # weapons_df = pd.DataFrame(data["Weapons"])
+        analyzer.analyze_demos()
 
-    logging.info(dataframe)
-    logging.info(mapping_df)
-    # logging.info(weapons_df)
+    logging.info("With TRamp allowed:")
+    analyzer.print_ct_win_percentage_for_time_cutoffs(
+        times, positions, weapons, classes, use_weapons_classes, options.map
+    )
 
-    # SELECT AVG(d.CTWon)
-    # FROM (
-    #  SELECT DISTINCT e.ID, e.CTWon
-    # FROM dataframe d JOIN VictimWeapons vw
-    # ON e.EventID = vw.EventID
-    # WHERE d.MapName = 'options.map'
-    # AND d.CTArea in positions["CT"]
-    # AND d.TArea in positions["T"]
-    # AND d.AttackerWeapon in weapons["Attacker"]
-    # AND vw.VictimWeapon in weapons["Victim"] ) t
-    # ---
-    # SELECT AVG(value1)
-    # FROM (
-    # SELECT DISTINCT e.ID, e.value1
-    # FROM events e JOIN MtoM m
-    # ON e.ID = m.EventID
-    # WHERE e.value2 IN (1,3) AND m.value3 IN (0,2,3,4,7,8)
-    # ) t
-    dataframe = dataframe[dataframe["MapName"] == options.map]
-    dataframe = dataframe[dataframe["CTArea"].isin(positions["CT"])]
-    dataframe = dataframe[dataframe["TArea"].isin(positions["T"])]
-    dataframe = dataframe[dataframe["AttackerWeapon"].isin(weapons["Attacker"])]
-    dataframe = dataframe[
-        dataframe["EventID"].apply(
-            lambda x: mapping_df.loc[mapping_df["EventID"] == x]
-            .loc[:, "VictimWeapon"]
-            .isin(weapons["Victim"])
-            .any()
-        )
-    ]
-    remove_Tramp = dataframe["TArea"] != "TRamp"
-
-    logging.info("With TRamp forbidden:")
-    analyzer.print_ct_win_percentage_for_time_cutoffs(dataframe[remove_Tramp], times)
-    logging.info("\nWith TRamp allowed:")
-    analyzer.print_ct_win_percentage_for_time_cutoffs(dataframe, times)
+    cursor.close()
+    connection.close()
 
 
 if __name__ == "__main__":
