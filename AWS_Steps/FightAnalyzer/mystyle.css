@@ -1,0 +1,106 @@
+body {
+    background-color: #232F3E;
+}
+
+h1 {
+    color: #722007;
+    font-family: Arial, Helvetica, sans-serif;
+    font-size: 50px;
+    text-align: center;
+}
+
+label,
+button {
+    color: #FF9900;
+    font-family: Arial, Helvetica, sans-serif;
+    font-size: 20px;
+    margin: 5px;
+}
+
+.radio_div {
+    width: 150px;
+    margin-left: 0px;
+    margin-right: 0px;
+}
+
+.dynamic_button {
+    font-size: 20px;
+    margin: 0px;
+    text-align: center;
+}
+
+.dynamic_button:hover {
+    background-color: #8d150c;
+}
+
+input {
+    color: #232F3E;
+    font-family: Arial, Helvetica, sans-serif;
+    font-size: 20px;
+    margin-left: 20px;
+}
+
+ul {
+    list-style-type: none;
+    font-size: 20px;
+    padding: 0px;
+    overflow: hidden;
+    background-color: #232F3E;
+    vertical-align: top;
+    margin: 0px;
+}
+
+li {
+    margin: 0px;
+    display: inline-block;
+}
+
+.dropbtn {
+    cursor: pointer;
+    vertical-align: top;
+    margin: 0px;
+}
+
+.dropdown {
+    position: relative;
+    display: inline-block;
+    vertical-align: top;
+    margin-top: 0px;
+    margin-bottom: 0px;
+    margin-right: 10px;
+}
+
+.dropdown-content {
+    display: none;
+    position: absolute;
+    background-color: #f9f9f9;
+    min-width: 0px;
+    max-width: 150px;
+    margin: 0px;
+    padding: 0px;
+    z-index: 1;
+    left: 0;
+}
+
+.dropdown:hover .dropdown-content {
+    display: block;
+    margin: 0px;
+    padding: 0px;
+}
+
+.dropdown:hover .dropbtn {
+    background-color: #3e8e41;
+}
+
+/* Create two equal columns that floats next to each other */
+.column {
+    padding: 5px;
+    display: inline-block;
+    vertical-align: top;
+}
+
+.row:after {
+    content: "";
+    display: table;
+    clear: both;
+}

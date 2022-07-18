@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="en-us">
+
+<head>
+    <meta charset="UTF-8" name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FightAnalyzer</title>
+    <link rel="stylesheet" href="mystyle.css">
+    <script src="myscript.js"></script>
+    <noscript>Sorry, your browser does not support JavaScript!</noscript>
+</head>
+
+<body onload="on_load()">
+    <h1>This is a Heading</h1>
+    <div class="row" , id="map_row">
+        <div class="column" , id="map_column">
+            <div>
+                <label for="map_select">Map:</label>
+                <select id="map_select" name="map_select" onchange="select_map(this)">
+                </select>
+            </div>
+        </div>
+    </div>
+    <div class="row" , id="attacker_row">
+        <div class="column" , id="attacker_column">
+            <div class="radio_div"><label>Attacker</label></div>
+
+            <div class="radio_div"><input type="radio" id="Attacker_Weapons" name="Attacker_weapons_classes" ,
+                    onclick="select_attacker_weapon_classes(this)" , value="Weapons">
+                <label for="Attacker_Weapons">Weapons</label>
+            </div>
+
+
+            <div class="radio_div"><input type="radio" id="Attacker_Classes" name="Attacker_weapons_classes"
+                    onclick="select_attacker_weapon_classes(this)" , value="Classes" , checked="checked">
+                <label for="Attacker_Classes">Classes</label>
+            </div>
+        </div>
+    </div>
+    <div class="row" , id="victim_row">
+        <div class="column" , id="victim_column">
+            <div>
+                <div class="radio_div"><label>Victim</label></div>
+
+                <div class="radio_div"><input type="radio" id="Victim_Weapons" name="Victim_weapons_classes" ,
+                        onclick="select_victim_weapon_classes(this)" , value="Weapons">
+                    <label for="Victim_Weapons">Weapons</label>
+                </div>
+
+                <div class="radio_div"><input type="radio" id="Victim_Classes" name="Victim_weapons_classes"
+                        onclick="select_victim_weapon_classes(this)" , value="Classes" , checked="checked">
+                    <label for="Victim_Classes">Classes</label>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="row" , id="time_row">
+        <div class="column" , id="time_column">
+            <div id="start_time">
+                <label for="start_second">Start second:</label>
+                <input type="number" id="start_second" name="start_second" min=0 max=174 onblur="adjust_end_min(this)"
+                    value=0>
+            </div>
+            <div id="end_time">
+                <label for="end_second">End second:</label>
+                <input type="number" id="end_second" name="end_second" min=1 max=175 onblur="adjust_start_max(this)"
+                    value=175>
+            </div>
+        </div>
+    </div>
+</body>
+
+</html>
