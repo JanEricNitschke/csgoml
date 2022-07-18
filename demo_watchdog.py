@@ -91,7 +91,7 @@ def on_modified(event):
             json_ending=ending,
         )
         logging.info(
-            "Calling analyter_sorter: analyzer = demo_analyzer_sorter.DemoAnalyzerSorter(indentation=True,dirs=[%s],log=None,maps_dir='E:\\PhD\\MachineLearning\\CSGOData\\ParsedDemos',json_ending=%s)",
+            "Calling analyzer_sorter: analyzer = demo_analyzer_sorter.DemoAnalyzerSorter(indentation=True,dirs=[%s],log=None,maps_dir='E:\\PhD\\MachineLearning\\CSGOData\\ParsedDemos',json_ending=%s)",
             path,
             ending,
         )
