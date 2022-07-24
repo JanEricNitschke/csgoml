@@ -49,6 +49,7 @@ connection = pymysql.connect(
     database=database,
     ssl_ca=r"D:\\CSGO\\ML\\CSGOML\AWS_Steps\\Certs\\global-bundle.pem",
 )
+
 # engine = create_engine(
 #     "mysql://{0}:{1}@{2}:{3}/{4}?charset=utf8".format(
 #         user, password, host, port, database
@@ -110,16 +111,62 @@ connection = pymysql.connect(
 # engine.dispose()
 with connection:
     cursor = connection.cursor()
-    cursor.execute("show grants for admin;")
+    # cursor.execute(
+    #     "CREATE TABLE Events (EventID int NOT NULL AUTO_INCREMENT, MatchID  TEXT, Round BIGINT, Pro  TINYINT(1), MapName VARCHAR(20), Time double, CTWon tinyint(1), CTArea VARCHAR(30), TArea VARCHAR(30), KillWeapon VARCHAR(30), PRIMARY KEY (EventID), INDEX (MapName, Time, CTArea, TArea, KillWeapon, Pro))"
+    # )
+    # cursor.execute(
+    #     "CREATE TABLE CTWeapons (EventID int, CTWeapon VARCHAR(30), FOREIGN KEY (EventID) REFERENCES Events(EventID), INDEX (EventID, CTWeapon))"
+    # )
+    # cursor.execute(
+    #     "CREATE TABLE TWeapons (EventID int, TWeapon VARCHAR(30), FOREIGN KEY (EventID) REFERENCES Events(EventID), INDEX (EventID, TWeapon))"
+    # )
+    # myresult = cursor.fetchall()
+    # for x in myresult:
+    #     logging.info(x)
+    # cursor.execute("DROP TABLE `VictimWeapons`")
+    # myresult = cursor.fetchall()
+    # for x in myresult:
+    #     logging.info(x)
+    # cursor.execute("ALTER TABLE `WeaponClasses` ADD PRIMARY KEY (`WeaponName`(255));")
+    # myresult = cursor.fetchall()
+    # for x in myresult:
+    #     logging.info(x)
+    cursor.execute("SHOW KEYS FROM Events")
     myresult = cursor.fetchall()
     for x in myresult:
         logging.info(x)
-    cursor.execute("show grants for IAM_USER;")
+    cursor.execute("SHOW INDEXES FROM Events")
     myresult = cursor.fetchall()
     for x in myresult:
         logging.info(x)
+    cursor.execute("SHOW INDEXES FROM CTWeapons")
+    myresult = cursor.fetchall()
+    for x in myresult:
+        logging.info(x)
+    cursor.execute("SHOW INDEXES FROM TWeapons")
+    myresult = cursor.fetchall()
+    for x in myresult:
+        logging.info(x)
+    cursor.execute("SHOW INDEXES FROM WeaponClasses")
+    myresult = cursor.fetchall()
+    for x in myresult:
+        logging.info(x)
+    # cursor.execute("show grants for admin;")
+    # myresult = cursor.fetchall()
+    # for x in myresult:
+    #     logging.info(x)
+    # cursor.execute("show grants for IAM_USER;")
+    # myresult = cursor.fetchall()
+    # for x in myresult:
+    #     logging.info(x)
 
-    sql = "select user,plugin,host from mysql.user;"
+    # sql = "select user,plugin,host from mysql.user;"
+    # cursor.execute(sql)
+    # myresult = cursor.fetchall()
+    # for x in myresult:
+    #     logging.info(x)
+
+    sql = "SELECT DISTINCT e.MapName FROM Events e"
     cursor.execute(sql)
     myresult = cursor.fetchall()
     for x in myresult:
@@ -145,32 +192,44 @@ with connection:
     result = cursor.fetchall()
     for i in result:
         logging.info(i)
-    sql = "SELECT MAX(`CTWon`) FROM `Events`"
-    cursor.execute(sql)
-    # Fetch all the records
-    result = cursor.fetchall()
-    for i in result:
-        logging.info(i)
-    sql = "SELECT  * FROM `Events` LIMIT 100"
+    sql = "SELECT * FROM `Events` LIMIT 10"
     cursor.execute(sql)
     # Fetch all the records
     result = cursor.fetchall()
     for i in result:
         logging.info(i)
 
-    sql = "DESCRIBE `VictimWeapons`"
+    sql = "DESCRIBE `CTWeapons`"
     cursor.execute(sql)
     result = cursor.fetchall()
     for i in result:
         logging.info(i)
 
-    sql = "SELECT COUNT(`EventID`) FROM `VictimWeapons`"
+    sql = "SELECT COUNT(`EventID`) FROM `CTWeapons`"
     cursor.execute(sql)
     # Fetch all the records
     result = cursor.fetchall()
     for i in result:
         logging.info(i)
-    sql = "SELECT * FROM `VictimWeapons` LIMIT 100"
+    sql = "SELECT * FROM `CTWeapons` LIMIT 10"
+    cursor.execute(sql)
+    result = cursor.fetchall()
+    for i in result:
+        logging.info(i)
+
+    sql = "DESCRIBE `TWeapons`"
+    cursor.execute(sql)
+    result = cursor.fetchall()
+    for i in result:
+        logging.info(i)
+
+    sql = "SELECT COUNT(`EventID`) FROM `TWeapons`"
+    cursor.execute(sql)
+    # Fetch all the records
+    result = cursor.fetchall()
+    for i in result:
+        logging.info(i)
+    sql = "SELECT * FROM `TWeapons` LIMIT 10"
     cursor.execute(sql)
 
     # Fetch all the records
