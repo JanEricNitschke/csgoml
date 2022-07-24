@@ -156,42 +156,65 @@ class FightAnalyzer:
         """
         logging.debug("Checking weapons!")
         victim_weapons = set()
+        attacker_weapons = set()
         while (
             self.current_frame_index < len(current_round["frames"])
             and current_round["frames"][self.current_frame_index]["tick"]
             <= event["tick"]
         ):
-            for player in current_round["frames"][self.current_frame_index][
-                event["victimSide"].lower()
-            ]["players"]:
-                if (
-                    event["victimSteamID"]
-                    and player["steamID"] == event["victimSteamID"]
-                ) or (
-                    (not event["victimSteamID"])
-                    and event["victimName"] == player["name"]
-                ):
-                    if player["inventory"] is None:
-                        self.current_frame_index += 1
-                        continue
-                    victim_weapons = {
-                        weapon["weaponName"]
-                        for weapon in player["inventory"]
-                        if weapon["weaponClass"] != "Grenade"
-                    }
+            if (
+                current_round["frames"][self.current_frame_index][
+                    event["victimSide"].lower()
+                ]["players"]
+                is not None
+            ):
+                for player in current_round["frames"][self.current_frame_index][
+                    event["victimSide"].lower()
+                ]["players"]:
+                    if (
+                        event["victimSteamID"]
+                        and player["steamID"] == event["victimSteamID"]
+                    ):
+                        if player["inventory"] is None:
+                            continue
+                        victim_weapons = {
+                            weapon["weaponName"] for weapon in player["inventory"]
+                        }
+            if (
+                current_round["frames"][self.current_frame_index][
+                    event["attackerSide"].lower()
+                ]["players"]
+                is not None
+            ):
+                for player in current_round["frames"][self.current_frame_index][
+                    event["attackerSide"].lower()
+                ]["players"]:
+                    if (
+                        event["attackerSteamID"]
+                        and player["steamID"] == event["attackerSteamID"]
+                    ):
+                        if player["inventory"] is None:
+                            continue
+                        attacker_weapons = {
+                            weapon["weaponName"] for weapon in player["inventory"]
+                        }
             self.current_frame_index += 1
         self.current_frame_index -= 1
-
+        if event["attackerSide"] == "T":
+            CT_weapons, T_weapons = victim_weapons, attacker_weapons
+        elif event["attackerSide"] == "CT":
+            CT_weapons, T_weapons = attacker_weapons, victim_weapons
         logging.debug("Attacker weapon: %s", event["weapon"])
         logging.debug("Victim weapons: %s", " ".join(victim_weapons))
-        return event["weapon"], victim_weapons
+        return event["weapon"], CT_weapons, T_weapons
 
     def summarize_round(
         self,
         event,
         game_time,
-        attacker_weapon,
-        victim_weapons,
+        kill_weapon,
+        CT_weapons,
+        T_weapons,
         CT_position,
         T_position,
         current_round,
@@ -216,16 +239,8 @@ class FightAnalyzer:
         Returns:
             None (DB is appended to in place)
         """
-        event_id = (
-            match_id
-            + "-"
-            + str(current_round["endTScore"] + current_round["endCTScore"])
-            + "-"
-            + str(game_time)
-        )
-        sql = "INSERT INTO Events (EventID, MatchID, Round, Pro, MapName, Time, CTWon, CTArea, TArea, AttackerWeapon) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)"
+        sql = "INSERT INTO Events (MatchID, Round, Pro, MapName, Time, CTWon, CTArea, TArea, KillWeapon) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)"
         val = (
-            event_id,
             match_id,
             current_round["endTScore"] + current_round["endCTScore"],
             int(is_pro_game),
@@ -234,12 +249,18 @@ class FightAnalyzer:
             int(event["attackerSide"] == "CT"),
             CT_position,
             T_position,
-            attacker_weapon,
+            kill_weapon,
         )
         logging.debug(sql, *val)
         self.cursor.execute(sql, val)
-        for weapon in victim_weapons:
-            sql = "INSERT INTO VictimWeapons (EventID, VictimWeapon) VALUES (%s, %s)"
+        event_id = self.cursor.lastrowid
+        for weapon in CT_weapons:
+            sql = "INSERT INTO CTWeapons (EventID, CTWeapon) VALUES (%s, %s)"
+            val = (event_id, weapon)
+            logging.debug(sql, *val)
+            self.cursor.execute(sql, val)
+        for weapon in T_weapons:
+            sql = "INSERT INTO TWeapons (EventID, TWeapon) VALUES (%s, %s)"
             val = (event_id, weapon)
             logging.debug(sql, *val)
             self.cursor.execute(sql, val)
@@ -272,18 +293,21 @@ class FightAnalyzer:
                 logging.debug("Round does not have kills recorded")
                 continue
             for event in current_round["kills"]:
+                if not event["victimSteamID"] or not event["attackerSteamID"]:
+                    continue
                 game_time = self.get_game_time(event, ticks)
                 CT_position, T_position = self.check_position(event, map_name)
                 if not CT_position or not T_position:
                     continue
-                attacker_weapon, victim_weapons = self.check_weapons(
+                kill_weapon, CT_weapons, T_weapons = self.check_weapons(
                     current_round, event
                 )
                 self.summarize_round(
                     event,
                     game_time,
-                    attacker_weapon,
-                    victim_weapons,
+                    kill_weapon,
+                    CT_weapons,
+                    T_weapons,
                     CT_position,
                     T_position,
                     current_round,
@@ -321,6 +345,11 @@ class FightAnalyzer:
         Returns:
             None (Modifies external MYSQL DB)
         """
+        sql = "SELECT DISTINCT e.MatchID FROM Events e"
+        self.cursor.execute(sql)
+        done_set = set()
+        for x in self.cursor.fetchall():
+            done_set.add(x[0])
         for maps_dir in self.directories:
             for map_dir in os.listdir(maps_dir):
                 if "de_" + map_dir not in NAV and map_dir not in NAV:
@@ -341,11 +370,13 @@ class FightAnalyzer:
                             with open(file_path, encoding="utf-8") as demo_json:
                                 demo_data = json.load(demo_json)
                             match_id = os.path.splitext(filename)[0]
-                            if self.check_exists(match_id):
-                                logging.info(
+
+                            if match_id in done_set:
+                                logging.debug(
                                     "There are already events from the file with the matchid %s in the database. Skipping it.",
                                 )
                                 continue
+                            logging.info(match_id)
                             is_pro_game = maps_dir != r"D:\CSGO\Demos\Maps"
                             map_name = demo_data["mapName"]
                             self.analyze_map(demo_data, map_name, match_id, is_pro_game)
@@ -362,7 +393,7 @@ class FightAnalyzer:
 
         Args:
             dataframe: dataframe containing winner side of each kill event
-            times: A a float indicating before which time the event should have happend
+            times: A list of two floats indicating between which times the event should have occured
             positions: A dicitionary of positions that are allowed/forbidden for each side of an event
             weapons: A dictionary of weapons that are allowed/forbidden for each side of an event
             classes: A dictionary of weapon classes that are allowed/forbidden for each side of an event
@@ -375,40 +406,34 @@ class FightAnalyzer:
         """
         ct_pos = ", ".join(f'"{val}"' for val in positions["CT"]["Allowed"])
         t_pos = ", ".join(f'"{val}"' for val in positions["T"]["Allowed"])
-        attacker_weapon = ", ".join(
-            f'"{val}"' for val in weapons["Attacker"]["Allowed"]
-        )
-        victim_weapon = ", ".join(f'"{val}"' for val in weapons["Victim"]["Allowed"])
+        T_weapon = ", ".join(f'"{val}"' for val in weapons["T"]["Allowed"])
+        not_T_weapon = ", ".join(f'"{val}"' for val in weapons["T"]["Forbidden"])
+        CT_weapon = ", ".join(f'"{val}"' for val in weapons["CT"]["Allowed"])
+        not_CT_weapon = ", ".join(f'"{val}"' for val in weapons["CT"]["Forbidden"])
+        Kill_weapon = ", ".join(f'"{val}"' for val in weapons["Kill"])
+        # not_ct_pos = ", ".join(f'"{val}"' for val in positions["CT"]["Forbidden"])
+        # not_t_pos = ", ".join(f'"{val}"' for val in positions["T"]["Forbidden"])
 
-        not_ct_pos = ", ".join(f'"{val}"' for val in positions["CT"]["Forbidden"])
-        not_t_pos = ", ".join(f'"{val}"' for val in positions["T"]["Forbidden"])
-        not_attacker_weapon = ", ".join(
-            f'"{val}"' for val in weapons["Attacker"]["Forbidden"]
-        )
-        not_victim_weapon = ", ".join(
-            f'"{val}"' for val in weapons["Victim"]["Forbidden"]
-        )
-        attacker_classes = ", ".join(
-            f'"{val}"' for val in classes["Attacker"]["Allowed"]
-        )
-        victim_classes = ", ".join(f'"{val}"' for val in classes["Victim"]["Allowed"])
-        not_attacker_classes = ", ".join(
-            f'"{val}"' for val in classes["Attacker"]["Forbidden"]
-        )
-        not_victim_classes = ", ".join(
-            f'"{val}"' for val in classes["Victim"]["Forbidden"]
-        )
+        CT_classes = ", ".join(f'"{val}"' for val in classes["CT"]["Allowed"])
+        T_classes = ", ".join(f'"{val}"' for val in classes["T"]["Allowed"])
+        Kill_classes = ", ".join(f'"{val}"' for val in classes["Kill"])
+        not_CT_classes = ", ".join(f'"{val}"' for val in classes["CT"]["Forbidden"])
+        not_T_classes = ", ".join(f'"{val}"' for val in classes["T"]["Forbidden"])
 
         sql = (
             f"""SELECT AVG(t.CTWon), COUNT(t.CTWon) """
             f"""FROM ( """
             f"""SELECT DISTINCT e.EventID, e.CTWon """
-            f"""FROM Events e JOIN VictimWeapons vw """
-            f"""ON e.EventID = vw.EventID """
-            f"""JOIN WeaponClasses wca """
-            f"""ON e.AttackerWeapon = wca.WeaponName """
-            f"""JOIN WeaponClasses wcv """
-            f"""ON vw.VictimWeapon = wcv.WeaponName """
+            f"""FROM Events e JOIN CTWeapons ctw """
+            f"""ON e.EventID = ctw.EventID """
+            f"""JOIN TWeapons tw """
+            f"""ON e.EventID = tw.EventID """
+            f"""JOIN WeaponClasses wcct """
+            f"""ON ctw.CTWeapon = wcct.WeaponName """
+            f"""JOIN WeaponClasses wct """
+            f"""ON tw.TWeapon = wct.WeaponName """
+            f"""JOIN WeaponClasses wck """
+            f"""ON e.KillWeapon = wck.WeaponName """
             f"""WHERE e.MapName = '{map_name}' """
             f"""AND e.Time BETWEEN {times[0]} AND {times[1]} """
         )
@@ -416,53 +441,43 @@ class FightAnalyzer:
             sql += f"""AND e.CTArea in ({ct_pos}) """
         if t_pos != "":
             sql += f"""AND e.TArea in ({t_pos}) """
-        if not_ct_pos != "":
-            sql += f"""AND e.CTArea NOT in ({not_ct_pos}) """
-        if not_t_pos != "":
-            sql += f"""AND e.TArea NOT in ({not_t_pos}) """
+        # if not_ct_pos != "":
+        #     sql += f"""AND e.CTArea NOT in ({not_ct_pos}) """
+        # if not_t_pos != "":
+        #     sql += f"""AND e.TArea NOT in ({not_t_pos}) """
 
-        if use_weapons_classes["Attacker"] == "weapons":
-            if attacker_weapon != "":
-                sql += f"""AND e.AttackerWeapon in ({attacker_weapon}) """
-            if not_attacker_weapon != "":
-                sql += f"""AND e.AttackerWeapon NOT in ({not_attacker_weapon}) """
-        elif use_weapons_classes["Attacker"] == "classes":
-            if attacker_classes != "":
-                sql += f"""AND wca.Class in ({attacker_classes}) """
-            if not_attacker_classes != "":
-                sql += f"""AND wca.Class NOT in ({not_attacker_classes}) """
-        else:
-            logging.error(
-                "use_weapons_classes['Attacker'] has to be either 'weapons' or 'classes'. Was %s",
-                use_weapons_classes["Attacker"],
-            )
-            sys.exit(
-                "use_weapons_classes['Attacker'] has to be either 'weapons' or 'classes'. Was %s",
-                use_weapons_classes["Attacker"],
-            )
-        if use_weapons_classes["Victim"] == "weapons":
-            if victim_weapon != "":
-                sql += f"""AND vw.VictimWeapon in ({victim_weapon}) """
-            if not_victim_weapon != "":
-                sql += f"""AND vw.VictimWeapon NOT in ({not_victim_weapon}) """
-        elif use_weapons_classes["Victim"] == "classes":
-            if victim_classes != "":
-                sql += f"""AND wcv.Class in ({victim_classes}) """
-            if not_victim_classes != "":
-                sql += f"""AND wcv.Class NOT in ({not_victim_classes}) """
-        else:
-            logging.error(
-                "use_weapons_classes['Victim'] has to be either 'weapons' or 'classes'. Was %s",
-                use_weapons_classes["Victim"],
-            )
-            sys.exit(
-                "use_weapons_classes['Victim'] has to be either 'weapons' or 'classes'. Was %s",
-                use_weapons_classes["Victim"],
-            )
+        if use_weapons_classes["CT"] == "weapons":
+            if CT_weapon != "":
+                sql += f"""AND ctw.CTWeapon in ({CT_weapon}) """
+            if not_CT_weapon != "":
+                sql += f"""AND ctw.CTWeapon NOT in ({not_CT_weapon}) """
+        elif use_weapons_classes["CT"] == "classes":
+            if CT_classes != "":
+                sql += f"""AND wcct.Class in ({CT_classes}) """
+            if not_CT_classes != "":
+                sql += f"""AND wcct.Class NOT in ({not_CT_classes}) """
+
+        if use_weapons_classes["T"] == "weapons":
+            if T_weapon != "":
+                sql += f"""AND tw.TWeapon in ({T_weapon}) """
+            if not_T_weapon != "":
+                sql += f"""AND tw.TWeapon NOT in ({not_T_weapon}) """
+        elif use_weapons_classes["T"] == "classes":
+            if T_classes != "":
+                sql += f"""AND wct.Class in ({T_classes}) """
+            if not_T_classes != "":
+                sql += f"""AND wct.Class NOT in ({not_T_classes}) """
+
+        if use_weapons_classes["Kill"] == "weapons":
+            if Kill_weapon != "":
+                sql += f"""AND e.KillWeapon in ({Kill_weapon}) """
+        elif use_weapons_classes["Kill"] == "classes":
+            if Kill_classes != "":
+                sql += f"""AND wck.Class in ({Kill_classes}) """
 
         sql += """) t"""
 
-        logging.debug(sql)
+        logging.info(sql)
         self.cursor.execute(sql)
         result = list(self.cursor.fetchone())
 
@@ -551,7 +566,7 @@ def main(args):
         "--dirs",
         nargs="*",
         default=[
-            r"E:\PhD\MachineLearning\CSGOData\ParsedDemos",
+            # r"E:\PhD\MachineLearning\CSGOData\ParsedDemos",
             r"D:\CSGO\Demos\Maps",
         ],
         help="All the directories that should be scanned for demos.",
@@ -571,20 +586,31 @@ def main(args):
     options = parser.parse_args(args)
     if options.debug:
         logging.basicConfig(
-            filename=options.log, encoding="utf-8", level=logging.DEBUG, filemode="w"
+            filename=options.log,
+            encoding="utf-8",
+            level=logging.DEBUG,
+            filemode="w",
+            format="%(asctime)s %(levelname)-8s %(message)s",
+            datefmt="%Y-%m-%d %H:%M:%S",
         )
     else:
         logging.basicConfig(
-            filename=options.log, encoding="utf-8", level=logging.INFO, filemode="w"
+            filename=options.log,
+            encoding="utf-8",
+            level=logging.INFO,
+            filemode="w",
+            format="%(asctime)s %(levelname)-8s %(message)s",
+            datefmt="%Y-%m-%d %H:%M:%S",
         )
+
     times = [options.starttime, options.endtime]
     positions = {
         "CT": {"Allowed": {"TopofMid", "Middle"}, "Forbidden": {}},
         "T": {"Allowed": {"Middle", "TRamp"}, "Forbidden": {}},
     }
-    use_weapons_classes = {"Attacker": "weapons", "Victim": "weapons"}
+    use_weapons_classes = {"CT": "weapons", "T": "weapons", "Kill": "weapons"}
     weapons = {
-        "Attacker": {
+        "CT": {
             "Allowed": {
                 "M4A4",
                 "AWP",
@@ -600,7 +626,20 @@ def main(args):
             },
             "Forbidden": {},
         },
-        "Victim": {
+        "Kill": [
+            "M4A4",
+            "AWP",
+            "AK-47",
+            "Galil AR",
+            "M4A1",
+            "SG 553",
+            "SSG 08",
+            "G3SG1",
+            "SCAR-20",
+            "FAMAS",
+            "AUG",
+        ],
+        "T": {
             "Allowed": {
                 "M4A4",
                 "AWP",
@@ -619,7 +658,7 @@ def main(args):
     }
 
     classes = {
-        "Attacker": {
+        "CT": {
             "Allowed": {
                 "Rifle",
                 "Heavy",
@@ -628,13 +667,19 @@ def main(args):
             },
             "Forbidden": {},
         },
-        "Victim": {
+        "T": {
             "Allowed": {
                 "Rifle",
                 "Heavy",
             },
             "Forbidden": {},
         },
+        "Kill": [
+            "Rifle",
+            "Heavy",
+            "SMG",
+            "Pistols",
+        ],
     }
 
     host = "fightanalyzer.ctox3zthjpph.eu-central-1.rds.amazonaws.com"
