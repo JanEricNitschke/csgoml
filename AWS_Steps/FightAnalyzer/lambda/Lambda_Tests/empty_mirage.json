@@ -1,0 +1,38 @@
+{
+    "map_name": "de_mirage",
+    "weapons": {
+        "Kill": [],
+        "CT": {
+            "Allowed": [],
+            "Forbidden": []
+        },
+        "T": {
+            "Allowed": [],
+            "Forbidden": []
+        }
+    },
+    "classes": {
+        "Kill": [],
+        "CT": {
+            "Allowed": [],
+            "Forbidden": []
+        },
+        "T": {
+            "Allowed": [],
+            "Forbidden": []
+        }
+    },
+    "positions": {
+        "CT": [],
+        "T": []
+    },
+    "use_weapons_classes": {
+        "CT": "weapons",
+        "Kill": "weapons",
+        "T": "weapons"
+    },
+    "times": {
+        "start": 0,
+        "end": 175
+    }
+}

@@ -1,0 +1,89 @@
+{
+    "map_name": "de_inferno",
+    "weapons": {
+        "Kill": [
+            "M4A4",
+            "AWP",
+            "AK-47",
+            "Galil AR",
+            "M4A1",
+            "SG 553",
+            "SSG 08",
+            "G3SG1",
+            "SCAR-20",
+            "FAMAS",
+            "AUG"
+        ],
+        "CT": {
+            "Allowed": [
+                "M4A4",
+                "AWP",
+                "AK-47",
+                "Galil AR",
+                "M4A1",
+                "SG 553",
+                "SSG 08",
+                "G3SG1",
+                "SCAR-20",
+                "FAMAS",
+                "AUG"
+            ],
+            "Forbidden": []
+        },
+        "T": {
+            "Allowed": [
+                "M4A4",
+                "AWP",
+                "AK-47",
+                "Galil AR",
+                "M4A1",
+                "SG 553",
+                "SSG 08",
+                "G3SG1",
+                "SCAR-20",
+                "FAMAS",
+                "AUG"
+            ],
+            "Forbidden": []
+        }
+    },
+    "classes": {
+        "Kill": [
+            "Rifle",
+            "Heavy"
+        ],
+        "CT": {
+            "Allowed": [
+                "Rifle",
+                "Heavy"
+            ],
+            "Forbidden": []
+        },
+        "T": {
+            "Allowed": [
+                "Rifle",
+                "Heavy"
+            ],
+            "Forbidden": []
+        }
+    },
+    "positions": {
+        "CT": [
+            "TopofMid",
+            "Middle"
+        ],
+        "T": [
+            "Middle",
+            "TRamp"
+        ]
+    },
+    "use_weapons_classes": {
+        "CT": "weapons",
+        "Kill": "weapons",
+        "T": "weapons"
+    },
+    "times": {
+        "start": 0,
+        "end": 25
+    }
+}
