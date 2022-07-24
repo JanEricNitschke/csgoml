@@ -9,15 +9,19 @@ const de_overpass = ['BackofA', 'LowerPark', 'BombsiteA', 'Connector', 'Canal', 
 const de_train = ['Tunnel2', 'TStairs', 'BombsiteA', 'TMain', 'Ivy', 'Kitchen', 'BombsiteB', 'CTSpawn', 'Tunnel', 'LadderTop', 'BackofB', 'LockerRoom', 'Connector', 'TSpawn', 'Tunnel1', 'LadderBottom', 'SnipersNest', 'Scaffolding', 'Alley', 'Dumpster', 'BPlatform', 'Tunnels', 'PopDog', 'ElectricalBox', 'None']
 const de_vertigo = ['Pit', 'Side', 'BombsiteA', 'BombsiteB', 'Tunnels', 'ARamp', 'Elevator', 'TSpawn', 'BackDoor', 'BackofA', 'Mid', 'LadderTop', 'Bridge', 'APlatform', 'Scaffolding', 'LadderBottom', 'CTSpawn', 'BackofB', 'TCorridorUp', 'TopofMid', 'Window', 'Crane', 'None']
 
-const attacker_weapons = ["CZ75 Auto", "Desert Eagle", "Dual Berettas", "Five-SeveN", "Glock-18",
+const kill_weapons = ["CZ75 Auto", "Desert Eagle", "Dual Berettas", "Five-SeveN", "Glock-18",
     "P2000", "P250", "R8 Revolver", "Tec-9", "USP-S", "MAG-7", "Nova", "Sawed-Off", "XM1014", "M249",
     "Negev", "MAC-10", "MP5-SD", "MP7", "MP9", "P90", "PP-Bizon", "UMP-45", "AK-47", "AUG", "FAMAS",
-    "Galil AR", "M4A1", "M4A4", "SG 553", "AWP", "G3SG1", "SCAR-20", "SSG 08"]
-const victim_weapons_allowed = attacker_weapons.concat(["Smoke Grenade", "Flashbang", "HE Grenade", "Incendiary Grenade", "Molotov", "Decoy Grenade", "Knife", "Zeus x27"])
-const victim_weapons_forbidden = attacker_weapons.concat(["Smoke Grenade", "Flashbang", "HE Grenade", "Incendiary Grenade", "Molotov", "Decoy Grenade", "Knife", "Zeus x27"])
-const attacker_classes = ["Pistols", "Heavy", "SMG", "Rifle", "Grenade", "Equipment"]
-const victim_classes_allowed = ["Pistols", "Heavy", "SMG", "Rifle"]
-const victim_classes_forbidden = ["Pistols", "Heavy", "SMG", "Rifle"]
+    "Galil AR", "M4A1", "M4A4", "SG 553", "AWP", "G3SG1", "SCAR-20", "SSG 08", "Smoke Grenade", "Flashbang", "HE Grenade", "Incendiary Grenade", "Molotov", "Decoy Grenade", "Knife", "Zeus x27"]
+const t_weapons_allowed = kill_weapons
+const t_weapons_forbidden = kill_weapons
+const ct_weapons_allowed = kill_weapons
+const ct_weapons_forbidden = kill_weapons
+const kill_classes = ["Pistols", "Heavy", "SMG", "Rifle", "Grenade", "Equipment"]
+const t_classes_allowed = kill_classes
+const t_classes_forbidden = kill_classes
+const ct_classes_allowed = kill_classes
+const ct_classes_forbidden = kill_classes
 const maps_map = new Map();
 maps_map.set("de_ancient", de_ancient)
 maps_map.set("de_cache", de_cache)
@@ -30,18 +34,24 @@ maps_map.set("de_overpass", de_overpass)
 maps_map.set("de_train", de_train)
 maps_map.set("de_vertigo", de_vertigo)
 const weapons_map = new Map();
-weapons_map.set('AttackerWeapon', attacker_weapons);
-weapons_map.set('AttackerClasses', attacker_classes);
-weapons_map.set('VictimWeaponAllowed', victim_weapons_allowed);
-weapons_map.set('VictimWeaponForbidden', victim_weapons_forbidden);
-weapons_map.set('VictimClassesAllowed', victim_classes_allowed);
-weapons_map.set('VictimClassesForbidden', victim_classes_forbidden);
+weapons_map.set('Kill_Weapon', kill_weapons);
+weapons_map.set('Kill_Classes', kill_classes);
+weapons_map.set('CT_WeaponAllowed', ct_weapons_allowed);
+weapons_map.set('CT_ClassesAllowed', ct_classes_allowed);
+weapons_map.set('CT_WeaponForbidden', ct_weapons_forbidden);
+weapons_map.set('CT_ClassesForbidden', ct_classes_forbidden);
+weapons_map.set('T_WeaponAllowed', t_weapons_allowed);
+weapons_map.set('T_WeaponForbidden', t_weapons_forbidden);
+weapons_map.set('T_ClassesAllowed', t_classes_allowed);
+weapons_map.set('T_ClassesForbidden', t_classes_forbidden);
 
 function on_load() {
     for (const [key, value] of maps_map) {
+        map_div = document.createElement("div")
+        map_div.setAttribute("id", key + "_div")
         for (const side of ["CT", "T"]) {
-            div = document.createElement("div")
-            div.setAttribute("id", key + "_" + side + "_div");
+            side_div = document.createElement("div")
+            side_div.setAttribute("id", key + "_" + side + "_div");
             dropdown = document.createElement("div");
             dropdown.setAttribute("class", "dropdown");
             dropdown.setAttribute("id", key + "_" + side + "_drop");
@@ -61,15 +71,17 @@ function on_load() {
                 addBtn.onclick = AddElement;
                 dropdown_content.appendChild(addBtn)
             }
-            column = document.getElementById("map_column")
-            div.appendChild(dropdown)
+
+            side_div.appendChild(dropdown)
             list = document.createElement("ul")
             list.setAttribute("id", key + "_" + side + "_list")
             list.style.display = "inline-block"
-            div.style.display = "none"
-            div.appendChild(list)
-            column.appendChild(div)
+            side_div.style.display = "none"
+            side_div.appendChild(list)
+            map_div.appendChild(side_div)
         }
+        component = document.getElementById("map_component")
+        component.appendChild(map_div)
         option = document.createElement("option")
         option.setAttribute("value", key)
         option.setAttribute("id", key + "_select")
@@ -100,51 +112,70 @@ function on_load() {
             addBtn.onclick = AddElement;
             dropdown_content.appendChild(addBtn)
         }
-        var column_name = key.split(/(?=[A-Z])/)[0].toLowerCase() + "_column"
-        column = document.getElementById(column_name)
+        var component_name = key.split("_")[0].toLowerCase() + "_component"
+        component = document.getElementById(component_name)
         div.appendChild(dropdown)
         list = document.createElement("ul")
         list.setAttribute("id", key + "_list")
         list.style.display = "inline-block"
         div.appendChild(list)
-        column.appendChild(div)
+        component.appendChild(div)
     }
-    document.getElementById("Attacker_Classes").click();
-    document.getElementById("Victim_Classes").click();
+    document.getElementById("CT_Classes").click();
+    document.getElementById("Kill_Classes").click();
+    document.getElementById("T_Classes").click();
     document.getElementById("map_select").onchange();
 }
 
-var currentAttackerValue = 0;
-function select_attacker_weapon_classes(myRadio) {
-    currentAttackerValue = myRadio.value;
+var currentKillValue = 0;
+function select_kill_weapon_classes(myRadio) {
+    currentKillValue = myRadio.value;
     target = myRadio.id.split("_")[0]
-    if (currentAttackerValue == "Classes") {
+    if (currentKillValue == "classes") {
 
-        document.getElementById(target + "Weapon_div").style.display = "none";
-        document.getElementById(target + "Classes_div").style.display = "block";
+        document.getElementById(target + "_Weapon_div").style.display = "none";
+        document.getElementById(target + "_Classes_div").style.display = "block";
 
     }
     else {
 
-        document.getElementById(target + "Weapon_div").style.display = "block";
-        document.getElementById(target + "Classes_div").style.display = "none";
+        document.getElementById(target + "_Weapon_div").style.display = "block";
+        document.getElementById(target + "_Classes_div").style.display = "none";
 
     }
 }
-var currentVictimValue = 0;
-function select_victim_weapon_classes(myRadio) {
-    currentVictimValue = myRadio.value;
+var currentTValue = 0;
+function select_T_weapon_classes(myRadio) {
+    currentTValue = myRadio.value;
     target = myRadio.id.split("_")[0]
-    if (currentVictimValue == "Classes") {
+    if (currentTValue == "classes") {
         for (const permission of ["Allowed", "Forbidden"]) {
-            document.getElementById(target + "Weapon" + permission + "_div").style.display = "none";
-            document.getElementById(target + "Classes" + permission + "_div").style.display = "block";
+            document.getElementById(target + "_Weapon" + permission + "_div").style.display = "none";
+            document.getElementById(target + "_Classes" + permission + "_div").style.display = "block";
         }
     }
     else {
         for (const permission of ["Allowed", "Forbidden"]) {
-            document.getElementById(target + "Weapon" + permission + "_div").style.display = "block";
-            document.getElementById(target + "Classes" + permission + "_div").style.display = "none";
+            document.getElementById(target + "_Weapon" + permission + "_div").style.display = "block";
+            document.getElementById(target + "_Classes" + permission + "_div").style.display = "none";
+        }
+    }
+}
+
+var currentCTValue = 0;
+function select_CT_weapon_classes(myRadio) {
+    currentCTValue = myRadio.value;
+    target = myRadio.id.split("_")[0]
+    if (currentCTValue == "classes") {
+        for (const permission of ["Allowed", "Forbidden"]) {
+            document.getElementById(target + "_Weapon" + permission + "_div").style.display = "none";
+            document.getElementById(target + "_Classes" + permission + "_div").style.display = "block";
+        }
+    }
+    else {
+        for (const permission of ["Allowed", "Forbidden"]) {
+            document.getElementById(target + "_Weapon" + permission + "_div").style.display = "block";
+            document.getElementById(target + "_Classes" + permission + "_div").style.display = "none";
         }
     }
 }
@@ -152,6 +183,8 @@ function select_victim_weapon_classes(myRadio) {
 var old_value = "0";
 function select_map(mySelect) {
     currentValue = mySelect.value
+    map_hull = document.getElementById("map_hull")
+    map_hull.src = "map_hulls/hulls_" + currentValue + ".png"
     for (const [key, value] of maps_map) {
         for (const side of ["CT", "T"]) {
             if (key == old_value) {
@@ -218,4 +251,168 @@ function adjust_start_max(end_number) {
     }
     start_input = document.getElementById("start_second")
     start_input.setAttribute("max", parseInt(value) - 1)
+}
+
+function fill_list_with_children_text(my_list_id) {
+    const my_list = []
+    children = document.getElementById(my_list_id).children
+    for (var i = 0; i < children.length; i++) {
+        my_list.push(children[i].innerText)
+    }
+    return my_list
+}
+
+// selecting loading div
+
+async function collect_query_input() {
+    var map_name = document.getElementById("map_select").value
+    const CT_pos = fill_list_with_children_text(map_name + "_CT_list")
+    const T_pos = fill_list_with_children_text(map_name + "_T_list")
+    var use_weapons_classes_Kill = document.querySelector('input[name="Kill_weapons_classes"]:checked').value
+    var Kill_classes_q = []
+    var Kill_weapons_q = []
+    if (use_weapons_classes_Kill == "Weapons") {
+        Kill_weapons_q = fill_list_with_children_text("Kill_Weapon_list")
+    }
+    else {
+        Kill_classes_q = fill_list_with_children_text("Kill_Classes_list")
+    }
+    var CT_classes_forbidden_q = []
+    var CT_classes_allowed_q = []
+    var CT_weapons_forbidden_q = []
+    var CT_weapons_allowed_q = []
+    use_weapons_classes_CT = document.querySelector('input[name="CT_weapons_classes"]:checked').value
+    if (use_weapons_classes_CT == "Weapons") {
+        CT_weapons_forbidden_q = fill_list_with_children_text("CT_WeaponForbidden_list")
+        CT_weapons_allowed_q = fill_list_with_children_text("CT_WeaponAllowed_list")
+    }
+    else {
+        CT_classes_forbidden_q = fill_list_with_children_text("CT_ClassesForbidden_list")
+        CT_classes_allowed_q = fill_list_with_children_text("CT_ClassesAllowed_list")
+    }
+    var T_classes_forbidden_q = []
+    var T_classes_allowed_q = []
+    var T_weapons_forbidden_q = []
+    var T_weapons_allowed_q = []
+    use_weapons_classes_T = document.querySelector('input[name="T_weapons_classes"]:checked').value
+    if (use_weapons_classes_T == "Weapons") {
+        T_weapons_forbidden_q = fill_list_with_children_text("T_WeaponForbidden_list")
+        T_weapons_allowed_q = fill_list_with_children_text("T_WeaponAllowed_list")
+    }
+    else {
+        T_classes_forbidden_q = fill_list_with_children_text("T_ClassesForbidden_list")
+        T_classes_allowed_q = fill_list_with_children_text("T_ClassesAllowed_list")
+    }
+    const times = []
+    times.push(document.getElementById("start_second").value)
+    times.push(document.getElementById("end_second").value)
+    result_text = document.getElementById("result_text")
+    result_text.innerHTML = "Retrieving information. Please wait."
+    event_data = {
+        "map_name": map_name,
+        "weapons": { "Kill": Kill_weapons_q, "T": { "Allowed": T_weapons_allowed_q, "Forbidden": T_weapons_forbidden_q }, "CT": { "Allowed": CT_weapons_allowed_q, "Forbidden": CT_weapons_forbidden_q } },
+        "classes": { "Kill": Kill_classes_q, "T": { "Allowed": T_classes_allowed_q, "Forbidden": T_classes_forbidden_q }, "CT": { "Allowed": CT_classes_allowed_q, "Forbidden": CT_classes_forbidden_q } },
+        "positions": { "CT": CT_pos, "T": T_pos },
+        "use_weapons_classes": { "CT": use_weapons_classes_CT, "T": use_weapons_classes_T, "Kill": use_weapons_classes_Kill },
+        "times": { "start": times[0], "end": times[1] }
+    }
+    // instantiate a headers object
+    var myHeaders = new Headers();
+    // add content type header to object
+    myHeaders.append("Content-Type", "application/json");
+    // using built in JSON utility package turn object to string and store in a variable
+    var raw = JSON.stringify(event_data);
+    // create a JSON object with parameters for API call and store in a variable
+    var requestOptions = {
+        method: 'POST',
+        headers: myHeaders,
+        body: raw,
+        redirect: 'follow'
+    };
+    var date = new Date();
+    var h = date.getHours();
+    var m = date.getMinutes();
+    var s = date.getSeconds();
+    var date = new Date();
+    displayLoading(date)
+    // make API call with parameters and use promises to get response
+    const result = await call_API("https://uq7f1xuyn1.execute-api.eu-central-1.amazonaws.com/dev", requestOptions)
+    hideLoading()
+    try {
+        body = JSON.parse(result.body)
+        status_code = result.statusCode
+        if (status_code == 200) {
+            result_text.innerHTML = "A total of " + body.Situations_found + " situations matching your description have been found.<br>Out of those the CT's won " + body.CT_win_percentage + "%."
+        }
+        else if (status_code == 500) {
+            result_text.innerHTML = "An error occured while processing your request: " + body.errorMessage
+        }
+        else if (status_code == 408) {
+            result_text.innerHTML = "The request timed out with the error message: " + body.errorMessage + "!<br>Your selection is probably too broad. Try a narrower one!"
+        }
+        else {
+            result_text.innerHTML = "An unkown status_code of " + status_code + " was returned from your query. I do not know what happend here..."
+        }
+    }
+    catch {
+        result_text.innerHTML = "Got an invalid response. It is likely that the gateway timed out.<br>Your selection is probably too broad. Try a narrower one!"
+    }
+
+}
+
+async function call_API(url, requestOptions) {
+    return fetch(url, requestOptions).then((res, reject) => {
+        const rejectResponse = {
+            "error_type": "SERVER_ERROR",
+            "error": true
+        }
+        if (res.ok === true) { return res.json() }
+        else { return reject(rejectReponse) }
+    }).catch(error => console.log('error', error));
+}
+
+function sleep(ms) {
+    return new Promise(resolve => setTimeout(resolve, ms));
+}
+
+
+// showing loading
+function displayLoading(date) {
+    const loader = document.getElementById("loading")
+    const timer = document.getElementById("timer")
+    loader.style.display = "inline-block";
+    timer.style.display = "inline"
+    updateTime(date, timer)
+}
+
+function updateTime(oldDate, timer) {
+    if (timer.style.display != "none") {
+        var newDate = new Date();
+        setTimeout(updateTime, 1000, oldDate, timer);
+        timer.innerHTML = msToHMS(newDate - oldDate);
+    }
+}
+
+function msToHMS(ms) {
+    // 1- Convert to seconds:
+    var seconds = ms / 1000;
+
+    // 3- Extract minutes:
+    var minutes = parseInt(seconds / 60); // 60 seconds in 1 minute
+
+    // 4- Keep only seconds not extracted to minutes:
+    seconds = parseInt(seconds % 60);
+
+    // 5 - Format so it shows a leading zero if needed
+    let minutesStr = ("00" + minutes).slice(-2);
+    let secondsStr = ("00" + seconds).slice(-2);
+
+    return minutesStr + "m:" + secondsStr + "s"
+}
+
+// hiding loading
+function hideLoading() {
+    const loader = document.getElementById("loading")
+    loader.style.display = "none";
+    timer.style.display = "none"
 }

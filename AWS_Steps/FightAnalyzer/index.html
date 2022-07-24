@@ -10,61 +10,90 @@
 </head>
 
 <body onload="on_load()">
-    <h1>This is a Heading</h1>
-    <div class="row" , id="map_row">
-        <div class="column" , id="map_column">
-            <div>
-                <label for="map_select">Map:</label>
-                <select id="map_select" name="map_select" onchange="select_map(this)">
-                </select>
+    <h1>CS:GO FightAnalyzer</h1>
+    <div class="row" id="my_row">
+        <div class="column" id="query_column">
+            <h2>Fight selector</h2>
+            <h3>Choose the specifics of which fight you want to analyze</h3>
+            <div class="component" , id="map_component">
+                <div>
+                    <label for="map_select">Map:</label>
+                    <select id="map_select" name="map_select" onchange="select_map(this)">
+                    </select>
+                </div>
+                <img src="map_hulls/hulls_de_dust2.png" class="map_hull" id="map_hull">
             </div>
-        </div>
-    </div>
-    <div class="row" , id="attacker_row">
-        <div class="column" , id="attacker_column">
-            <div class="radio_div"><label>Attacker</label></div>
+            <div class="component" , id="kill_component">
+                <div class="radio_div"><label>Kill</label></div>
 
-            <div class="radio_div"><input type="radio" id="Attacker_Weapons" name="Attacker_weapons_classes" ,
-                    onclick="select_attacker_weapon_classes(this)" , value="Weapons">
-                <label for="Attacker_Weapons">Weapons</label>
-            </div>
-
-
-            <div class="radio_div"><input type="radio" id="Attacker_Classes" name="Attacker_weapons_classes"
-                    onclick="select_attacker_weapon_classes(this)" , value="Classes" , checked="checked">
-                <label for="Attacker_Classes">Classes</label>
-            </div>
-        </div>
-    </div>
-    <div class="row" , id="victim_row">
-        <div class="column" , id="victim_column">
-            <div>
-                <div class="radio_div"><label>Victim</label></div>
-
-                <div class="radio_div"><input type="radio" id="Victim_Weapons" name="Victim_weapons_classes" ,
-                        onclick="select_victim_weapon_classes(this)" , value="Weapons">
-                    <label for="Victim_Weapons">Weapons</label>
+                <div class="radio_div"><input type="radio" id="Kill_Weapons" name="Kill_weapons_classes" ,
+                        onclick="select_kill_weapon_classes(this)" , value="weapons">
+                    <label for="Kill_Weapons">Weapons</label>
                 </div>
 
-                <div class="radio_div"><input type="radio" id="Victim_Classes" name="Victim_weapons_classes"
-                        onclick="select_victim_weapon_classes(this)" , value="Classes" , checked="checked">
-                    <label for="Victim_Classes">Classes</label>
+
+                <div class="radio_div"><input type="radio" id="Kill_Classes" name="Kill_weapons_classes"
+                        onclick="select_kill_weapon_classes(this)" , value="classes" , checked="checked">
+                    <label for="Kill_Classes">Classes</label>
                 </div>
             </div>
+            <div class="component" , id="ct_component">
+                <div>
+                    <div class="radio_div"><label>CT</label></div>
+
+                    <div class="radio_div"><input type="radio" id="CT_Weapons" name="CT_weapons_classes" ,
+                            onclick="select_CT_weapon_classes(this)" , value="weapons">
+                        <label for="CT_Weapons">Weapons</label>
+                    </div>
+
+                    <div class="radio_div"><input type="radio" id="CT_Classes" name="CT_weapons_classes"
+                            onclick="select_CT_weapon_classes(this)" , value="classes" , checked="checked">
+                        <label for="CT_Classes">Classes</label>
+                    </div>
+                </div>
+            </div>
+            <div class="component" , id="t_component">
+                <div>
+                    <div class="radio_div"><label>T</label></div>
+
+                    <div class="radio_div"><input type="radio" id="T_Weapons" name="T_weapons_classes" ,
+                            onclick="select_T_weapon_classes(this)" , value="weapons">
+                        <label for="T_Weapons">Weapons</label>
+                    </div>
+
+                    <div class="radio_div"><input type="radio" id="T_Classes" name="T_weapons_classes"
+                            onclick="select_T_weapon_classes(this)" , value="classes" , checked="checked">
+                        <label for="T_Classes">Classes</label>
+                    </div>
+                </div>
+            </div>
+            <div class="component" , id="time_component">
+                <div id="start_time">
+                    <label for="start_second" class="time_label">Start second:</label>
+                    <input type="number" id="start_second" class="time_input" name="start_second" min=0 max=174
+                        onblur="adjust_end_min(this)" value=0>
+                </div>
+                <div id="end_time">
+                    <label for="end_second" class="time_label">End second:</label>
+                    <input type="number" id="end_second" class="time_input" name="end_second" min=1 max=175
+                        onblur="adjust_start_max(this)" value=175>
+                </div>
+            </div>
+            <div id="query_button_div">
+                <button type="button" onclick="collect_query_input()">Query</button>
+            </div>
         </div>
-    </div>
-    <div class="row" , id="time_row">
-        <div class="column" , id="time_column">
-            <div id="start_time">
-                <label for="start_second">Start second:</label>
-                <input type="number" id="start_second" name="start_second" min=0 max=174 onblur="adjust_end_min(this)"
-                    value=0>
+        <div class="column" id="result_column">
+            <h2>Results</h2>
+            <div id="result_content" class="result_text">
+                <p id="result_text">The result will be shown here.<br>Press the 'Query' button to get the CT win
+                    percentage for your
+                    chosen
+                    configuration.</p>
+                <div id="loading"></div>
+                <p id="timer">Time</p>
             </div>
-            <div id="end_time">
-                <label for="end_second">End second:</label>
-                <input type="number" id="end_second" name="end_second" min=1 max=175 onblur="adjust_start_max(this)"
-                    value=175>
-            </div>
+
         </div>
     </div>
 </body>

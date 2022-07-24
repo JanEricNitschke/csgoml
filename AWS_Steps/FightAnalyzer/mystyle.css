@@ -7,6 +7,22 @@ h1 {
     font-family: Arial, Helvetica, sans-serif;
     font-size: 50px;
     text-align: center;
+    margin-top: 10px;
+    margin-bottom: 10px;
+}
+
+h2 {
+    color: #f9f9f9;
+    font-family: Arial, Helvetica, sans-serif;
+    margin-top: 10px;
+    margin-bottom: 10px;
+}
+
+h3 {
+    color: #f9f9f9;
+    font-family: Arial, Helvetica, sans-serif;
+    margin-top: 10px;
+    margin-bottom: 10px;
 }
 
 label,
@@ -59,6 +75,7 @@ li {
     cursor: pointer;
     vertical-align: top;
     margin: 0px;
+    width: 135px;
 }
 
 .dropdown {
@@ -93,14 +110,70 @@ li {
 }
 
 /* Create two equal columns that floats next to each other */
+.component {
+    padding: 5px;
+    display: block;
+}
+
 .column {
     padding: 5px;
     display: inline-block;
     vertical-align: top;
+    width: 49%;
 }
 
 .row:after {
     content: "";
     display: table;
     clear: both;
+}
+
+.time_label {
+    width: 135px;
+    display: inline-block;
+    margin-right: 0px;
+}
+
+.time_input {
+    width: 60px;
+    margin: 0px;
+    padding: 0px;
+}
+
+.result_text {
+    color: #dcd0c1
+}
+
+.map_hull {
+    width: 700px;
+    height: auto;
+}
+
+#loading {
+    width: 2rem;
+    height: 2rem;
+    border: 5px solid #f3f3f3;
+    border-top: 6px solid #9c41f2;
+    border-bottom: 6px solid #9c41f2;
+    border-radius: 100%;
+    display: none;
+    animation: spin 1s infinite linear;
+}
+
+
+@keyframes spin {
+    from {
+        transform: rotate(0deg);
+    }
+
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+#timer {
+    display: none;
+    font-size: 4rem;
+    margin: 0px;
+    padding: 0px;
 }
