@@ -1,0 +1,10 @@
+Plots/
+Analysis/
+AWS_Steps/Certs/
+AWS_Steps/DynamoDB_Tutorial/
+AWS_Steps/FightAnalyzer/auxilliary/
+AWS_Steps/FightAnalyzer/fight_analyzer.zip
+AWS_Steps/FightAnalyzer/lambda/pymysql/
+AWS_Steps/FightAnalyzer/lambda/PyMySQL-1.0.2.dist-info/
+AWS_Steps/FightAnalyzer/lambda/rds_config.py
+__pycache__/
