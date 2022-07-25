@@ -141,7 +141,7 @@ class FightAnalyzer:
         Return:
             An integer of the number of seconds since the round started
         """
-        game_time = (event["tick"] - ticks["roundStartTick"]) / ticks["tickRate"]
+        game_time = (event["tick"] - ticks["freezeTimeEndTick"]) / ticks["tickRate"]
         return game_time
 
     def check_weapons(self, current_round, event):
@@ -608,7 +608,7 @@ def main(args):
         "CT": {"Allowed": {"TopofMid", "Middle"}, "Forbidden": {}},
         "T": {"Allowed": {"Middle", "TRamp"}, "Forbidden": {}},
     }
-    use_weapons_classes = {"CT": "weapons", "T": "weapons", "Kill": "weapons"}
+    use_weapons_classes = {"CT": "classes", "T": "classes", "Kill": "classes"}
     weapons = {
         "CT": {
             "Allowed": {
@@ -662,8 +662,6 @@ def main(args):
             "Allowed": {
                 "Rifle",
                 "Heavy",
-                "SMG",
-                "Pistols",
             },
             "Forbidden": {},
         },
@@ -677,8 +675,6 @@ def main(args):
         "Kill": [
             "Rifle",
             "Heavy",
-            "SMG",
-            "Pistols",
         ],
     }
 
