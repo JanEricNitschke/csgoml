@@ -75,7 +75,7 @@ li {
     cursor: pointer;
     vertical-align: top;
     margin: 0px;
-    width: 135px;
+    width: 150px;
 }
 
 .dropdown {
@@ -109,6 +109,11 @@ li {
     background-color: #3e8e41;
 }
 
+.addBtn {
+    margin: 0px;
+    width: 150px;
+}
+
 /* Create two equal columns that floats next to each other */
 .component {
     padding: 5px;
@@ -129,7 +134,7 @@ li {
 }
 
 .time_label {
-    width: 135px;
+    width: 150px;
     display: inline-block;
     margin-right: 0px;
 }

@@ -68,6 +68,7 @@ function on_load() {
             for (let i = 0; i < value.length; i++) {
                 var addBtn = document.createElement("button");
                 addBtn.innerHTML = value[i];
+                addBtn.setAttribute("class", "addBtn")
                 addBtn.onclick = AddElement;
                 dropdown_content.appendChild(addBtn)
             }
@@ -109,6 +110,7 @@ function on_load() {
         for (let i = 0; i < value.length; i++) {
             var addBtn = document.createElement("button");
             addBtn.innerHTML = value[i];
+            addBtn.setAttribute("class", "addBtn")
             addBtn.onclick = AddElement;
             dropdown_content.appendChild(addBtn)
         }
@@ -122,7 +124,7 @@ function on_load() {
         component.appendChild(div)
     }
     document.getElementById("CT_Classes").click();
-    document.getElementById("Kill_Classes").click();
+    document.getElementById("Kill_Class").click();
     document.getElementById("T_Classes").click();
     document.getElementById("map_select").onchange();
 }
@@ -203,6 +205,7 @@ function removeElement(e) {
     var addBtn = document.createElement("button");
     addBtn.innerHTML = e.target.innerHTML;
     addBtn.onclick = AddElement;
+    addBtn.setAttribute("class", "addBtn")
     element_id = e.target.parentNode.parentNode.id
     div = element_id.slice(0, element_id.lastIndexOf('_'))
     document.getElementById(div).appendChild(addBtn);
