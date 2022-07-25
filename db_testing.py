@@ -50,6 +50,10 @@ connection = pymysql.connect(
     ssl_ca=r"D:\\CSGO\\ML\\CSGOML\AWS_Steps\\Certs\\global-bundle.pem",
 )
 
+# connection = pymysql.connect(
+#     host=host, user="admin", password="InfernoFightTeam9182!", database=database
+# )
+
 # engine = create_engine(
 #     "mysql://{0}:{1}@{2}:{3}/{4}?charset=utf8".format(
 #         user, password, host, port, database
@@ -192,6 +196,30 @@ with connection:
     result = cursor.fetchall()
     for i in result:
         logging.info(i)
+    sql = "SELECT MIN(`Time`) FROM `Events`"
+    cursor.execute(sql)
+    # Fetch all the records
+    result = cursor.fetchall()
+    for i in result:
+        logging.info(i)
+    sql = "SELECT MAX(`Time`) FROM `Events`"
+    cursor.execute(sql)
+    # Fetch all the records
+    result = cursor.fetchall()
+    for i in result:
+        logging.info(i)
+    sql = "SELECT * FROM `Events` WHERE `Time` < 0.0"
+    cursor.execute(sql)
+    # Fetch all the records
+    result = cursor.fetchall()
+    for i in result:
+        logging.info(i)
+    # sql = "SELECT * FROM `Events` WHERE `Time` > 190.0"
+    # cursor.execute(sql)
+    # # Fetch all the records
+    # result = cursor.fetchall()
+    # for i in result:
+    #     logging.info(i)
     sql = "SELECT * FROM `Events` LIMIT 10"
     cursor.execute(sql)
     # Fetch all the records
@@ -256,3 +284,4 @@ with connection:
     result = cursor.fetchall()
     for i in result:
         logging.info(i)
+    # connection.commit()
