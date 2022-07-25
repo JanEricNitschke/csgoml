@@ -271,7 +271,7 @@ async function collect_query_input() {
     var use_weapons_classes_Kill = document.querySelector('input[name="Kill_weapons_classes"]:checked').value
     var Kill_classes_q = []
     var Kill_weapons_q = []
-    if (use_weapons_classes_Kill == "Weapons") {
+    if (use_weapons_classes_Kill == "weapons") {
         Kill_weapons_q = fill_list_with_children_text("Kill_Weapon_list")
     }
     else {
@@ -282,7 +282,7 @@ async function collect_query_input() {
     var CT_weapons_forbidden_q = []
     var CT_weapons_allowed_q = []
     use_weapons_classes_CT = document.querySelector('input[name="CT_weapons_classes"]:checked').value
-    if (use_weapons_classes_CT == "Weapons") {
+    if (use_weapons_classes_CT == "weapons") {
         CT_weapons_forbidden_q = fill_list_with_children_text("CT_WeaponForbidden_list")
         CT_weapons_allowed_q = fill_list_with_children_text("CT_WeaponAllowed_list")
     }
@@ -295,7 +295,7 @@ async function collect_query_input() {
     var T_weapons_forbidden_q = []
     var T_weapons_allowed_q = []
     use_weapons_classes_T = document.querySelector('input[name="T_weapons_classes"]:checked').value
-    if (use_weapons_classes_T == "Weapons") {
+    if (use_weapons_classes_T == "weapons") {
         T_weapons_forbidden_q = fill_list_with_children_text("T_WeaponForbidden_list")
         T_weapons_allowed_q = fill_list_with_children_text("T_WeaponAllowed_list")
     }
@@ -322,7 +322,6 @@ async function collect_query_input() {
     myHeaders.append("Content-Type", "application/json");
     // using built in JSON utility package turn object to string and store in a variable
     var raw = JSON.stringify(event_data);
-    // create a JSON object with parameters for API call and store in a variable
     var requestOptions = {
         method: 'POST',
         headers: myHeaders,
