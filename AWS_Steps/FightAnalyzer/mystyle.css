@@ -134,7 +134,7 @@ li {
 }
 
 .time_label {
-    width: 150px;
+    width: 120px;
     display: inline-block;
     margin-right: 0px;
 }
@@ -150,7 +150,8 @@ li {
 }
 
 .map_hull {
-    width: 700px;
+    max-width: 50%;
+    min-width: 500px;
     height: auto;
 }
 
@@ -181,4 +182,29 @@ li {
     font-size: 4rem;
     margin: 0px;
     padding: 0px;
+}
+
+.tooltip {
+    position: relative;
+    display: inline-block;
+    color: #f9f9f9;
+    /* border-bottom: 1px dotted black; */
+}
+
+.tooltip .tooltiptext {
+    visibility: hidden;
+    width: 50vw;
+    background-color: black;
+    color: #fff;
+    text-align: center;
+    /* border-radius: 6px;
+    padding: 5px 0; */
+
+    /* Position the tooltip */
+    position: absolute;
+    z-index: 1;
+}
+
+.tooltip:hover .tooltiptext {
+    visibility: visible;
 }

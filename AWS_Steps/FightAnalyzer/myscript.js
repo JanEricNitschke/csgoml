@@ -1,13 +1,13 @@
-const de_ancient = ['SideEntrance', 'BombsiteA', 'TSpawn', 'CTSpawn', 'House', 'Tunnel', 'TSideUpper', 'Water', 'Outside', 'Middle', 'MainHall', 'Alley', 'Ruins', 'SideHall', 'TopofMid', 'TSideLower', 'Ramp', 'BombsiteB', 'BackHall', 'None']
-const de_cache = ['Entrance', 'BombsiteA', 'LongA', 'BombsiteB', 'Garage', 'Middle', 'LongHall', 'Catwalk', 'TSpawn', 'Quad', 'Warehouse', 'Forklift', 'Dumpster', 'Window', 'Rafters', 'Back', 'CTSpawn', 'StorageRoom', 'ARamp', 'Truck', 'Squeaky', 'Roof', 'Ducts', 'None']
-const de_cbble = ['BPlatform', 'Courtyard', 'BombsiteA', 'CTSpawn', 'BombsiteB', 'ARamp', 'LowerTunnel', 'Tunnels', 'Patio', 'Balcony', 'UpperTunnel', 'LongA', 'Hut', 'Underpass', 'Connector', 'TunnelStairs', 'TRamp', 'Catwalk', 'Hay', 'TSpawn', 'SideDoor', 'TMain', 'SnipersNest', 'None']
-const de_dust2 = ['BombsiteA', 'LongDoors', 'BombsiteB', 'BDoors', 'OutsideTunnel', 'OutsideLong', 'ExtendedA', 'Hole', 'Catwalk', 'Side', 'TSpawn', 'UpperTunnel', 'Short', 'TRamp', 'Middle', 'UnderA', 'ARamp', 'LongA', 'TunnelStairs', 'TopofMid', 'ShortStairs', 'CTSpawn', 'Pit', 'Ramp', 'MidDoors', 'LowerTunnel', 'None']
-const de_inferno = ['CTSpawn', 'BombsiteA', 'TRamp', 'TSpawn', 'LowerMid', 'TopofMid', 'Quad', 'Upstairs', 'BombsiteB', 'Banana', 'Ruins', 'Middle', 'BackAlley', 'Apartments', 'Graveyard', 'SecondMid', 'Balcony', 'Pit', 'Arch', 'Bridge', 'Underpass', 'Library', 'Deck', 'Kitchen', 'None']
-const de_mirage = ['CTSpawn', 'BombsiteA', 'TRamp', 'TicketBooth', 'TopofMid', 'Shop', 'Apartments', 'BombsiteB', 'PalaceAlley', 'TSpawn', 'Catwalk', 'House', 'SnipersNest', 'Jungle', 'Tunnel', 'BackAlley', 'Middle', 'PalaceInterior', 'TunnelStairs', 'Ladder', 'Stairs', 'SideAlley', 'Scaffolding', 'Truck', 'Connector', 'Balcony', 'None']
-const de_nuke = ['Hut', 'Roof', 'Outside', 'BombsiteB', 'Ramp', 'TSpawn', 'BombsiteA', 'Decon', 'Silo', 'Lobby', 'Vending', 'Garage', 'CTSpawn', 'Squeaky', 'Vents', 'Rafters', 'HutRoof', 'Tunnels', 'LockerRoom', 'Observation', 'Secret', 'Heaven', 'Hell', 'Mini', 'Admin', 'Catwalk', 'Crane', 'Trophy', 'Control', 'None']
-const de_overpass = ['BackofA', 'LowerPark', 'BombsiteA', 'Connector', 'Canal', 'Tunnels', 'Fountain', 'UpperPark', 'Walkway', 'Water', 'StorageRoom', 'SnipersNest', 'Lobby', 'Construction', 'Playground', 'Restroom', 'Pipe', 'TSpawn', 'Alley', 'UnderA', 'BombsiteB', 'TStairs', 'SideAlley', 'Bridge', 'Pit', 'Stairs', 'None']
-const de_train = ['Tunnel2', 'TStairs', 'BombsiteA', 'TMain', 'Ivy', 'Kitchen', 'BombsiteB', 'CTSpawn', 'Tunnel', 'LadderTop', 'BackofB', 'LockerRoom', 'Connector', 'TSpawn', 'Tunnel1', 'LadderBottom', 'SnipersNest', 'Scaffolding', 'Alley', 'Dumpster', 'BPlatform', 'Tunnels', 'PopDog', 'ElectricalBox', 'None']
-const de_vertigo = ['Pit', 'Side', 'BombsiteA', 'BombsiteB', 'Tunnels', 'ARamp', 'Elevator', 'TSpawn', 'BackDoor', 'BackofA', 'Mid', 'LadderTop', 'Bridge', 'APlatform', 'Scaffolding', 'LadderBottom', 'CTSpawn', 'BackofB', 'TCorridorUp', 'TopofMid', 'Window', 'Crane', 'None']
+const de_ancient = ['SideEntrance', 'BombsiteA', 'TSpawn', 'CTSpawn', 'House', 'Tunnel', 'TSideUpper', 'Water', 'Outside', 'Middle', 'MainHall', 'Alley', 'Ruins', 'SideHall', 'TopofMid', 'TSideLower', 'Ramp', 'BombsiteB', 'BackHall'].sort().concat(['None'])
+const de_cache = ['Entrance', 'BombsiteA', 'LongA', 'BombsiteB', 'Garage', 'Middle', 'LongHall', 'Catwalk', 'TSpawn', 'Quad', 'Warehouse', 'Forklift', 'Dumpster', 'Window', 'Rafters', 'Back', 'CTSpawn', 'StorageRoom', 'ARamp', 'Truck', 'Squeaky', 'Roof', 'Ducts'].sort().concat(['None'])
+const de_cbble = ['BPlatform', 'Courtyard', 'BombsiteA', 'CTSpawn', 'BombsiteB', 'ARamp', 'LowerTunnel', 'Tunnels', 'Patio', 'Balcony', 'UpperTunnel', 'LongA', 'Hut', 'Underpass', 'Connector', 'TunnelStairs', 'TRamp', 'Catwalk', 'Hay', 'TSpawn', 'SideDoor', 'TMain', 'SnipersNest'].sort().concat(['None'])
+const de_dust2 = ['BombsiteA', 'LongDoors', 'BombsiteB', 'BDoors', 'OutsideTunnel', 'OutsideLong', 'ExtendedA', 'Hole', 'Catwalk', 'Side', 'TSpawn', 'UpperTunnel', 'Short', 'TRamp', 'Middle', 'UnderA', 'ARamp', 'LongA', 'TunnelStairs', 'TopofMid', 'ShortStairs', 'CTSpawn', 'Pit', 'Ramp', 'MidDoors', 'LowerTunnel'].sort().concat(['None'])
+const de_inferno = ['CTSpawn', 'BombsiteA', 'TRamp', 'TSpawn', 'LowerMid', 'TopofMid', 'Quad', 'Upstairs', 'BombsiteB', 'Banana', 'Ruins', 'Middle', 'BackAlley', 'Apartments', 'Graveyard', 'SecondMid', 'Balcony', 'Pit', 'Arch', 'Bridge', 'Underpass', 'Library', 'Deck', 'Kitchen'].sort().concat(['None'])
+const de_mirage = ['CTSpawn', 'BombsiteA', 'TRamp', 'TicketBooth', 'TopofMid', 'Shop', 'Apartments', 'BombsiteB', 'PalaceAlley', 'TSpawn', 'Catwalk', 'House', 'SnipersNest', 'Jungle', 'Tunnel', 'BackAlley', 'Middle', 'PalaceInterior', 'TunnelStairs', 'Ladder', 'Stairs', 'SideAlley', 'Scaffolding', 'Truck', 'Connector', 'Balcony'].sort().concat(['None'])
+const de_nuke = ['Hut', 'Roof', 'Outside', 'BombsiteB', 'Ramp', 'TSpawn', 'BombsiteA', 'Decon', 'Silo', 'Lobby', 'Vending', 'Garage', 'CTSpawn', 'Squeaky', 'Vents', 'Rafters', 'HutRoof', 'Tunnels', 'LockerRoom', 'Observation', 'Secret', 'Heaven', 'Hell', 'Mini', 'Admin', 'Catwalk', 'Crane', 'Trophy', 'Control'].sort().concat(['None'])
+const de_overpass = ['BackofA', 'LowerPark', 'BombsiteA', 'Connector', 'Canal', 'Tunnels', 'Fountain', 'UpperPark', 'Walkway', 'Water', 'StorageRoom', 'SnipersNest', 'Lobby', 'Construction', 'Playground', 'Restroom', 'Pipe', 'TSpawn', 'Alley', 'UnderA', 'BombsiteB', 'TStairs', 'SideAlley', 'Bridge', 'Pit', 'Stairs'].sort().concat(['None'])
+const de_train = ['Tunnel2', 'TStairs', 'BombsiteA', 'TMain', 'Ivy', 'Kitchen', 'BombsiteB', 'CTSpawn', 'Tunnel', 'LadderTop', 'BackofB', 'LockerRoom', 'Connector', 'TSpawn', 'Tunnel1', 'LadderBottom', 'SnipersNest', 'Scaffolding', 'Alley', 'Dumpster', 'BPlatform', 'Tunnels', 'PopDog', 'ElectricalBox'].sort().concat(['None'])
+const de_vertigo = ['Pit', 'Side', 'BombsiteA', 'BombsiteB', 'Tunnels', 'ARamp', 'Elevator', 'TSpawn', 'BackDoor', 'BackofA', 'Mid', 'LadderTop', 'Bridge', 'APlatform', 'Scaffolding', 'LadderBottom', 'CTSpawn', 'BackofB', 'TCorridorUp', 'TopofMid', 'Window', 'Crane'].sort().concat(['None'])
 
 const kill_weapons = ["CZ75 Auto", "Desert Eagle", "Dual Berettas", "Five-SeveN", "Glock-18",
     "P2000", "P250", "R8 Revolver", "Tec-9", "USP-S", "MAG-7", "Nova", "Sawed-Off", "XM1014", "M249",
@@ -309,6 +309,9 @@ async function collect_query_input() {
     const times = []
     times.push(document.getElementById("start_second").value)
     times.push(document.getElementById("end_second").value)
+    if (times[1] == 175) {
+        times[1] = 10000
+    }
     result_text = document.getElementById("result_text")
     result_text.innerHTML = "Retrieving information. Please wait."
     event_data = {
@@ -344,7 +347,7 @@ async function collect_query_input() {
         body = JSON.parse(result.body)
         status_code = result.statusCode
         if (status_code == 200) {
-            result_text.innerHTML = "A total of " + body.Situations_found + " situations matching your description have been found.<br>Out of those the CT's won " + body.CT_win_percentage + "%."
+            result_text.innerHTML = "A total of " + body.Situations_found + " situations matching your description have been found.<br>Out of those the CT's won " + body.CT_win_percentage + "%." + "<div class='tooltip'>&#x1F6C8;<span class='tooltiptext'> Perfmored sql command:<br>" + body.sql + "</span></div>"
         }
         else if (status_code == 500) {
             result_text.innerHTML = "An error occured while processing your request: " + body.errorMessage
