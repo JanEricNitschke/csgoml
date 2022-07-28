@@ -15,7 +15,7 @@
         <div class="column" id="query_column">
             <h2>Fight selector</h2>
             <h3>Choose the specifics of which fight you want to analyze</h3>
-            <div class="component" , id="map_component">
+            <div class="component" id="map_component">
                 <div>
                     <label for="map_select">Map:</label>
                     <select id="map_select" name="map_select" onchange="select_map(this)">
@@ -28,7 +28,7 @@
                 </div>
                 <img src="map_hulls/hulls_de_dust2.png" class="map_hull" id="map_hull">
             </div>
-            <div class="component" , id="kill_component">
+            <div class="component" id="kill_component">
                 <div class="radio_div"><label>Kill</label>
                     <div class="tooltip">&#x1F6C8;
                         <span class="tooltiptext">Select whether you want to filter directly by weapons or generally
@@ -38,16 +38,16 @@
                     </div>
                 </div>
 
-                <div class="radio_div"><input type="radio" id="Kill_Weapons" name="Kill_weapons_classes" ,
-                        onclick="select_kill_weapon_classes(this)" , value="weapons">
+                <div class="radio_div"><input type="radio" id="Kill_Weapons" name="Kill_weapons_classes"
+                        onclick="select_kill_weapon_classes(this)" value="weapons">
                     <label for="Kill_Weapons">Weapons</label>
                 </div>
                 <div class="radio_div"><input type="radio" id="Kill_Class" name="Kill_weapons_classes"
-                        onclick="select_kill_weapon_classes(this)" , value="classes" , checked="checked">
+                        onclick="select_kill_weapon_classes(this)" value="classes" checked="checked">
                     <label for="Kill_Class">Classes</label>
                 </div>
             </div>
-            <div class="component" , id="ct_component">
+            <div class="component" id="ct_component">
                 <div>
                     <div class="radio_div"><label>CT</label>
                         <div class="tooltip">&#x1F6C8;
@@ -58,18 +58,18 @@
                         </div>
                     </div>
 
-                    <div class="radio_div"><input type="radio" id="CT_Weapons" name="CT_weapons_classes" ,
-                            onclick="select_CT_weapon_classes(this)" , value="weapons">
+                    <div class="radio_div"><input type="radio" id="CT_Weapons" name="CT_weapons_classes"
+                            onclick="select_CT_weapon_classes(this)" value="weapons">
                         <label for="CT_Weapons">Weapons</label>
                     </div>
 
                     <div class="radio_div"><input type="radio" id="CT_Classes" name="CT_weapons_classes"
-                            onclick="select_CT_weapon_classes(this)" , value="classes" , checked="checked">
+                            onclick="select_CT_weapon_classes(this)" value="classes" checked="checked">
                         <label for="CT_Classes">Classes</label>
                     </div>
                 </div>
             </div>
-            <div class="component" , id="t_component">
+            <div class="component" id="t_component">
                 <div>
                     <div class="radio_div"><label>T</label>
                         <div class="tooltip">&#x1F6C8;
@@ -80,18 +80,18 @@
                         </div>
                     </div>
 
-                    <div class="radio_div"><input type="radio" id="T_Weapons" name="T_weapons_classes" ,
-                            onclick="select_T_weapon_classes(this)" , value="weapons">
+                    <div class="radio_div"><input type="radio" id="T_Weapons" name="T_weapons_classes"
+                            onclick="select_T_weapon_classes(this)" value="weapons">
                         <label for="T_Weapons">Weapons</label>
                     </div>
 
                     <div class="radio_div"><input type="radio" id="T_Classes" name="T_weapons_classes"
-                            onclick="select_T_weapon_classes(this)" , value="classes" , checked="checked">
+                            onclick="select_T_weapon_classes(this)" value="classes" checked="checked">
                         <label for="T_Classes">Classes</label>
                     </div>
                 </div>
             </div>
-            <div class="component" , id="time_component">
+            <div class="component" id="time_component">
                 <label>Time range:</label>
                 <div class="tooltip">&#x1F6C8;
                     <span class="tooltiptext">Select the time range you want to consider.<br>The value for a kill is
