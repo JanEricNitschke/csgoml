@@ -381,7 +381,6 @@ async function collect_query_input() {
         }
     }
     catch {
-        alert(raw)
         result_text.innerHTML = "Got an invalid response. It is likely that the gateway timed out.<br>Your selection is probably too broad. Try a narrower one!"
     }
 
