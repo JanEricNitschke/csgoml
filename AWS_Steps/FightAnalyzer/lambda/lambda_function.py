@@ -3,6 +3,7 @@ import logging
 import rds_config
 import pymysql
 import json
+import math
 
 # rds settings
 rds_host = "fightanalyzer.ctox3zthjpph.eu-central-1.rds.amazonaws.com"
@@ -22,12 +23,92 @@ except pymysql.MySQLError as e:
 
 logger.info("SUCCESS: Connection to RDS MySQL instance succeeded")
 
+event = {
+    "map_name": "de_inferno",
+    "weapons": {
+        "Kill": [
+            "M4A4",
+            "AWP",
+            "AK-47",
+            "Galil AR",
+            "M4A1",
+            "SG 553",
+            "SSG 08",
+            "G3SG1",
+            "SCAR-20",
+            "FAMAS",
+            "AUG",
+        ],
+        "CT": {
+            "Allowed": [
+                "M4A4",
+                "AWP",
+                "AK-47",
+                "Galil AR",
+                "M4A1",
+                "SG 553",
+                "SSG 08",
+                "G3SG1",
+                "SCAR-20",
+                "FAMAS",
+                "AUG",
+            ],
+            "Forbidden": [],
+        },
+        "T": {
+            "Allowed": [
+                "M4A4",
+                "AWP",
+                "AK-47",
+                "Galil AR",
+                "M4A1",
+                "SG 553",
+                "SSG 08",
+                "G3SG1",
+                "SCAR-20",
+                "FAMAS",
+                "AUG",
+            ],
+            "Forbidden": [],
+        },
+    },
+    "classes": {
+        "Kill": ["Rifle", "Heavy"],
+        "CT": {"Allowed": ["Rifle", "Heavy"], "Forbidden": []},
+        "T": {"Allowed": ["Rifle", "Heavy"], "Forbidden": []},
+    },
+    "positions": {"CT": ["TopofMid", "Middle"], "T": ["Middle", "TRamp"]},
+    "use_weapons_classes": {"CT": "weapons", "Kill": "weapons", "T": "weapons"},
+    "times": {"start": 0, "end": 25},
+}
+
+
+def get_wilson_interval(success_percent, total_n, z):
+    success_percent = float(success_percent)
+    lower = (
+        success_percent
+        + z * z / (2 * total_n)
+        - z
+        * math.sqrt(
+            (success_percent * (1 - success_percent) + z * z / (4 * total_n)) / total_n
+        )
+    ) / (1 + z * z / total_n)
+    upper = (
+        success_percent
+        + z * z / (2 * total_n)
+        + z
+        * math.sqrt(
+            (success_percent * (1 - success_percent) + z * z / (4 * total_n)) / total_n
+        )
+    ) / (1 + z * z / total_n)
+    return [lower, success_percent, upper]
+
 
 def lambda_handler(event, context):
     """
     This function fetches content from MySQL RDS instance
     """
-    try:
+    if True:
         ct_pos = ", ".join(f'"{val}"' for val in event["positions"]["CT"])
         t_pos = ", ".join(f'"{val}"' for val in event["positions"]["T"])
         T_weapon = ", ".join(f'"{val}"' for val in event["weapons"]["T"]["Allowed"])
@@ -107,17 +188,29 @@ def lambda_handler(event, context):
         with conn.cursor() as cursor:
             cursor.execute(sql)
             result = list(cursor.fetchone())
-
         res = {}
         if result[1] > 0:
-            res["Situations_found"], res["CT_win_percentage"] = result[1], round(
-                100 * result[0]
+            res["Situations_found"], res["CT_win_percentage"], res["sql"] = (
+                result[1],
+                [
+                    round(100 * x)
+                    for x in get_wilson_interval(result[0], result[1], 1.0)
+                ],  # number of standard deviations
+                sql,
             )
         else:
-            res["Situations_found"], res["CT_win_percentage"] = 0, 0
+            res["Situations_found"], res["CT_win_percentage"], res["sql"] = (
+                0,
+                [0, 0, 0],
+                sql,
+            )
         return {"statusCode": 200, "body": json.dumps(res)}
-    except Exception as err:
+    # except Exception as err:
+    else:
         return {
             "statusCode": 500,
             "body": json.dumps(f"Unexpected {err=}, {type(err)=}"),
         }
+
+
+print(lambda_handler(event, None))

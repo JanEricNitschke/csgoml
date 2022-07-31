@@ -367,7 +367,7 @@ async function collect_query_input() {
         const status_code = result.statusCode
         if (status_code == 200) {
             result_text.innerHTML = "A total of " + body.Situations_found + " situations matching your description  \
-            have been found.<br>Out of those the CT's won " + body.CT_win_percentage + "%." +
+            have been found.<br>Out of those the CT's won " + body.CT_win_percentage[1] + "%." +
                 "<div class='tooltip'>&#x1F6C8;<span class='tooltiptext'> Perfmored sql command:<br>" + body.sql + "</span></div>"
         }
         else if (status_code == 500) {
