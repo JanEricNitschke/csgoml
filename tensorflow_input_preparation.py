@@ -405,81 +405,6 @@ def convert_winner_to_int(winner_string):
         return None
 
 
-def regularize_coordinates(coordinate, minimum, maximum):
-    """Regularizes coordinates to be between -1 and 1
-
-    If the map is in the awpy NAV data then minimum and maximum correspondt to actual min and max values.
-    If the map is not then they are flatly taken to be +-2000/2000/200 for x, y and z respectively.
-    In that case the coordinate can end up outside of -1 to 1 in some cases.
-
-    Args:
-        coordinate: Float representing a player coordinate
-        minimum: The minimal possible value of this coordinate
-        maximum: The maximal possible value of thos coordinate
-
-    Returns:
-        A float corresponding to a rescaled coordinate that is always between -1 and 1
-    """
-    shift = (maximum + minimum) / 2
-    scaling = (maximum - minimum) / 2
-    return (coordinate - shift) / scaling
-
-
-def get_extremes_from_NAV(map_name):
-    """Determines the maximal and mininmal possible x, y and z values for a given map
-
-    Look through the awpy NAV data of the given map and search all recorded areas.
-    Keep track of minimum and maximum value for each coordinate.
-    If the map does not exist in the NAV data then use default values of +-2000/2000/200 for x, y and z respectively
-
-    Args:
-        map_name: String of the currently investigated map
-
-    Returns:
-        Two dictionary containing the minimum and maximum determined values for each coordinate.
-    """
-    if map_name not in NAV:
-        minimum = {"x": -2000, "y": -2000, "z": -200}
-        maximum = {"x": 2000, "y": 2000, "z": 200}
-    else:
-        minimum = {"x": sys.maxsize, "y": sys.maxsize, "z": sys.maxsize}
-        maximum = {"x": -sys.maxsize, "y": -sys.maxsize, "z": -sys.maxsize}
-        for area in NAV[map_name]:
-            for feature in ["x", "y", "z"]:
-                for corner in ["northWest", "southEast"]:
-                    maximum[feature] = max(
-                        NAV[map_name][area][corner + feature.upper()], maximum[feature]
-                    )
-                    minimum[feature] = min(
-                        NAV[map_name][area][corner + feature.upper()], minimum[feature]
-                    )
-    return minimum, maximum
-
-
-def regularize_coordinatesdf(position_df, map_name):
-    """Apply coordinate regularization to all coordinate positions in the dataframe.
-
-    Gather minimum and maximum values and regularize each coordinate to be between -1 and 1
-
-    Args:
-        position_df: Dataframe containing every players position and status for each time step
-        map_name: String of the current maps name
-
-    Returns:
-        dataframe after player coordinate regularization
-    """
-    minimum, maximum = get_extremes_from_NAV("de_" + map_name)
-    for side in ["CT", "T"]:
-        for number in range(1, 6):
-            for feature in ["x", "y", "z"]:
-                position_df[side + "Player" + str(number) + feature] = position_df[
-                    side + "Player" + str(number) + feature
-                ].apply(
-                    regularize_coordinates, args=(minimum[feature], maximum[feature])
-                )
-    return position_df
-
-
 def get_token_length(map_name):
     """Determine the lenght of player position tokens for this map.
 
@@ -753,9 +678,6 @@ def main(args):
                     analyze_rounds(data, position_dataset_dict, match_id)
             # Transform to dataset and write it to file as json
             position_dataset_df = pd.DataFrame(position_dataset_dict)
-            position_dataset_df["position_df"] = position_dataset_df[
-                "position_df"
-            ].apply(regularize_coordinatesdf, args=(directoryname,))
             if not options.reanalyze:
                 position_dataset_df = pd.concat(
                     [prev_dataframe, position_dataset_df], ignore_index=True
