@@ -23,65 +23,6 @@ except pymysql.MySQLError as e:
 
 logger.info("SUCCESS: Connection to RDS MySQL instance succeeded")
 
-event = {
-    "map_name": "de_inferno",
-    "weapons": {
-        "Kill": [
-            "M4A4",
-            "AWP",
-            "AK-47",
-            "Galil AR",
-            "M4A1",
-            "SG 553",
-            "SSG 08",
-            "G3SG1",
-            "SCAR-20",
-            "FAMAS",
-            "AUG",
-        ],
-        "CT": {
-            "Allowed": [
-                "M4A4",
-                "AWP",
-                "AK-47",
-                "Galil AR",
-                "M4A1",
-                "SG 553",
-                "SSG 08",
-                "G3SG1",
-                "SCAR-20",
-                "FAMAS",
-                "AUG",
-            ],
-            "Forbidden": [],
-        },
-        "T": {
-            "Allowed": [
-                "M4A4",
-                "AWP",
-                "AK-47",
-                "Galil AR",
-                "M4A1",
-                "SG 553",
-                "SSG 08",
-                "G3SG1",
-                "SCAR-20",
-                "FAMAS",
-                "AUG",
-            ],
-            "Forbidden": [],
-        },
-    },
-    "classes": {
-        "Kill": ["Rifle", "Heavy"],
-        "CT": {"Allowed": ["Rifle", "Heavy"], "Forbidden": []},
-        "T": {"Allowed": ["Rifle", "Heavy"], "Forbidden": []},
-    },
-    "positions": {"CT": ["TopofMid", "Middle"], "T": ["Middle", "TRamp"]},
-    "use_weapons_classes": {"CT": "weapons", "Kill": "weapons", "T": "weapons"},
-    "times": {"start": 0, "end": 25},
-}
-
 
 def get_wilson_interval(success_percent, total_n, z):
     success_percent = float(success_percent)
@@ -108,29 +49,7 @@ def lambda_handler(event, context):
     """
     This function fetches content from MySQL RDS instance
     """
-    if True:
-        ct_pos = ", ".join(f'"{val}"' for val in event["positions"]["CT"])
-        t_pos = ", ".join(f'"{val}"' for val in event["positions"]["T"])
-        T_weapon = ", ".join(f'"{val}"' for val in event["weapons"]["T"]["Allowed"])
-        not_T_weapon = ", ".join(
-            f'"{val}"' for val in event["weapons"]["T"]["Forbidden"]
-        )
-        CT_weapon = ", ".join(f'"{val}"' for val in event["weapons"]["CT"]["Allowed"])
-        not_CT_weapon = ", ".join(
-            f'"{val}"' for val in event["weapons"]["CT"]["Forbidden"]
-        )
-        Kill_weapon = ", ".join(f'"{val}"' for val in event["weapons"]["Kill"])
-
-        CT_classes = ", ".join(f'"{val}"' for val in event["classes"]["CT"]["Allowed"])
-        T_classes = ", ".join(f'"{val}"' for val in event["classes"]["T"]["Allowed"])
-        Kill_classes = ", ".join(f'"{val}"' for val in event["classes"]["Kill"])
-        not_CT_classes = ", ".join(
-            f'"{val}"' for val in event["classes"]["CT"]["Forbidden"]
-        )
-        not_T_classes = ", ".join(
-            f'"{val}"' for val in event["classes"]["T"]["Forbidden"]
-        )
-
+    try:
         sql = (
             f"""SELECT AVG(t.CTWon), COUNT(t.CTWon) """
             f"""FROM ( """
@@ -145,58 +64,74 @@ def lambda_handler(event, context):
             f"""ON tw.TWeapon = wct.WeaponName """
             f"""JOIN WeaponClasses wck """
             f"""ON e.KillWeapon = wck.WeaponName """
-            f"""WHERE e.MapName = '{event["map_name"]}' """
-            f"""AND e.Time BETWEEN {event["times"]["start"]} AND {event["times"]["end"]} """
+            f"""WHERE e.MapName = %s """
+            f"""AND e.Time BETWEEN %s AND %s """
         )
-        if ct_pos != "":
-            sql += f"""AND e.CTArea in ({ct_pos}) """
-        if t_pos != "":
-            sql += f"""AND e.TArea in ({t_pos}) """
+        param = [event["map_name"], event["times"]["start"], event["times"]["end"]]
 
+        if event["positions"]["CT"]:
+            sql += f"""AND e.CTArea in %s """
+            param.append(event["positions"]["CT"])
+        if event["positions"]["T"]:
+            sql += f"""AND e.TArea in %s """
+            param.append(event["positions"]["T"])
         if event["use_weapons_classes"]["CT"] == "weapons":
-            if CT_weapon != "":
-                sql += f"""AND ctw.CTWeapon in ({CT_weapon}) """
-            if not_CT_weapon != "":
-                sql += f"""AND ctw.CTWeapon NOT in ({not_CT_weapon}) """
+            if event["weapons"]["CT"]["Allowed"]:
+                sql += f"""AND ctw.CTWeapon in %s """
+                param.append(event["weapons"]["CT"]["Allowed"])
+            if event["weapons"]["CT"]["Forbidden"]:
+                sql += f"""AND ctw.CTWeapon NOT in %s """
+                param.append(event["weapons"]["CT"]["Forbidden"])
         elif event["use_weapons_classes"]["CT"] == "classes":
-            if CT_classes != "":
-                sql += f"""AND wcct.Class in ({CT_classes}) """
-            if not_CT_classes != "":
-                sql += f"""AND wcct.Class NOT in ({not_CT_classes}) """
+            if event["classes"]["CT"]["Allowed"]:
+                sql += f"""AND wcct.Class in %s """
+                param.append(event["classes"]["CT"]["Allowed"])
+            if event["classes"]["CT"]["Forbidden"]:
+                sql += f"""AND wcct.Class NOT in %s """
+                param.append(event["classes"]["CT"]["Forbidden"])
 
         if event["use_weapons_classes"]["T"] == "weapons":
-            if T_weapon != "":
-                sql += f"""AND tw.TWeapon in ({T_weapon}) """
-            if not_T_weapon != "":
-                sql += f"""AND tw.TWeapon NOT in ({not_T_weapon}) """
+            if event["weapons"]["T"]["Allowed"]:
+                sql += f"""AND tw.TWeapon in %s """
+                param.append(event["weapons"]["T"]["Allowed"])
+            if event["weapons"]["T"]["Forbidden"]:
+                sql += f"""AND tw.TWeapon NOT in %s """
+                param.append(event["weapons"]["T"]["Forbidden"])
         elif event["use_weapons_classes"]["T"] == "classes":
-            if T_classes != "":
-                sql += f"""AND wct.Class in ({T_classes}) """
-            if not_T_classes != "":
-                sql += f"""AND wct.Class NOT in ({not_T_classes}) """
+            if event["classes"]["T"]["Allowed"]:
+                sql += f"""AND wct.Class in %s """
+                param.append(event["classes"]["T"]["Allowed"])
+            if event["classes"]["T"]["Forbidden"]:
+                sql += f"""AND wct.Class NOT in %s """
+                param.append(event["classes"]["T"]["Forbidden"])
 
         if event["use_weapons_classes"]["Kill"] == "weapons":
-            if Kill_weapon != "":
-                sql += f"""AND e.KillWeapon in ({Kill_weapon}) """
+            if event["weapons"]["Kill"]:
+                sql += f"""AND e.KillWeapon in %s """
+                param.append(event["weapons"]["Kill"])
         elif event["use_weapons_classes"]["Kill"] == "classes":
-            if Kill_classes != "":
-                sql += f"""AND wck.Class in ({Kill_classes}) """
+            if event["classes"]["Kill"]:
+                sql += f"""AND wck.Class in %s """
+                param.append(event["classes"]["Kill"])
 
         sql += """) t"""
 
         logger.info(sql)
-        with conn.cursor() as cursor:
-            cursor.execute(sql)
-            result = list(cursor.fetchone())
+        logging.info(param)
         res = {}
+        with conn.cursor() as cursor:
+            cursor.execute(sql, param)
+            result = list(cursor.fetchone())
+            logging.info(cursor._last_executed)
+            res["sql"] = cursor._last_executed
+
         if result[1] > 0:
-            res["Situations_found"], res["CT_win_percentage"], res["sql"] = (
+            res["Situations_found"], res["CT_win_percentage"] = (
                 result[1],
                 [
                     round(100 * x)
                     for x in get_wilson_interval(result[0], result[1], 1.0)
                 ],  # number of standard deviations
-                sql,
             )
         else:
             res["Situations_found"], res["CT_win_percentage"], res["sql"] = (
@@ -204,13 +139,10 @@ def lambda_handler(event, context):
                 [0, 0, 0],
                 sql,
             )
+
         return {"statusCode": 200, "body": json.dumps(res)}
-    # except Exception as err:
-    else:
+    except Exception as err:
         return {
             "statusCode": 500,
             "body": json.dumps(f"Unexpected {err=}, {type(err)=}"),
         }
-
-
-print(lambda_handler(event, None))
