@@ -40,7 +40,14 @@ import imageio
 from tqdm import tqdm
 import matplotlib.pyplot as plt
 from awpy.parser import DemoParser
-from awpy.visualization.plot import *
+from awpy.visualization.plot import (
+    plot_map,
+    position_transform,
+    plot_round,
+    plot_rounds_different_players,
+    plot_rounds_same_players,
+    plot_nades,
+)
 from awpy.analytics.nav import generate_position_token
 from awpy.data import NAV
 
@@ -339,17 +346,17 @@ def plot_map_tiles(output_path, map_name="de_ancient", map_type="original", dark
     for a in NAV[map_name]:
         area = NAV[map_name][a]
         try:
-            area["southEastX"] = position_transform(map_name, area["southEastX"], "x")
-            area["northWestX"] = position_transform(map_name, area["northWestX"], "x")
-            area["southEastY"] = position_transform(map_name, area["southEastY"], "y")
-            area["northWestY"] = position_transform(map_name, area["northWestY"], "y")
+            south_east_x = position_transform(map_name, area["southEastX"], "x")
+            north_west_x = position_transform(map_name, area["northWestX"], "x")
+            south_east_y = position_transform(map_name, area["southEastY"], "y")
+            north_west_y = position_transform(map_name, area["northWestY"], "y")
         except KeyError:
             pass
         # Get its lower left points, height and width
-        width = area["southEastX"] - area["northWestX"]
-        height = area["northWestY"] - area["southEastY"]
-        southwest_x = area["northWestX"]
-        southwest_y = area["southEastY"]
+        width = south_east_x - north_west_x
+        height = north_west_y - south_east_y
+        southwest_x = north_west_x
+        southwest_y = south_east_y
         rect = patches.Rectangle(
             (southwest_x, southwest_y),
             width,
