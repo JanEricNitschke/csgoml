@@ -3,7 +3,7 @@
 
     Typical usage example:
 
-    area_matrix = create_area_distance_matrix()
+    area_matrix = get_area_distance_matrix()
     logging.info(area_matrix["de_dust2"]["ExtendedA"]["CTSpawn"])
     logging.info(area_matrix["de_dust2"]["CTSpawn"]["ExtendedA"])
 
@@ -51,6 +51,7 @@ import json
 import argparse
 from statistics import mean, median
 import numpy as np
+import networkx
 from shapely.geometry import Polygon
 from matplotlib import patches
 import matplotlib.pyplot as plt
@@ -234,16 +235,19 @@ def plot_mid(map_name):
     plt.close(fig)
 
 
-def create_tile_distance_matrix(save=False):
-    """Creates a tree like nested dictionary containing distance matrices (as dicts) for each map for all tiles
+def get_tile_distance_matrix(
+    save=False, json_path="D:\\CSGO\\ML\\CSGOML\\data\\tile_dist_matrix.json"
+):
+    """Generates or grabs a tree like nested dictionary containing distance matrices (as dicts) for each map for all tiles
+    Structures is [dist_type(euclidean,graph,geodesic)][map_name][area1id][area2id]
 
     Args:
         save (boolean): Whether to also save the dictionary as a json file
+        json_path (string): Path to either grab an existing matrix from a save a new one to
 
     Returns:
         Tree structure containing distances for all tile pairs on all maps
     """
-    json_path = "D:\\CSGO\\ML\\CSGOML\\data\\tile_dist_matrix.json"
     if os.path.exists(json_path):
         with open(json_path, encoding="utf8") as f:
             tile_distance_matrix = json.load(f)
@@ -296,7 +300,7 @@ def create_tile_distance_matrix(save=False):
                     tile_distance_matrix["geodesic"][map_name][area1][area2] = geodesic[
                         "distance"
                     ]
-                except Exception as e:
+                except networkx.NetworkXNoPath as e:
                     logging.warning(
                         "Exception '%s' occured while trying to find path between area %s in region %s and area %s in region %s",
                         e,
@@ -315,24 +319,29 @@ def create_tile_distance_matrix(save=False):
     return tile_distance_matrix
 
 
-def create_area_distance_matrix(tile_distance_matrix=None, save=False):
-    """Creates a tree like nested dictionary containing distance matrices (as dicts) for each map for all regions
+def get_area_distance_matrix(
+    tile_distance_matrix=None,
+    save=False,
+    json_path="D:\\CSGO\\ML\\CSGOML\\data\\area_dist_matrix.json",
+):
+    """Generates or grabs a tree like nested dictionary containing distance matrices (as dicts) for each map for all regions
+    Structures is [map_name][area1id][area2id][dist_type(euclidean,graph,geodesic)][reference_point(centroid,representative_point,median)]
 
     Args:
         tile_distance_matrix (tree): A tree like structure containing the distances between all tile combinations
         save (boolean): Whether to also save the dictionary as a json file
+        json_path (string): Path to either grab an existing matrix from a save a new one to
 
     Returns:
         Tree structure containing distances for all tile pairs on all maps
     """
-    json_path = "D:\\CSGO\\ML\\CSGOML\\data\\area_dist_matrix.json"
     if os.path.exists(json_path):
         with open(json_path, encoding="utf8") as f:
             area_distance_matrix = json.load(f)
         return area_distance_matrix
     area_distance_matrix = tree()
     if tile_distance_matrix is None:
-        tile_distance_matrix = create_tile_distance_matrix()
+        tile_distance_matrix = get_tile_distance_matrix()
     for dist_type in tile_distance_matrix:
         logging.debug("Dist_type: %s", dist_type)
         for map_name, tiles in NAV.items():
@@ -381,17 +390,10 @@ def generate_centroids(map_name):
     Returns:
         Tuple of dictionaries containing the centroid and representative tiles for each region of the map
     """
-    centers = {}
-    area_points = defaultdict(list)
-    hulls = {}
-    centers = {}
     area_points = defaultdict(list)
     z_s = defaultdict(list)
-    center_z = {}
     area_ids_cent = {}
     area_ids_rep = {}
-    my_centroid = {}
-    rep_point = {}
     for a in NAV[map_name]:
         area = NAV[map_name][a]
         cur_x = []
@@ -405,19 +407,15 @@ def generate_centroids(map_name):
         for x, y in itertools.product(cur_x, cur_y):
             area_points[area["areaName"]].append((x, y))
     for area in area_points:
-        points_array = np.array(area_points[area])
         hull = np.array(stepped_hull(area_points[area]))
-        hulls[area] = hull
-        centers[area] = points_array.mean(axis=0)
-        center_z[area] = mean(z_s[area])
-        my_centroid[area] = np.array(Polygon(hull).centroid)
-        rep_point[area] = np.array(Polygon(hull).representative_point())
-        area_ids_cent[area] = find_closest_area(
-            map_name, list(my_centroid[area]) + [center_z[area]]
-        )["areaId"]
-        area_ids_rep[area] = find_closest_area(
-            map_name, list(rep_point[area]) + [center_z[area]]
-        )["areaId"]
+        my_centroid = list(np.array(Polygon(hull).centroid.coords)[0]) + [
+            mean(z_s[area])
+        ]
+        rep_point = list(np.array(Polygon(hull).representative_point().coords)[0]) + [
+            mean(z_s[area])
+        ]
+        area_ids_cent[area] = find_closest_area(map_name, my_centroid)["areaId"]
+        area_ids_rep[area] = find_closest_area(map_name, rep_point)["areaId"]
     return area_ids_cent, area_ids_rep
 
 
@@ -459,15 +457,17 @@ def main(args):
 
     # with open("D:\CSGO\ML\CSGOML\data\\tile_dist_matrix.json") as f:
     #     tiles_matrix = json.load(f)
-    with open(
-        "D:\\CSGO\\ML\\CSGOML\\data\\area_dist_matrix.json", encoding="utf8"
-    ) as f:
-        area_matrix = json.load(f)
+    # with open(
+    #     "D:\\CSGO\\ML\\CSGOML\\data\\area_dist_matrix.json", encoding="utf8"
+    # ) as f:
+    #     area_matrix = json.load(f)
+    area_matrix = get_area_distance_matrix()
 
     logging.info(area_matrix["de_dust2"]["ExtendedA"]["CTSpawn"])
     logging.info(area_matrix["de_dust2"]["CTSpawn"]["ExtendedA"])
 
     centroids, reps = generate_centroids("de_dust2")
+    logging.info(centroids)
     graph = area_distance(
         "de_dust2", centroids["ExtendedA"], centroids["CTSpawn"], dist_type="graph"
     )
