@@ -51,7 +51,6 @@ import json
 import argparse
 from statistics import mean, median
 import numpy as np
-import networkx
 from shapely.geometry import Polygon
 from matplotlib import patches
 import matplotlib.pyplot as plt
@@ -77,13 +76,10 @@ def mark_areas(map_name, areas):
         area = NAV[map_name][a]
         if a not in areas:
             continue
-        try:
-            south_east_x = position_transform(map_name, area["southEastX"], "x")
-            north_west_x = position_transform(map_name, area["northWestX"], "x")
-            south_east_y = position_transform(map_name, area["southEastY"], "y")
-            north_west_y = position_transform(map_name, area["northWestY"], "y")
-        except KeyError:
-            pass
+        south_east_x = position_transform(map_name, area["southEastX"], "x")
+        north_west_x = position_transform(map_name, area["northWestX"], "x")
+        south_east_y = position_transform(map_name, area["southEastY"], "y")
+        north_west_y = position_transform(map_name, area["northWestY"], "y")
         # Get its lower left points, height and width
         width = south_east_x - north_west_x
         height = north_west_y - south_east_y
@@ -159,7 +155,7 @@ def plot_path(map_name, graph, geodesic):
         )
         axis.add_patch(rect)
     plt.savefig(
-        f"D:\\CSGO\\ML\\CSGOML\\Plots\\distance_matrix_examples\\{map_name}_{graph[0]}_{graph[-1]}_{graph['distance']}_{geodesic['distance']}.png",
+        f"D:\\CSGO\\ML\\CSGOML\\Plots\\distance_matrix_examples\\{map_name}_{graph['areas'][0]}_{graph['areas'][-1]}_{graph['distance']}_{geodesic['distance']}.png",
         bbox_inches="tight",
         dpi=1000,
     )
@@ -195,8 +191,8 @@ def plot_mid(map_name):
         area = NAV[map_name][a]
         if a not in cent_ids.values() and a not in rep_ids.values():
             continue
-        logging.info(a)
-        logging.info(NAV["de_dust2"][a])
+        # logging.info(a)
+        # logging.info(NAV["de_dust2"][a])
         try:
             south_east_x = position_transform(map_name, area["southEastX"], "x")
             north_west_x = position_transform(map_name, area["northWestX"], "x")
@@ -289,30 +285,14 @@ def get_tile_distance_matrix(
                     + (area1_y - area2_y) ** 2
                     + (area1_z - area2_z) ** 2
                 )
-                try:
-                    graph = area_distance(map_name, area1, area2, dist_type="graph")
-                    tile_distance_matrix["graph"][map_name][area1][area2] = graph[
-                        "distance"
-                    ]
-                    geodesic = area_distance(
-                        map_name, area1, area2, dist_type="geodesic"
-                    )
-                    tile_distance_matrix["geodesic"][map_name][area1][area2] = geodesic[
-                        "distance"
-                    ]
-                except networkx.NetworkXNoPath as e:
-                    logging.warning(
-                        "Exception '%s' occured while trying to find path between area %s in region %s and area %s in region %s",
-                        e,
-                        area1,
-                        tiles[area1]["areaName"],
-                        area2,
-                        tiles[area2]["areaName"],
-                    )
-                    tile_distance_matrix["graph"][map_name][area1][area2] = float("inf")
-                    tile_distance_matrix["geodesic"][map_name][area1][area2] = float(
-                        "inf"
-                    )
+                graph = area_distance(map_name, area1, area2, dist_type="graph")
+                tile_distance_matrix["graph"][map_name][area1][area2] = graph[
+                    "distance"
+                ]
+                geodesic = area_distance(map_name, area1, area2, dist_type="geodesic")
+                tile_distance_matrix["geodesic"][map_name][area1][area2] = geodesic[
+                    "distance"
+                ]
     if save:
         with open(json_path, "w", encoding="utf8") as json_file:
             json.dump(tile_distance_matrix, json_file)
@@ -340,8 +320,6 @@ def get_area_distance_matrix(
             area_distance_matrix = json.load(f)
         return area_distance_matrix
     area_distance_matrix = tree()
-    if tile_distance_matrix is None:
-        tile_distance_matrix = get_tile_distance_matrix()
     for dist_type in tile_distance_matrix:
         logging.debug("Dist_type: %s", dist_type)
         for map_name, tiles in NAV.items():
@@ -354,27 +332,57 @@ def get_area_distance_matrix(
                 logging.debug("area1: %s", area1)
                 for area2, centroid2 in centroids.items():
                     logging.debug("area2: %s", area2)
-                    area_distance_matrix[map_name][area1][area2][dist_type][
-                        "centroid"
-                    ] = tile_distance_matrix[dist_type][map_name][str(centroid1)][
-                        str(centroid2)
-                    ]
-                    area_distance_matrix[map_name][area1][area2][dist_type][
-                        "representative_point"
-                    ] = tile_distance_matrix[dist_type][map_name][str(reps[area1])][
-                        str(reps[area2])
-                    ]
-                    connections = []
-                    for sub_area1 in area_mapping[area1]:
-                        for sub_area2 in area_mapping[area2]:
-                            connections.append(
-                                tile_distance_matrix[dist_type][map_name][
-                                    str(sub_area1)
-                                ][str(sub_area2)]
-                            )
-                    area_distance_matrix[map_name][area1][area2][dist_type][
-                        "median_dist"
-                    ] = median(connections)
+                    if tile_distance_matrix is None:
+                        area_distance_matrix[map_name][area1][area2][dist_type][
+                            "centroid"
+                        ] = area_distance(
+                            map_name, centroid1, centroid2, dist_type=dist_type
+                        )[
+                            "distance"
+                        ]
+                        area_distance_matrix[map_name][area1][area2][dist_type][
+                            "representative_point"
+                        ] = area_distance(
+                            map_name, reps[area1], reps[area2], dist_type=dist_type
+                        )[
+                            "distance"
+                        ]
+                        connections = []
+                        for sub_area1 in area_mapping[area1]:
+                            for sub_area2 in area_mapping[area2]:
+                                connections.append(
+                                    area_distance(
+                                        map_name,
+                                        sub_area1,
+                                        sub_area2,
+                                        dist_type=dist_type,
+                                    )["distance"]
+                                )
+                        area_distance_matrix[map_name][area1][area2][dist_type][
+                            "median_dist"
+                        ] = median(connections)
+                    else:
+                        area_distance_matrix[map_name][area1][area2][dist_type][
+                            "centroid"
+                        ] = tile_distance_matrix[dist_type][map_name][str(centroid1)][
+                            str(centroid2)
+                        ]
+                        area_distance_matrix[map_name][area1][area2][dist_type][
+                            "representative_point"
+                        ] = tile_distance_matrix[dist_type][map_name][str(reps[area1])][
+                            str(reps[area2])
+                        ]
+                        connections = []
+                        for sub_area1 in area_mapping[area1]:
+                            for sub_area2 in area_mapping[area2]:
+                                connections.append(
+                                    tile_distance_matrix[dist_type][map_name][
+                                        str(sub_area1)
+                                    ][str(sub_area2)]
+                                )
+                        area_distance_matrix[map_name][area1][area2][dist_type][
+                            "median_dist"
+                        ] = median(connections)
     if save:
         with open(json_path, "w", encoding="utf8") as json_file:
             json.dump(area_distance_matrix, json_file)

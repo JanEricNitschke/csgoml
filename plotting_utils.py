@@ -345,13 +345,10 @@ def plot_map_tiles(output_path, map_name="de_ancient", map_type="original", dark
     # Loop over each nav mesh tile
     for a in NAV[map_name]:
         area = NAV[map_name][a]
-        try:
-            south_east_x = position_transform(map_name, area["southEastX"], "x")
-            north_west_x = position_transform(map_name, area["northWestX"], "x")
-            south_east_y = position_transform(map_name, area["southEastY"], "y")
-            north_west_y = position_transform(map_name, area["northWestY"], "y")
-        except KeyError:
-            pass
+        south_east_x = position_transform(map_name, area["southEastX"], "x")
+        north_west_x = position_transform(map_name, area["northWestX"], "x")
+        south_east_y = position_transform(map_name, area["southEastY"], "y")
+        north_west_y = position_transform(map_name, area["northWestY"], "y")
         # Get its lower left points, height and width
         width = south_east_x - north_west_x
         height = north_west_y - south_east_y

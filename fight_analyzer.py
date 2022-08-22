@@ -25,7 +25,6 @@ import boto3
 from awpy.analytics.nav import find_closest_area
 from awpy.data import NAV
 import pymysql
-import mysql.connector
 
 
 class FightAnalyzer:
@@ -370,7 +369,6 @@ class FightAnalyzer:
                             with open(file_path, encoding="utf-8") as demo_json:
                                 demo_data = json.load(demo_json)
                             match_id = os.path.splitext(filename)[0]
-
                             if match_id in done_set:
                                 logging.debug(
                                     "There are already events from the file with the matchid %s in the database. Skipping it.",

@@ -26,7 +26,7 @@ import random
 from collections import defaultdict
 import pandas as pd
 import numpy as np
-import networkx
+from sympy.utilities.iterables import multiset_permutations
 import tensorflow as tf
 from tensorflow.keras import layers
 from sklearn.model_selection import train_test_split
@@ -772,6 +772,7 @@ class TrajectoryPredictor:
             Shape of position_arrays is (2|1, 5, 3) with the first index indicating the team, the second the player and the third the coordinate
             distance_type: String indicating how the distance between two player positions should be calculated. Options are "geodesic", "graph" and "euclidean"
             tile_dist_matrix: Preloaded distance matrix for each tile
+            Structures is [dist_type(euclidean,graph,geodesic)][map_name][area1id][area2id]
 
         Returns:
             A float representing the distance between these two game states
@@ -779,9 +780,16 @@ class TrajectoryPredictor:
         if distance_type is None:
             distance_type = "geodesic"
         distance = 0
-        if position_array_1.shape != position_array_2.shape:
-            logging.error("Game state shapes do not match!")
+        if (
+            position_array_1.shape[0] != position_array_2.shape[0]
+            or position_array_1.shape[2] != position_array_2.shape[2]
+        ):
+            logging.error(
+                "Game state shapes do not match! Both states have to have the same number of teams(1 or 2) and same number of coordinates (3)."
+            )
             sys.exit()
+        if position_array_1.shape[1] < position_array_2.shape[1]:
+            position_array_1, position_array_2 = position_array_2, position_array_1
         logging.debug(position_array_1.shape)
         logging.debug(position_array_2.shape)
         # Pre compute the area names for each player's position
@@ -789,22 +797,22 @@ class TrajectoryPredictor:
         for team in range(position_array_1.shape[0]):
             for player in range(position_array_1.shape[1]):
                 areas[1][team][player] = find_closest_area(
-                    self.map_name, position_array_1[team, player, :]
+                    self.map_name, position_array_1[team][player]
                 )["areaId"]
                 areas[2][team][player] = find_closest_area(
-                    self.map_name, position_array_2[team, player, :]
+                    self.map_name, position_array_2[team][player]
                 )["areaId"]
         # Get the minimum mapping distance for each side separately
-        for team in range(position_array_2.shape[0]):
+        for team in range(position_array_1.shape[0]):
             side_distance = float("inf")
             # Generate all possible mappings between players from array1 and array2. (Map player1 from array1 to player1 from array2 and player2's to each other or match player1's with player2's and so on)
             for mapping in itertools.permutations(
-                range(position_array_2.shape[1]), position_array_2.shape[1]
+                range(position_array_1.shape[1]), position_array_2.shape[1]
             ):
                 # Distance team distance for the current mapping
                 cur_dist = 0
                 # Calculate the distance between each pair of players in the current mapping
-                for player1, player2 in enumerate(mapping):
+                for player2, player1 in enumerate(mapping):
                     # Just take euclidian distance between the two players. Fast but ignores walls
                     if distance_type == "euclidean":
                         this_dist = math.sqrt(
@@ -833,27 +841,20 @@ class TrajectoryPredictor:
                         # The underlying graph is directed (There is a short path to drop down a ledge but a long one is needed to get back up)
                         # So calculate both possible values and take the minimum one so that the distance between two states/trajectories is commutative
                         if tile_dist_matrix is None:
-                            try:
-                                dist1 = area_distance(
+                            this_dist = min(
+                                area_distance(
                                     self.map_name,
                                     areas[1][team][player1],
                                     areas[2][team][player2],
                                     dist_type=distance_type,
-                                )["distance"]
-                            except networkx.NetworkXNoPath:
-                                dist1 = float("inf")
-                            try:
-                                dist2 = (
-                                    area_distance(
-                                        self.map_name,
-                                        areas[2][team][player2],
-                                        areas[1][team][player1],
-                                        dist_type=distance_type,
-                                    )["distance"],
-                                )
-                            except networkx.NetworkXNoPath:
-                                dist2 = float("inf")
-                            this_dist = min(dist1, dist2)
+                                )["distance"],
+                                area_distance(
+                                    self.map_name,
+                                    areas[2][team][player2],
+                                    areas[1][team][player1],
+                                    dist_type=distance_type,
+                                )["distance"],
+                            )
                         else:
                             this_dist = min(
                                 tile_dist_matrix[distance_type][self.map_name][
@@ -879,13 +880,23 @@ class TrajectoryPredictor:
             distance += side_distance
         return distance
 
-    def token_state_distance(self, token_array_1, token_array_2, distance_type):
+    def token_state_distance(
+        self,
+        token_array_1,
+        token_array_2,
+        distance_type="geodesic",
+        reference_point="centroid",
+        area_dist_matrix=None,
+    ):
         """Calculates a distance between two game states based on player positions
 
         Args:
             token_array_1: Numpy array from a set first index from an array as generated by __modify_data_frame_shape with configuration == "token"
             token_array_2: Numpy array from a set first index from an array as generated by __modify_data_frame_shape with configuration == "token"
-            distance_type: String indicating how the distance between two player positions should be calculated. Options are "geodesic", "graph", "euclidian" and "edit_distance"
+            distance_type: String indicating how the distance between two player positions should be calculated. Options are "geodesic", "graph", "euclidean" and "edit_distance"
+            reference_point: String indicating which reference point to use to determine area distance. Options are "centroid" and "representative_point"
+            area_dist_matrix: Preloaded distance matrix for each area.
+            Structures is [map_name][area1id][area2id][dist_type(euclidean,graph,geodesic)][reference_point(centroid,representative_point)]
 
         Returns:
             A float representing the distance between these two game states
@@ -894,20 +905,121 @@ class TrajectoryPredictor:
         # And also distances based on actual distances between the areas. Get all possible mappings to go from one token to the other (how to deal with different number of players alive?)
         # Calculate the centoid of each area and get the distance between these centoids for all the areas. Either euclidian, graph or geodesic
         # These could be precomputed for named areas as there its just a ~25*25 matrix.
+        if len(token_array_1) != len(token_array_2):
+            logging.error("Token arrays have to have the same length!")  # +
+            sys.exit()
+        logging.info(token_array_1)
+        logging.info(token_array_2)
+        map_area_names = []
+        for area_id in NAV[self.map_name]:
+            if NAV[self.map_name][area_id]["areaName"] not in map_area_names:
+                map_area_names.append(NAV[self.map_name][area_id]["areaName"])
+        map_area_names.sort()
+        logging.info(map_area_names)
+
+        if (
+            len(token_array_1) != len(map_area_names)
+            and len(token_array_1) != len(map_area_names) * 2
+        ):
+            logging.error(
+                "Token arrays do not have the correct length. There has to be one entry per named area per team considered!"
+            )
+            sys.exit()
+
+        if area_dist_matrix is None:
+            area_dist_matrix = get_area_distance_matrix()
         if distance_type is None:
             distance_type = "geodesic"
+
         distance = 0
+
+        if distance_type == "edit_distance":
+            logging.info(list(map(abs, np.subtract(token_array_1, token_array_2))))
+            distance = sum(map(abs, np.subtract(token_array_1, token_array_2)))
+
+        elif distance_type in ["geodesic", "graph", "euclidean"]:
+            if area_dist_matrix is None:
+                ref_points = {}
+                (
+                    ref_points["centroid"],
+                    ref_points["representative_point"],
+                ) = generate_centroids(self.map_name)
+            for i in range(len(token_array_1) // len(map_area_names)):
+                logging.info("i: %s", i)
+                side_distance = float("inf")
+                array1, array2 = (
+                    token_array_1[
+                        0
+                        + i * len(map_area_names) : len(map_area_names)
+                        + i * len(map_area_names),
+                    ],
+                    token_array_2[
+                        0
+                        + i * len(map_area_names) : len(map_area_names)
+                        + i * len(map_area_names),
+                    ],
+                )
+                logging.info(array1)
+                logging.info(array2)
+                if sum(array1) < sum(array2):
+                    array1, array2 = array2, array1
+                diff_array = np.subtract(array1, array2)
+                pos_indices = []
+                neg_indices = []
+                for i, difference in enumerate(diff_array):
+                    if difference > 0:
+                        pos_indices.extend([i] * int(difference))
+                    elif difference < 0:
+                        neg_indices.extend([i] * int((abs(difference))))
+                logging.info(pos_indices)
+                logging.info(neg_indices)
+                for mapping in (
+                    list(zip(x, neg_indices))
+                    for x in multiset_permutations(pos_indices, len(neg_indices))
+                ):
+                    logging.info(mapping)
+                    this_dist = 0
+                    for area1, area2 in mapping:
+                        if area_dist_matrix is None:
+                            this_dist += min(
+                                area_distance(
+                                    self.map_name,
+                                    ref_points[reference_point][map_area_names[area1]],
+                                    ref_points[reference_point][map_area_names[area2]],
+                                    dist_type=distance_type,
+                                )["distance"],
+                                area_distance(
+                                    self.map_name,
+                                    ref_points[reference_point][map_area_names[area2]],
+                                    ref_points[reference_point][map_area_names[area1]],
+                                    dist_type=distance_type,
+                                )["distance"],
+                            )
+                        else:
+                            this_dist += min(
+                                area_dist_matrix[self.map_name][map_area_names[area1]][
+                                    map_area_names[area2]
+                                ][distance_type][reference_point],
+                                area_dist_matrix[self.map_name][map_area_names[area2]][
+                                    map_area_names[area1]
+                                ][distance_type][reference_point],
+                            )
+                    side_distance = min(side_distance, this_dist)
+                distance += side_distance
         return distance
 
     def trajectory_distance(
-        self, trajectory_array_1, trajectory_array_2, distance_type=None
+        self,
+        trajectory_array_1,
+        trajectory_array_2,
+        distance_type=None,
     ):
         """Calculates a distance distance between two trajectories
 
         Args:
             trajectory_array_1: Numpy array as generated by __modify_data_frame_shape
             trajectory_array_2: Numpy array from a set first index from an array as generated by __modify_data_frame_shape
-
+            distance_type: String indicating how the distance between two player positions should be calculated. Options are "geodesic", "graph", "euclidean" and "edit_distance"
         Returns:
             A float representing the distance between these two trajectories
         """
@@ -978,7 +1090,7 @@ def main(args):
             encoding="utf-8",
             level=logging.INFO,
             filemode="w",
-            format="%(asctime)s %(levelname)-8s %(message)s",
+            format="%(asctime)s %(levelname)-8s - %(funcName)s - %(message)s",
             datefmt="%Y-%m-%d %H:%M:%S",
         )
 
