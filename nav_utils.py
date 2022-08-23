@@ -95,7 +95,7 @@ def mark_areas(map_name, areas):
         )
         axis.add_patch(rect)
     plt.savefig(
-        f"D:\\CSGO\\ML\\CSGOML\\Plots\\distance_matrix_fails\\{map_name}_{'_'.join(areas)}.png",
+        f"D:\\CSGO\\ML\\CSGOML\\Plots\\distance_matrix_fails\\{map_name}_{'_'.join(str(area) for area in areas)}.png",
         bbox_inches="tight",
         dpi=1000,
     )
