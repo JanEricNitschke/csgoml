@@ -34,6 +34,10 @@ import matplotlib.pyplot as plt
 from awpy.data import NAV
 from awpy.analytics.nav import area_distance, find_closest_area
 from tqdm import tqdm
+from nav_utils import (
+    generate_centroids,
+    get_area_distance_matrix,
+)
 
 
 class TrajectoryPredictor:
