@@ -18,6 +18,8 @@
 
 import math
 import itertools
+import shutil
+import collections
 import os
 import logging
 import argparse
@@ -26,13 +28,28 @@ import random
 from collections import defaultdict
 import pandas as pd
 import numpy as np
+import imageio
 from sympy.utilities.iterables import multiset_permutations
 import tensorflow as tf
 from tensorflow.keras import layers
 from sklearn.model_selection import train_test_split
 import matplotlib.pyplot as plt
+import matplotlib as mpl
 from awpy.data import NAV
-from awpy.analytics.nav import area_distance, find_closest_area
+from awpy.visualization.plot import (
+    plot_map,
+    position_transform,
+    get_player_id,
+    get_shortest_distances_mapping,
+    plot_positions,
+    tree,
+)
+from awpy.analytics.nav import (
+    area_distance,
+    find_closest_area,
+    position_state_distance,
+    token_state_distance,
+)
 from tqdm import tqdm
 from nav_utils import (
     generate_centroids,
@@ -72,7 +89,7 @@ class TrajectoryPredictor:
             self.random_state = random_state
 
         if times is None:
-            self.times = [10, 160, 10]
+            self.times = [20, 20, 10]  # [10,160,10]
         else:
             self.times = times
 
@@ -105,7 +122,8 @@ class TrajectoryPredictor:
         self.example_id = example_id
 
     def __get_configurations(self):
-        coordinates = ["tokens", "positions"]
+        # coordinates = ["tokens", "positions"]
+        coordinates = ["positions"]
         time = np.arange(
             self.times[0], self.times[1] + self.times[2] // 2, self.times[2]
         )
@@ -224,7 +242,8 @@ class TrajectoryPredictor:
         position_df = pd.DataFrame(position_df.tolist())
         # Convert the individual string into the respective integers
         # Divide numbers by 5 so they are all from 0 to 1
-        position_df = position_df.applymap(lambda x: float(x) / 5)
+        # TODO: renable this?
+        # position_df = position_df.applymap(lambda x: float(x) / 5)
         # Pad the df to the specified length
         position_df = self.__pad_to_length(position_df, time)
         # Convert to numpy array
@@ -541,6 +560,64 @@ class TrajectoryPredictor:
         test_labels, test_features = self.__transform_dataframe_to_arrays(test_df)
         val_labels, val_features = self.__transform_dataframe_to_arrays(val_df)
         train_labels, train_features = self.__transform_dataframe_to_arrays(train_df)
+
+        # logging.info(
+        #     self.trajectory_distance(train_features[0], train_features[1], "geodesic")
+        # )
+        name = "Test"
+        output = r"D:\CSGO\ML\CSGOML\Plots"
+        round_num = 10
+        base_name = f"{name}_{round_num}"
+
+        # logging.info("Generating token round file.")
+        # plot_round_tokens(
+        #     filename=plot_token_file,
+        #     frames=frames,
+        #     map_name=demo_map_name,
+        #     map_type="simpleradar",
+        #     dark=False,
+        #     fps=2,
+        # )
+        # logging.info("Generating round file.")
+        # plot_round(
+        #     filename=plot_round_file,
+        #     frames=frames,
+        #     map_name=demo_map_name,
+        #     map_type="simpleradar",
+        #     dark=False,
+        #     fps=2,
+        # )
+
+        n_rounds = 2
+        rounds_file_diff_play = os.path.join(
+            output, f"{base_name}_{n_rounds}_rounds_different_players.gif"
+        )
+        rounds_file_diff_play_img = os.path.join(
+            output, f"{base_name}_{n_rounds}_rounds_different_players_img.png"
+        )
+        logging.info("Generating rounds_different_players.")
+        self.plot_rounds_different_players(
+            rounds_file_diff_play,
+            [
+                train_features[round_num + i]
+                for i in range(-n_rounds // 2, n_rounds // 2)
+            ],
+            map_name=self.map_name,
+            map_type="simpleradar",
+            fps=1,
+        )
+
+        logging.info("Generating rounds_different_players image.")
+        self.plot_rounds_different_players_image(
+            rounds_file_diff_play_img,
+            [
+                train_features[round_num + i]
+                for i in range(-n_rounds // 2, n_rounds // 2)
+            ],
+            map_name=self.map_name,
+            map_type="simpleradar",
+        )
+
         self.datasets[side][time][coordinate]["val"]["features"] = val_features
         self.datasets[side][time][coordinate]["train"]["features"] = train_features
         self.datasets[side][time][coordinate]["test"]["features"] = test_features
@@ -761,257 +838,6 @@ class TrajectoryPredictor:
         for configuration in self.__get_configurations():
             self.plot_model(configuration)
 
-    def position_state_distance(
-        self,
-        position_array_1,
-        position_array_2,
-        distance_type="geodesic",
-        tile_dist_matrix=None,
-    ):
-        """Calculates a distance between two game states based on player positions
-
-        Args:
-            position_array_1: Numpy array from a set first index from an array as generated by __modify_data_frame_shape with configuration == "positions"
-            position_array_2: Numpy array from a set first index from an array as generated by __modify_data_frame_shape with configuration == "positions"
-            Shape of position_arrays is (2|1, 5, 3) with the first index indicating the team, the second the player and the third the coordinate
-            distance_type: String indicating how the distance between two player positions should be calculated. Options are "geodesic", "graph" and "euclidean"
-            tile_dist_matrix: Preloaded distance matrix for each tile
-            Structures is [dist_type(euclidean,graph,geodesic)][map_name][area1id][area2id]
-
-        Returns:
-            A float representing the distance between these two game states
-        """
-        if distance_type is None:
-            distance_type = "geodesic"
-        distance = 0
-        if (
-            position_array_1.shape[0] != position_array_2.shape[0]
-            or position_array_1.shape[2] != position_array_2.shape[2]
-        ):
-            logging.error(
-                "Game state shapes do not match! Both states have to have the same number of teams(1 or 2) and same number of coordinates (3)."
-            )
-            sys.exit()
-        if position_array_1.shape[1] < position_array_2.shape[1]:
-            position_array_1, position_array_2 = position_array_2, position_array_1
-        logging.debug(position_array_1.shape)
-        logging.debug(position_array_2.shape)
-        # Pre compute the area names for each player's position
-        areas = {1: defaultdict(dict), 2: defaultdict(dict)}
-        for team in range(position_array_1.shape[0]):
-            for player in range(position_array_1.shape[1]):
-                areas[1][team][player] = find_closest_area(
-                    self.map_name, position_array_1[team][player]
-                )["areaId"]
-                areas[2][team][player] = find_closest_area(
-                    self.map_name, position_array_2[team][player]
-                )["areaId"]
-        # Get the minimum mapping distance for each side separately
-        for team in range(position_array_1.shape[0]):
-            side_distance = float("inf")
-            # Generate all possible mappings between players from array1 and array2. (Map player1 from array1 to player1 from array2 and player2's to each other or match player1's with player2's and so on)
-            for mapping in itertools.permutations(
-                range(position_array_1.shape[1]), position_array_2.shape[1]
-            ):
-                # Distance team distance for the current mapping
-                cur_dist = 0
-                # Calculate the distance between each pair of players in the current mapping
-                for player2, player1 in enumerate(mapping):
-                    # Just take euclidian distance between the two players. Fast but ignores walls
-                    if distance_type == "euclidean":
-                        this_dist = math.sqrt(
-                            (
-                                position_array_1[team][player1][0]
-                                - position_array_2[team][player2][0]
-                            )
-                            ** 2
-                            + (
-                                position_array_1[team][player1][1]
-                                - position_array_2[team][player2][1]
-                            )
-                            ** 2
-                            + (
-                                position_array_1[team][player1][2]
-                                - position_array_2[team][player2][2]
-                            )
-                            ** 2
-                        )
-                    # Use a more accurate graph based distance that takes into account the actual map
-                    # TODO: Load the precomputed distance matrices here
-                    # TODO: Sometimes there is no path between two tiles. In that case the distance matrices contain float("inf").
-                    # Think about how to deal with that for the mapping. Probably just use a big value that isnt infinite.
-                    # Like sys.maxsize/6
-                    elif distance_type in ["geodesic", "graph"]:
-                        # The underlying graph is directed (There is a short path to drop down a ledge but a long one is needed to get back up)
-                        # So calculate both possible values and take the minimum one so that the distance between two states/trajectories is commutative
-                        if tile_dist_matrix is None:
-                            this_dist = min(
-                                area_distance(
-                                    self.map_name,
-                                    areas[1][team][player1],
-                                    areas[2][team][player2],
-                                    dist_type=distance_type,
-                                )["distance"],
-                                area_distance(
-                                    self.map_name,
-                                    areas[2][team][player2],
-                                    areas[1][team][player1],
-                                    dist_type=distance_type,
-                                )["distance"],
-                            )
-                        else:
-                            this_dist = min(
-                                tile_dist_matrix[distance_type][self.map_name][
-                                    str(areas[1][team][player1])
-                                ][str(areas[2][team][player2])],
-                                tile_dist_matrix[distance_type][self.map_name][
-                                    str(areas[2][team][player2])
-                                ][str(areas[1][team][player1])],
-                            )
-                        if this_dist == float("inf"):
-                            this_dist = sys.maxsize / 6
-                    else:
-                        logging.error(
-                            "Got invalid distance type %s. Valid options are 'geodesic', 'graph' and 'euclidian'.",
-                            distance_type,
-                        )
-                        sys.exit()
-                    # Build up the overall distance for the current mapping of the current side
-                    cur_dist += this_dist
-                # Only keep the smallest distance from all the mappings
-                side_distance = min(side_distance, cur_dist)
-            # Build the total distance as the sum of the individual side's distances
-            distance += side_distance
-        return distance
-
-    def token_state_distance(
-        self,
-        token_array_1,
-        token_array_2,
-        distance_type="geodesic",
-        reference_point="centroid",
-        area_dist_matrix=None,
-    ):
-        """Calculates a distance between two game states based on player positions
-
-        Args:
-            token_array_1: Numpy array from a set first index from an array as generated by __modify_data_frame_shape with configuration == "token"
-            token_array_2: Numpy array from a set first index from an array as generated by __modify_data_frame_shape with configuration == "token"
-            distance_type: String indicating how the distance between two player positions should be calculated. Options are "geodesic", "graph", "euclidean" and "edit_distance"
-            reference_point: String indicating which reference point to use to determine area distance. Options are "centroid" and "representative_point"
-            area_dist_matrix: Preloaded distance matrix for each area.
-            Structures is [map_name][area1id][area2id][dist_type(euclidean,graph,geodesic)][reference_point(centroid,representative_point)]
-
-        Returns:
-            A float representing the distance between these two game states
-        """
-        # TODO: imlement a simple edit distance: "101" is 1 edit away from "100" and 2 edits away from "110".
-        # And also distances based on actual distances between the areas. Get all possible mappings to go from one token to the other (how to deal with different number of players alive?)
-        # Calculate the centoid of each area and get the distance between these centoids for all the areas. Either euclidian, graph or geodesic
-        # These could be precomputed for named areas as there its just a ~25*25 matrix.
-        if len(token_array_1) != len(token_array_2):
-            logging.error("Token arrays have to have the same length!")  # +
-            sys.exit()
-        logging.info(token_array_1)
-        logging.info(token_array_2)
-        map_area_names = []
-        for area_id in NAV[self.map_name]:
-            if NAV[self.map_name][area_id]["areaName"] not in map_area_names:
-                map_area_names.append(NAV[self.map_name][area_id]["areaName"])
-        map_area_names.sort()
-        logging.info(map_area_names)
-
-        if (
-            len(token_array_1) != len(map_area_names)
-            and len(token_array_1) != len(map_area_names) * 2
-        ):
-            logging.error(
-                "Token arrays do not have the correct length. There has to be one entry per named area per team considered!"
-            )
-            sys.exit()
-
-        if area_dist_matrix is None:
-            area_dist_matrix = get_area_distance_matrix()
-        if distance_type is None:
-            distance_type = "geodesic"
-
-        distance = 0
-
-        if distance_type == "edit_distance":
-            logging.info(list(map(abs, np.subtract(token_array_1, token_array_2))))
-            distance = sum(map(abs, np.subtract(token_array_1, token_array_2)))
-
-        elif distance_type in ["geodesic", "graph", "euclidean"]:
-            if area_dist_matrix is None:
-                ref_points = {}
-                (
-                    ref_points["centroid"],
-                    ref_points["representative_point"],
-                ) = generate_centroids(self.map_name)
-            for i in range(len(token_array_1) // len(map_area_names)):
-                logging.info("i: %s", i)
-                side_distance = float("inf")
-                array1, array2 = (
-                    token_array_1[
-                        0
-                        + i * len(map_area_names) : len(map_area_names)
-                        + i * len(map_area_names),
-                    ],
-                    token_array_2[
-                        0
-                        + i * len(map_area_names) : len(map_area_names)
-                        + i * len(map_area_names),
-                    ],
-                )
-                logging.info(array1)
-                logging.info(array2)
-                if sum(array1) < sum(array2):
-                    array1, array2 = array2, array1
-                diff_array = np.subtract(array1, array2)
-                pos_indices = []
-                neg_indices = []
-                for i, difference in enumerate(diff_array):
-                    if difference > 0:
-                        pos_indices.extend([i] * int(difference))
-                    elif difference < 0:
-                        neg_indices.extend([i] * int((abs(difference))))
-                logging.info(pos_indices)
-                logging.info(neg_indices)
-                for mapping in (
-                    list(zip(x, neg_indices))
-                    for x in multiset_permutations(pos_indices, len(neg_indices))
-                ):
-                    logging.info(mapping)
-                    this_dist = 0
-                    for area1, area2 in mapping:
-                        if area_dist_matrix is None:
-                            this_dist += min(
-                                area_distance(
-                                    self.map_name,
-                                    ref_points[reference_point][map_area_names[area1]],
-                                    ref_points[reference_point][map_area_names[area2]],
-                                    dist_type=distance_type,
-                                )["distance"],
-                                area_distance(
-                                    self.map_name,
-                                    ref_points[reference_point][map_area_names[area2]],
-                                    ref_points[reference_point][map_area_names[area1]],
-                                    dist_type=distance_type,
-                                )["distance"],
-                            )
-                        else:
-                            this_dist += min(
-                                area_dist_matrix[self.map_name][map_area_names[area1]][
-                                    map_area_names[area2]
-                                ][distance_type][reference_point],
-                                area_dist_matrix[self.map_name][map_area_names[area2]][
-                                    map_area_names[area1]
-                                ][distance_type][reference_point],
-                            )
-                    side_distance = min(side_distance, this_dist)
-                distance += side_distance
-        return distance
-
     def trajectory_distance(
         self,
         trajectory_array_1,
@@ -1033,26 +859,381 @@ class TrajectoryPredictor:
         length = max(len(trajectory_array_1), len(trajectory_array_2))
         for time in tqdm(range(length)):
             if len(trajectory_array_1.shape) > 2.5:
-                distance += self.position_state_distance(
-                    trajectory_array_1[time]
-                    if time in range(len(trajectory_array_1))
-                    else trajectory_array_1[-1],
-                    trajectory_array_2[time]
-                    if time in range(len(trajectory_array_2))
-                    else trajectory_array_2[-1],
-                    distance_type=distance_type,
+                distance += (
+                    position_state_distance(
+                        map_name=self.map_name,
+                        position_array_1=trajectory_array_1[time]
+                        if time in range(len(trajectory_array_1))
+                        else trajectory_array_1[-1],
+                        position_array_2=trajectory_array_2[time]
+                        if time in range(len(trajectory_array_2))
+                        else trajectory_array_2[-1],
+                        distance_type=distance_type,
+                    )
+                    / length
                 )
             else:
-                distance += self.token_state_distance(
-                    trajectory_array_1[time]
-                    if time in range(len(trajectory_array_1))
-                    else trajectory_array_1[-1],
-                    trajectory_array_2[time]
-                    if time in range(len(trajectory_array_2))
-                    else trajectory_array_2[-1],
-                    distance_type=distance_type,
+                distance += (
+                    token_state_distance(
+                        map_name=self.map_name,
+                        token_array_1=trajectory_array_1[time]
+                        if time in range(len(trajectory_array_1))
+                        else trajectory_array_1[-1],
+                        token_array_2=trajectory_array_2[time]
+                        if time in range(len(trajectory_array_2))
+                        else trajectory_array_2[-1],
+                        distance_type=distance_type,
+                    )
+                    / length
                 )
+            logging.info(distance)
         return distance
+
+    def plot_rounds_different_players(
+        self,
+        filename,
+        frames_list,
+        map_name="de_ancient",
+        map_type="original",
+        dark=False,
+        fps=10,
+        n_frames=9000,
+    ):
+        """Plots a list of rounds and saves as a .gif. Each player in the first round is assigned a separate color. Players in the other rounds are matched by proximity.
+        Only use untransformed coordinates.
+
+        Args:
+            filename (string): Filename to save the gif
+            frames_list (list): List of np arrays each frame should have shape (Time_steps,2|1(sides),5,3)
+            map_name (string): Map to search
+            map_type (string): "original" or "simpleradar"
+            dark (boolean): Only for use with map_type="simpleradar". Indicates if you want to use the SimpleRadar dark map type
+            fps (integer): Number of frames per second in the gif
+            n_frames (integer): The first how many frames should be plotted
+
+        Returns:
+            True, saves .gif
+        """
+        if os.path.isdir("csgo_tmp"):
+            shutil.rmtree("csgo_tmp/")
+        os.mkdir("csgo_tmp")
+        image_files = []
+        # Needed to check if leaders have been fully initialized
+        dict_initialized = {0: False, 1: False}
+        # Used to store values for each round separately. Needed when a round ends.
+        frame_positions = collections.defaultdict(list)
+        frame_colors = collections.defaultdict(list)
+        frame_markers = collections.defaultdict(list)
+        frame_alphas = collections.defaultdict(list)
+        frame_sizes = collections.defaultdict(list)
+        colors_list = {
+            1: ["cyan", "yellow", "fuchsia", "lime", "orange"],
+            0: ["red", "green", "black", "white", "gold"],
+        }
+        # Determine how many frames are there in total
+        max_frames = max(frames.shape[0] for frames in frames_list)
+        # Build tree data structure for leaders
+        # Currently leaders={"t":{},"ct":{}} would probably do as well
+        # For each side the keys are a players steamd id + "_" + frame_number in case the same steamid occurs in multiple rounds
+        leaders = tree()
+        # Want to avoid unsafe defaults
+        for i in tqdm(range(min(max_frames, int(n_frames)))):
+            # Initialize lists used to store things from all rounds to plot for each frame
+            positions = []
+            colors = []
+            markers = []
+            alphas = []
+            sizes = []
+            # Is used to determine if a specific leader has already been seen. Needed when a leader drops out because their round has already ended
+            checked_in = set()
+            # Loop over all the rounds and update the position and status of all leaders
+            for frame_index, frames in enumerate(frames_list):
+                # Check if the current frame has already ended
+                if i in range(frames.shape[0]):
+                    for side in range(frames.shape[1]):
+                        # Do not do this if leaders has not been fully initialized
+                        if dict_initialized[side] is True:
+                            for player_index, p in enumerate(frames[i][side]):
+                                player_id = f"{player_index}_{frame_index}_{side}"
+                                if (
+                                    player_id not in leaders[side]
+                                    or player_id in checked_in
+                                ):
+                                    continue
+                                pos = (
+                                    position_transform(map_name, p[0], "x"),
+                                    position_transform(map_name, p[1], "y"),
+                                )
+                                leaders[side][player_id]["pos"] = pos
+            # Now do another loop to add all players in all frames with their appropriate colors.
+            for frame_index, frames in enumerate(frames_list):
+                # Initialize lists used to store values for this round for this frame
+                frame_positions[frame_index] = []
+                frame_colors[frame_index] = []
+                frame_markers[frame_index] = []
+                frame_alphas[frame_index] = []
+                frame_sizes[frame_index] = []
+                if i in range(len(frames)):
+                    for side in range(frames.shape[1]):
+                        # If we have already initialized leaders
+                        if dict_initialized[side] is True:
+                            # Get the positions of all players in the current frame and round
+                            current_positions = []
+                            for player_index, p in enumerate(frames[i][side]):
+                                pos = (
+                                    position_transform(map_name, p[0], "x"),
+                                    position_transform(map_name, p[1], "y"),
+                                )
+                                current_positions.append(pos)
+                            # Find the best mapping between current players and leaders
+                            mapping = get_shortest_distances_mapping(
+                                leaders[side], current_positions
+                            )
+                        # Now do the actual plotting
+                        for player_index, p in enumerate(frames[i][side]):
+                            player_id = f"{player_index}_{frame_index}_{side}"
+                            pos = (
+                                position_transform(map_name, p[0], "x"),
+                                position_transform(map_name, p[1], "y"),
+                            )
+
+                            frame_markers[frame_index].append(rf"$ {frame_index} $")
+
+                            # If the leaders have not been initialized yet, do so
+                            if dict_initialized[side] is False:
+                                leaders[side][player_id]["index"] = player_index
+                                leaders[side][player_id]["pos"] = pos
+
+                            # This is relevant for all subsequent frames
+                            # If we are a leader we update our values
+                            # Should be able to be dropped as we already updated leaders in the earlier loop
+                            if player_id in leaders[side]:
+                                # Grab our current player_index from what it was the previous round to achieve color consistency
+                                player_index = leaders[side][player_id]["index"]
+                                # Update our position
+                                leaders[side][player_id]["pos"] = pos
+                            # If not a leader
+                            else:
+                                # Grab the id of the leader assigned to this player
+                                assigned_leader = mapping[player_index]
+                                # If the assigned leader is now dead or has not been assigned (happens when his round is already over)
+                                # Then we take over that position if we are not also dead
+                                if assigned_leader not in checked_in:
+                                    # Remove the previous leaders entry from the dict
+                                    old_index = leaders[side][assigned_leader]["index"]
+                                    del leaders[side][assigned_leader]
+                                    # Fill with our own values but use their prior index to keep color consistency when switching leaders
+                                    leaders[side][player_id]["index"] = old_index
+                                    leaders[side][player_id]["pos"] = pos
+                                    player_index = leaders[side][player_id]["index"]
+                                # If the leader is alive and present or if we are also dead
+                                else:
+                                    # We just grab our color
+                                    player_index = leaders[side][assigned_leader][
+                                        "index"
+                                    ]
+                            frame_colors[frame_index].append(
+                                colors_list[side][player_index]
+                            )
+                            frame_positions[frame_index].append(pos)
+                            # If we are an alive leader we get opaque and big markers
+                            if (
+                                player_id in leaders[side]
+                                and not player_id in checked_in
+                            ):
+                                frame_alphas[frame_index].append(1)
+                                frame_sizes[frame_index].append(
+                                    mpl.rcParams["lines.markersize"] ** 2
+                                )
+                            # If not we get partially transparent and small ones
+                            else:
+                                frame_alphas[frame_index].append(0.5)
+                                frame_sizes[frame_index].append(
+                                    0.3 * mpl.rcParams["lines.markersize"] ** 2
+                                )
+                            # If we are a leader we are now checked in so everyone knows our round has not ended yet
+                            if player_id in leaders[side]:
+                                checked_in.add(player_id)
+                        # Once we have done our first loop over a side we are initialized
+                        dict_initialized[side] = True
+                # Add the values for the current round to the lists for the whole frame
+                positions.extend(frame_positions[frame_index])
+                colors.extend(frame_colors[frame_index])
+                markers.extend(frame_markers[frame_index])
+                alphas.extend(frame_alphas[frame_index])
+                sizes.extend(frame_sizes[frame_index])
+            f, _ = plot_positions(
+                positions=positions,
+                colors=colors,
+                markers=markers,
+                alphas=alphas,
+                sizes=sizes,
+                map_name=map_name,
+                map_type=map_type,
+                dark=dark,
+            )
+            image_files.append(f"csgo_tmp/{i}.png")
+            f.savefig(image_files[-1], dpi=300, bbox_inches="tight")
+            plt.close()
+        images = []
+        for file in image_files:
+            images.append(imageio.imread(file))
+        imageio.mimsave(filename, images, fps=fps)
+        # shutil.rmtree("csgo_tmp/")
+        return True
+
+    def plot_rounds_different_players_image(
+        self,
+        filename,
+        frames_list,
+        map_name="de_ancient",
+        map_type="original",
+        dark=False,
+        n_frames=9000,
+    ):
+        """Plots a list of rounds and saves as a .gif. Each player in the first round is assigned a separate color. Players in the other rounds are matched by proximity.
+        Only use untransformed coordinates.
+
+        Args:
+            filename (string): Filename to save the gif
+            frames_list (list): List of np arrays each frame should have shape (Time_steps,2|1(sides),5,3)
+            map_name (string): Map to search
+            map_type (string): "original" or "simpleradar"
+            dark (boolean): Only for use with map_type="simpleradar". Indicates if you want to use the SimpleRadar dark map type
+            n_frames (integer): The first how many frames should be plotted
+
+        Returns:
+            True, saves .gif
+        """
+        # Needed to check if leaders have been fully initialized
+        dict_initialized = {0: False, 1: False}
+        # Used to store values for each round separately. Needed when a round ends.
+        frame_positions = collections.defaultdict(
+            lambda: collections.defaultdict(lambda: collections.defaultdict(list))
+        )
+        frame_colors = collections.defaultdict(
+            lambda: collections.defaultdict(lambda: collections.defaultdict(list))
+        )
+        colors_list = {
+            1: ["cyan", "yellow", "fuchsia", "lime", "orange"],
+            0: ["red", "green", "black", "white", "gold"],
+        }
+        # Determine how many frames are there in total
+        max_frames = max(frames.shape[0] for frames in frames_list)
+        # Build tree data structure for leaders
+        # Currently leaders={"t":{},"ct":{}} would probably do as well
+        # For each side the keys are a players steamd id + "_" + frame_number in case the same steamid occurs in multiple rounds
+        leaders = tree()
+        # Want to avoid unsafe defaults
+        for i in tqdm(range(min(max_frames, int(n_frames)))):
+            # Is used to determine if a specific leader has already been seen. Needed when a leader drops out because their round has already ended
+            checked_in = set()
+            # Loop over all the rounds and update the position and status of all leaders
+            for frame_index, frames in enumerate(frames_list):
+                # Check if the current frame has already ended
+                if i in range(frames.shape[0]):
+                    for side in range(frames.shape[1]):
+                        # Do not do this if leaders has not been fully initialized
+                        if dict_initialized[side] is True:
+                            for player_index, p in enumerate(frames[i][side]):
+                                player_id = f"{player_index}_{frame_index}_{side}"
+                                if (
+                                    player_id not in leaders[side]
+                                    or player_id in checked_in
+                                ):
+                                    continue
+                                pos = (
+                                    position_transform(map_name, p[0], "x"),
+                                    position_transform(map_name, p[1], "y"),
+                                )
+                                leaders[side][player_id]["pos"] = pos
+            # Now do another loop to add all players in all frames with their appropriate colors.
+            for frame_index, frames in enumerate(frames_list):
+                # Initialize lists used to store values for this round for this frame
+                if i in range(frames.shape[0]):
+                    for side in range(frames.shape[1]):
+                        # If we have already initialized leaders
+                        if dict_initialized[side] is True:
+                            # Get the positions of all players in the current frame and round
+                            current_positions = []
+                            for player_index, p in enumerate(frames[i][side]):
+                                pos = (
+                                    position_transform(map_name, p[0], "x"),
+                                    position_transform(map_name, p[1], "y"),
+                                )
+                                current_positions.append(pos)
+                            # Find the best mapping between current players and leaders
+                            mapping = get_shortest_distances_mapping(
+                                leaders[side], current_positions
+                            )
+                        # Now do the actual plotting
+                        for player_index, p in enumerate(frames[i][side]):
+                            player_id = f"{player_index}_{frame_index}_{side}"
+                            pos = (
+                                position_transform(map_name, p[0], "x"),
+                                position_transform(map_name, p[1], "y"),
+                            )
+
+                            # If the leaders have not been initialized yet, do so
+                            if dict_initialized[side] is False:
+                                leaders[side][player_id]["index"] = player_index
+                                leaders[side][player_id]["pos"] = pos
+
+                            # This is relevant for all subsequent frames
+                            # If we are a leader we update our values
+                            # Should be able to be dropped as we already updated leaders in the earlier loop
+                            if player_id in leaders[side]:
+                                # Grab our current player_index from what it was the previous round to achieve color consistency
+                                player_index = leaders[side][player_id]["index"]
+                                # Update our position
+                                leaders[side][player_id]["pos"] = pos
+                            # If not a leader
+                            else:
+                                # Grab the id of the leader assigned to this player
+                                assigned_leader = mapping[player_index]
+                                # If the assigned leader is now dead or has not been assigned (happens when his round is already over)
+                                # Then we take over that position if we are not also dead
+                                if assigned_leader not in checked_in:
+                                    # Remove the previous leaders entry from the dict
+                                    old_index = leaders[side][assigned_leader]["index"]
+                                    del leaders[side][assigned_leader]
+                                    # Fill with our own values but use their prior index to keep color consistency when switching leaders
+                                    leaders[side][player_id]["index"] = old_index
+                                    leaders[side][player_id]["pos"] = pos
+                                    player_index = leaders[side][player_id]["index"]
+                                # If the leader is alive and present or if we are also dead
+                                else:
+                                    # We just grab our color
+                                    player_index = leaders[side][assigned_leader][
+                                        "index"
+                                    ]
+                            frame_colors[frame_index][side][player_index].append(
+                                colors_list[side][player_index]
+                            )
+                            frame_positions[frame_index][side][player_index].append(pos)
+                            # If we are a leader we are now checked in so everyone knows our round has not ended yet
+                            if player_id in leaders[side]:
+                                checked_in.add(player_id)
+                        # Once we have done our first loop over a side we are initialized
+                        dict_initialized[side] = True
+                        logging.info(frame_positions)
+                        logging.info(frame_colors)
+        f, a = plot_map(map_name=map_name, map_type=map_type, dark=dark)
+        for frame in frame_positions:
+            for side in frame_positions[frame]:
+                for player in frame_positions[frame][side]:
+                    a.plot(
+                        [x[0] for x in frame_positions[frame][side][player]],
+                        [x[1] for x in frame_positions[frame][side][player]],
+                        c=frame_colors[frame][side][player][0],
+                        linestyle="-",
+                        linewidth=0.5,
+                    )
+        a.get_xaxis().set_visible(False)
+        a.get_yaxis().set_visible(False)
+        f.savefig(filename, dpi=1000, bbox_inches="tight")
+        plt.close()
+        return True
 
 
 def main(args):
@@ -1108,23 +1289,28 @@ def main(args):
 
     # Read in the prepared json file.
     # File="D:\CSGO\Demos\Maps\\"+options.map+"\Analysis\Prepared_Input_Tensorflow_"+options.map+".json"
+    #  r"E:\PhD\MachineLearning\CSGOData\ParsedDemos\\"
+    #     + options.map
+    #     + r"\Analysis\Prepared_Input_Tensorflow_"
+    #     + options.map
+    #     + ".json"
     file = (
-        r"E:\PhD\MachineLearning\CSGOData\ParsedDemos\\"
+        "D:\\CSGO\\Demos\\Maps\\"
         + options.map
-        + r"\Analysis\Prepared_Input_Tensorflow_"
+        + "\\Analysis\\Prepared_Input_Tensorflow_"
         + options.map
         + ".json"
     )
-
     predictor = TrajectoryPredictor(
         file,
-        times=[160, 160, 10],
+        times=[15, 15, 2],
         sides=["BOTH"],
         random_state=random_state,
         example_id=example_index,
+        map_name="de_" + options.map,
     )
     predictor.generate_data_sets()
-    predictor.plot_all_models()
+    # predictor.plot_all_models()
 
 
 if __name__ == "__main__":
