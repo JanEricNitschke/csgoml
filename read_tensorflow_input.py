@@ -42,13 +42,13 @@ from awpy.visualization.plot import (
     get_player_id,
     get_shortest_distances_mapping,
     plot_positions,
-    tree,
 )
 from awpy.analytics.nav import (
     area_distance,
     find_closest_area,
     position_state_distance,
     token_state_distance,
+    tree,
 )
 from tqdm import tqdm
 from nav_utils import (
@@ -564,7 +564,7 @@ class TrajectoryPredictor:
         # logging.info(
         #     self.trajectory_distance(train_features[0], train_features[1], "geodesic")
         # )
-        name = "Test"
+        name = "Test_Geo"
         output = r"D:\CSGO\ML\CSGOML\Plots"
         round_num = 10
         base_name = f"{name}_{round_num}"
@@ -898,6 +898,7 @@ class TrajectoryPredictor:
         dark=False,
         fps=10,
         n_frames=9000,
+        dist_type="geodesic",
     ):
         """Plots a list of rounds and saves as a .gif. Each player in the first round is assigned a separate color. Players in the other rounds are matched by proximity.
         Only use untransformed coordinates.
@@ -910,6 +911,7 @@ class TrajectoryPredictor:
             dark (boolean): Only for use with map_type="simpleradar". Indicates if you want to use the SimpleRadar dark map type
             fps (integer): Number of frames per second in the gif
             n_frames (integer): The first how many frames should be plotted
+            dist_type (string): String indicating the type of distance to use. Can be graph, geodesic, euclidean, manhattan, canberra or cosine.
 
         Returns:
             True, saves .gif
@@ -938,6 +940,7 @@ class TrajectoryPredictor:
         leaders = tree()
         # Want to avoid unsafe defaults
         for i in tqdm(range(min(max_frames, int(n_frames)))):
+            print("Timestep:", i)
             # Initialize lists used to store things from all rounds to plot for each frame
             positions = []
             colors = []
@@ -960,11 +963,12 @@ class TrajectoryPredictor:
                                     or player_id in checked_in
                                 ):
                                     continue
-                                pos = (
-                                    position_transform(map_name, p[0], "x"),
-                                    position_transform(map_name, p[1], "y"),
-                                )
-                                leaders[side][player_id]["pos"] = pos
+                                # pos = (
+                                #     position_transform(map_name, p[0], "x"),
+                                #     position_transform(map_name, p[1], "y"),
+                                #     p[2],
+                                # )
+                                leaders[side][player_id]["pos"] = p
             # Now do another loop to add all players in all frames with their appropriate colors.
             for frame_index, frames in enumerate(frames_list):
                 # Initialize lists used to store values for this round for this frame
@@ -980,22 +984,28 @@ class TrajectoryPredictor:
                             # Get the positions of all players in the current frame and round
                             current_positions = []
                             for player_index, p in enumerate(frames[i][side]):
-                                pos = (
-                                    position_transform(map_name, p[0], "x"),
-                                    position_transform(map_name, p[1], "y"),
-                                )
-                                current_positions.append(pos)
+                                # pos = (
+                                #     position_transform(map_name, p[0], "x"),
+                                #     position_transform(map_name, p[1], "y"),
+                                #     p[2],
+                                # )
+                                current_positions.append(p)
                             # Find the best mapping between current players and leaders
                             mapping = get_shortest_distances_mapping(
-                                leaders[side], current_positions
+                                self.map_name,
+                                leaders[side],
+                                current_positions,
+                                dist_type=dist_type,
                             )
                         # Now do the actual plotting
                         for player_index, p in enumerate(frames[i][side]):
                             player_id = f"{player_index}_{frame_index}_{side}"
-                            pos = (
-                                position_transform(map_name, p[0], "x"),
-                                position_transform(map_name, p[1], "y"),
-                            )
+                            # pos = (
+                            #     position_transform(map_name, p[0], "x"),
+                            #     position_transform(map_name, p[1], "y"),
+                            #     p[2],
+                            # )
+                            pos = p
 
                             frame_markers[frame_index].append(rf"$ {frame_index} $")
 
@@ -1071,6 +1081,7 @@ class TrajectoryPredictor:
                 map_name=map_name,
                 map_type=map_type,
                 dark=dark,
+                apply_transformation=True,
             )
             image_files.append(f"csgo_tmp/{i}.png")
             f.savefig(image_files[-1], dpi=300, bbox_inches="tight")
@@ -1090,6 +1101,7 @@ class TrajectoryPredictor:
         map_type="original",
         dark=False,
         n_frames=9000,
+        dist_type="geodesic",
     ):
         """Plots a list of rounds and saves as a .gif. Each player in the first round is assigned a separate color. Players in the other rounds are matched by proximity.
         Only use untransformed coordinates.
@@ -1101,6 +1113,7 @@ class TrajectoryPredictor:
             map_type (string): "original" or "simpleradar"
             dark (boolean): Only for use with map_type="simpleradar". Indicates if you want to use the SimpleRadar dark map type
             n_frames (integer): The first how many frames should be plotted
+            dist_type (string): String indicating the type of distance to use. Can be graph, geodesic, euclidean, manhattan, canberra or cosine.
 
         Returns:
             True, saves .gif
@@ -1142,11 +1155,12 @@ class TrajectoryPredictor:
                                     or player_id in checked_in
                                 ):
                                     continue
-                                pos = (
-                                    position_transform(map_name, p[0], "x"),
-                                    position_transform(map_name, p[1], "y"),
-                                )
-                                leaders[side][player_id]["pos"] = pos
+                                # pos = (
+                                #     position_transform(map_name, p[0], "x"),
+                                #     position_transform(map_name, p[1], "y"),
+                                #     p[2],
+                                # )
+                                leaders[side][player_id]["pos"] = p
             # Now do another loop to add all players in all frames with their appropriate colors.
             for frame_index, frames in enumerate(frames_list):
                 # Initialize lists used to store values for this round for this frame
@@ -1157,23 +1171,28 @@ class TrajectoryPredictor:
                             # Get the positions of all players in the current frame and round
                             current_positions = []
                             for player_index, p in enumerate(frames[i][side]):
-                                pos = (
-                                    position_transform(map_name, p[0], "x"),
-                                    position_transform(map_name, p[1], "y"),
-                                )
-                                current_positions.append(pos)
+                                # pos = (
+                                #     position_transform(map_name, p[0], "x"),
+                                #     position_transform(map_name, p[1], "y"),
+                                #     p[2],
+                                # )
+                                current_positions.append(p)
                             # Find the best mapping between current players and leaders
                             mapping = get_shortest_distances_mapping(
-                                leaders[side], current_positions
+                                self.map_name,
+                                leaders[side],
+                                current_positions,
+                                dist_type=dist_type,
                             )
                         # Now do the actual plotting
                         for player_index, p in enumerate(frames[i][side]):
                             player_id = f"{player_index}_{frame_index}_{side}"
-                            pos = (
-                                position_transform(map_name, p[0], "x"),
-                                position_transform(map_name, p[1], "y"),
-                            )
-
+                            # pos = (
+                            #     position_transform(map_name, p[0], "x"),
+                            #     position_transform(map_name, p[1], "y"),
+                            #     p[2],
+                            # )
+                            pos = p
                             # If the leaders have not been initialized yet, do so
                             if dict_initialized[side] is False:
                                 leaders[side][player_id]["index"] = player_index
@@ -1216,15 +1235,19 @@ class TrajectoryPredictor:
                                 checked_in.add(player_id)
                         # Once we have done our first loop over a side we are initialized
                         dict_initialized[side] = True
-                        logging.info(frame_positions)
-                        logging.info(frame_colors)
         f, a = plot_map(map_name=map_name, map_type=map_type, dark=dark)
         for frame in frame_positions:
             for side in frame_positions[frame]:
                 for player in frame_positions[frame][side]:
                     a.plot(
-                        [x[0] for x in frame_positions[frame][side][player]],
-                        [x[1] for x in frame_positions[frame][side][player]],
+                        [
+                            position_transform(map_name, x[0], "x")
+                            for x in frame_positions[frame][side][player]
+                        ],
+                        [
+                            position_transform(map_name, x[1], "y")
+                            for x in frame_positions[frame][side][player]
+                        ],
                         c=frame_colors[frame][side][player][0],
                         linestyle="-",
                         linewidth=0.5,
