@@ -569,41 +569,60 @@ class TrajectoryPredictor:
         # round_num = 10
         # base_name = f"{name}_{round_num}"
 
-        # # logging.info("Generating token round file.")
-        # # plot_round_tokens(
-        # #     filename=plot_token_file,
-        # #     frames=frames,
-        # #     map_name=demo_map_name,
-        # #     map_type="simpleradar",
-        # #     dark=False,
-        # #     fps=2,
-        # # )
-        # # logging.info("Generating round file.")
-        # # plot_round(
-        # #     filename=plot_round_file,
-        # #     frames=frames,
-        # #     map_name=demo_map_name,
-        # #     map_type="simpleradar",
-        # #     dark=False,
-        # #     fps=2,
-        # # )
-        # distance_variant = "geodesic"
-        # n_rounds = 2
-        # rounds_file_diff_play = os.path.join(
-        #     output, f"{base_name}_{n_rounds}_rounds_different_players.gif"
+        name = "Test_Geo"
+        output = r"D:\CSGO\ML\CSGOML\Plots\multi_round_testing"
+        round_num = 10
+        base_name = f"{name}_{round_num}"
+
+        # logging.info("Generating token round file.")
+        # plot_round_tokens(
+        #     filename=plot_token_file,
+        #     frames=frames,
+        #     map_name=demo_map_name,
+        #     map_type="simpleradar",
+        #     dark=False,
+        #     fps=2,
         # )
-        # rounds_file_diff_play_traj = os.path.join(
-        #     output, f"{base_name}_{n_rounds}_rounds_different_players_traj.gif"
+        # logging.info("Generating round file.")
+        # plot_round(
+        #     filename=plot_round_file,
+        #     frames=frames,
+        #     map_name=demo_map_name,
+        #     map_type="simpleradar",
+        #     dark=False,
+        #     fps=2,
         # )
-        # rounds_file_diff_play_img = os.path.join(
-        #     output, f"{base_name}_{n_rounds}_rounds_different_players_img.png"
-        # )
-        # rounds_file_diff_play_img_traj = os.path.join(
-        #     output, f"{base_name}_{n_rounds}_rounds_different_players_img_traj.png"
-        # )
-        # logging.info("Generating rounds_different_players.")
+        distance_variant = "geodesic"
+        n_rounds = 2
+        rounds_file_diff_play = os.path.join(
+            output, f"{base_name}_{n_rounds}_rounds_different_players.gif"
+        )
+        rounds_file_diff_play_traj = os.path.join(
+            output, f"{base_name}_{n_rounds}_rounds_different_players_traj.gif"
+        )
+        rounds_file_diff_play_img = os.path.join(
+            output, f"{base_name}_{n_rounds}_rounds_different_players_img.png"
+        )
+        rounds_file_diff_play_img_traj = os.path.join(
+            output, f"{base_name}_{n_rounds}_rounds_different_players_img_traj.png"
+        )
+        # Normal baseline
+        logging.info("Generating rounds_different_players.")
+        self.plot_rounds_different_players(
+            rounds_file_diff_play,
+            [
+                train_features[round_num + i]
+                for i in range(-n_rounds // 2, n_rounds // 2)
+            ],
+            map_name=self.map_name,
+            map_type="simpleradar",
+            fps=1,
+            dist_type=distance_variant,
+        )
+
+        # logging.info("Generating rounds_different_players image combined.")
         # self.plot_rounds_different_players(
-        #     rounds_file_diff_play,
+        #     rounds_file_diff_play_img,
         #     [
         #         train_features[round_num + i]
         #         for i in range(-n_rounds // 2, n_rounds // 2)
@@ -612,9 +631,12 @@ class TrajectoryPredictor:
         #     map_type="simpleradar",
         #     fps=1,
         #     dist_type=distance_variant,
+        #     image=True,
         # )
-        # logging.info("Generating rounds_different_players_traj.")
-        # self.plot_rounds_different_players_traj(
+
+        # # Trajectory from combined function
+        # logging.info("Generating rounds_different_players trajectory.")
+        # self.plot_rounds_different_players(
         #     rounds_file_diff_play_traj,
         #     [
         #         train_features[round_num + i]
@@ -624,22 +646,11 @@ class TrajectoryPredictor:
         #     map_type="simpleradar",
         #     fps=1,
         #     dist_type=distance_variant,
+        #     trajectory=True,
         # )
 
-        # logging.info("Generating rounds_different_players image.")
-        # self.plot_rounds_different_players_image(
-        #     rounds_file_diff_play_img,
-        #     [
-        #         train_features[round_num + i]
-        #         for i in range(-n_rounds // 2, n_rounds // 2)
-        #     ],
-        #     map_name=self.map_name,
-        #     map_type="simpleradar",
-        #     dist_type=distance_variant,
-        # )
-
-        # logging.info("Generating rounds_different_players image traj.")
-        # self.plot_rounds_different_players_image_traj(
+        # logging.info("Generating rounds_different_players image trajectory")
+        # self.plot_rounds_different_players(
         #     rounds_file_diff_play_img_traj,
         #     [
         #         train_features[round_num + i]
@@ -647,7 +658,10 @@ class TrajectoryPredictor:
         #     ],
         #     map_name=self.map_name,
         #     map_type="simpleradar",
+        #     fps=1,
         #     dist_type=distance_variant,
+        #     image=True,
+        #     trajectory=True,
         # )
 
         name = "Test_Euc"
@@ -687,9 +701,7 @@ class TrajectoryPredictor:
         rounds_file_diff_play_img_traj = os.path.join(
             output, f"{base_name}_{n_rounds}_rounds_different_players_img_traj.png"
         )
-        rounds_file_diff_play_img_trajcomb = os.path.join(
-            output, f"{base_name}_{n_rounds}_rounds_different_players_img_trajcomb.png"
-        )
+        # Normal baseline
         # logging.info("Generating rounds_different_players.")
         # self.plot_rounds_different_players(
         #     rounds_file_diff_play,
@@ -717,42 +729,35 @@ class TrajectoryPredictor:
         #     image=True,
         # )
 
-        logging.info("Generating rounds_different_players_traj.")
-        self.plot_rounds_different_players_traj(
-            rounds_file_diff_play_traj,
-            [
-                train_features[round_num + i]
-                for i in range(-n_rounds // 2, n_rounds // 2)
-            ],
-            map_name=self.map_name,
-            map_type="simpleradar",
-            fps=1,
-            dist_type=distance_variant,
-        )
-        logging.info("Generating rounds_different_players_trajcomb.")
-        self.plot_rounds_different_players_traj(
-            rounds_file_diff_play_img_trajcomb,
-            [
-                train_features[round_num + i]
-                for i in range(-n_rounds // 2, n_rounds // 2)
-            ],
-            map_name=self.map_name,
-            map_type="simpleradar",
-            fps=1,
-            dist_type=distance_variant,
-            image=True,
-        )
-        logging.info("Generating rounds_different_players image traj.")
-        self.plot_rounds_different_players_image_traj(
-            rounds_file_diff_play_img_traj,
-            [
-                train_features[round_num + i]
-                for i in range(-n_rounds // 2, n_rounds // 2)
-            ],
-            map_name=self.map_name,
-            map_type="simpleradar",
-            dist_type=distance_variant,
-        )
+        # # Trajectory from combined function
+        # logging.info("Generating rounds_different_players trajectory.")
+        # self.plot_rounds_different_players(
+        #     rounds_file_diff_play_traj,
+        #     [
+        #         train_features[round_num + i]
+        #         for i in range(-n_rounds // 2, n_rounds // 2)
+        #     ],
+        #     map_name=self.map_name,
+        #     map_type="simpleradar",
+        #     fps=1,
+        #     dist_type=distance_variant,
+        #     trajectory=True,
+        # )
+
+        # logging.info("Generating rounds_different_players image trajectory")
+        # self.plot_rounds_different_players(
+        #     rounds_file_diff_play_img_traj,
+        #     [
+        #         train_features[round_num + i]
+        #         for i in range(-n_rounds // 2, n_rounds // 2)
+        #     ],
+        #     map_name=self.map_name,
+        #     map_type="simpleradar",
+        #     fps=1,
+        #     dist_type=distance_variant,
+        #     image=True,
+        #     trajectory=True,
+        # )
 
         self.datasets[side][time][coordinate]["val"]["features"] = val_features
         self.datasets[side][time][coordinate]["train"]["features"] = train_features
@@ -1036,6 +1041,7 @@ class TrajectoryPredictor:
         n_frames=9000,
         dist_type="geodesic",
         image=False,
+        trajectory=False,
     ):
         """Plots a list of rounds and saves as a .gif. Each player in the first round is assigned a separate color. Players in the other rounds are matched by proximity.
         Only use untransformed coordinates.
@@ -1050,29 +1056,73 @@ class TrajectoryPredictor:
             n_frames (integer): The first how many frames should be plotted
             dist_type (string): String indicating the type of distance to use. Can be graph, geodesic, euclidean, manhattan, canberra or cosine
             image (boolean): Boolean indicating whether a gif of positions or a singular image of trajectories should be produced
+            trajectory (boolean): Indicates whether the clustering of players should be done for the while trajectories instead of each individual time step
 
         Returns:
             True, saves .gif
         """
-        if not image:
-            if os.path.isdir("csgo_tmp"):
-                shutil.rmtree("csgo_tmp/")
-            os.mkdir("csgo_tmp")
-            image_files = []
-        # Needed to check if leaders have been fully initialized
-        dict_initialized = {0: False, 1: False}
-        # Used to store values for each round separately. Needed when a round ends.
-        if image:
+        if image and not trajectory:
             frame_positions = collections.defaultdict(
                 lambda: collections.defaultdict(lambda: collections.defaultdict(list))
             )
             frame_colors = collections.defaultdict(
                 lambda: collections.defaultdict(lambda: collections.defaultdict(list))
             )
+        elif not image:
+            if os.path.isdir("csgo_tmp"):
+                shutil.rmtree("csgo_tmp/")
+            os.mkdir("csgo_tmp")
+            image_files = []
+            if trajectory:
+                mappings = defaultdict(list)
+        else:  # image and trajectory
+            f, a = plot_map(map_name=map_name, map_type=map_type, dark=dark)
+        # Needed to check if leaders have been fully initialized
+        dict_initialized = {0: False, 1: False}
+        # Used to store values for each round separately. Needed when a round ends.
+
         colors_list = {
             1: ["cyan", "yellow", "fuchsia", "lime", "orange"],
             0: ["red", "green", "black", "white", "gold"],
         }
+
+        if trajectory:
+            for frame_index, frames in enumerate(tqdm(frames_list)):
+                # Initialize lists used to store values for this round for this frame
+                for side in range(frames.shape[1]):
+                    mapping = get_shortest_distances_mapping(
+                        self.map_name,
+                        self.transform_to_traj_dimensions(
+                            frames_list[0][:, side, :, :]
+                        ),
+                        self.transform_to_traj_dimensions(frames[:, side, :, :]),
+                        dist_type=dist_type,
+                        trajectory=True,
+                    )
+                    if image:
+                        for player in range(frames.shape[2]):
+                            a.plot(
+                                [
+                                    position_transform(map_name, x, "x")
+                                    for x in frames[:, side, player, 0]
+                                ],
+                                [
+                                    position_transform(map_name, y, "y")
+                                    for y in frames[:, side, player, 1]
+                                ],
+                                c=colors_list[side][mapping[player]],
+                                linestyle="-",
+                                linewidth=0.5,
+                            )
+                    else:
+                        mappings[side].append(mapping)
+            if image:
+                a.get_xaxis().set_visible(False)
+                a.get_yaxis().set_visible(False)
+                f.savefig(filename, dpi=1000, bbox_inches="tight")
+                plt.close()
+                return True
+
         # Determine how many frames are there in total
         max_frames = max(frames.shape[0] for frames in frames_list)
         # Build tree data structure for leaders
@@ -1087,95 +1137,56 @@ class TrajectoryPredictor:
                 markers = []
                 alphas = []
                 sizes = []
-            # Is used to determine if a specific leader has already been seen. Needed when a leader drops out because their round has already ended
-            checked_in = set()
-            # Loop over all the rounds and update the position and status of all leaders
-            for frame_index, frames in enumerate(frames_list):
-                # Check if the current frame has already ended
-                if i in range(frames.shape[0]):
-                    for side in range(frames.shape[1]):
-                        # Do not do this if leaders has not been fully initialized
-                        if dict_initialized[side] is True:
-                            for player_index, p in enumerate(frames[i][side]):
-                                player_id = f"{player_index}_{frame_index}_{side}"
-                                if (
-                                    player_id not in leaders[side]
-                                    or player_id in checked_in
-                                ):
-                                    continue
-                                leaders[side][player_id]["pos"] = p
+            if not trajectory:
+                # Is used to determine if a specific leader has already been seen. Needed when a leader drops out because their round has already ended
+                checked_in = set()
+                # Loop over all the rounds and update the position and status of all leaders
+                for frame_index, frames in enumerate(frames_list):
+                    # Check if the current frame has already ended
+                    if i in range(frames.shape[0]):
+                        for side in range(frames.shape[1]):
+                            # Do not do this if leaders has not been fully initialized
+                            if dict_initialized[side] is True:
+                                for player_index, p in enumerate(frames[i][side]):
+                                    player_id = f"{player_index}_{frame_index}_{side}"
+                                    if (
+                                        player_id not in leaders[side]
+                                        or player_id in checked_in
+                                    ):
+                                        continue
+                                    leaders[side][player_id]["pos"] = p
             # Now do another loop to add all players in all frames with their appropriate colors.
             for frame_index, frames in enumerate(frames_list):
                 # Initialize lists used to store values for this round for this frame
                 if i in range(len(frames)):
                     for side in range(frames.shape[1]):
-                        # If we have already initialized leaders
-                        if dict_initialized[side] is True:
-                            # Get the positions of all players in the current frame and round
-                            current_positions = []
-                            for player_index, p in enumerate(frames[i][side]):
-                                current_positions.append(p)
-                            # Find the best mapping between current players and leaders
-                            mapping = get_shortest_distances_mapping(
-                                self.map_name,
-                                leaders[side],
-                                current_positions,
-                                dist_type=dist_type,
-                            )
+                        if not trajectory:
+                            # If we have already initialized leaders
+                            if dict_initialized[side] is True:
+                                # Get the positions of all players in the current frame and round
+                                current_positions = []
+                                for player_index, p in enumerate(frames[i][side]):
+                                    current_positions.append(p)
+                                # Find the best mapping between current players and leaders
+                                mapping = get_shortest_distances_mapping(
+                                    self.map_name,
+                                    leaders[side],
+                                    current_positions,
+                                    dist_type=dist_type,
+                                )
                         # Now do the actual plotting
                         for player_index, p in enumerate(frames[i][side]):
-                            player_id = f"{player_index}_{frame_index}_{side}"
                             pos = p
-
-                            # If the leaders have not been initialized yet, do so
-                            if dict_initialized[side] is False:
-                                leaders[side][player_id]["index"] = player_index
-                                leaders[side][player_id]["pos"] = pos
-
-                            # This is relevant for all subsequent frames
-                            # If we are a leader we update our values
-                            # Should be able to be dropped as we already updated leaders in the earlier loop
-                            if player_id in leaders[side]:
-                                # Grab our current player_index from what it was the previous round to achieve color consistency
-                                player_index = leaders[side][player_id]["index"]
-                                # Update our position
-                                leaders[side][player_id]["pos"] = pos
-                            # If not a leader
-                            else:
-                                # Grab the id of the leader assigned to this player
-                                assigned_leader = mapping[player_index]
-                                # If the assigned leader is now dead or has not been assigned (happens when his round is already over)
-                                # Then we take over that position if we are not also dead
-                                if assigned_leader not in checked_in:
-                                    # Remove the previous leaders entry from the dict
-                                    old_index = leaders[side][assigned_leader]["index"]
-                                    del leaders[side][assigned_leader]
-                                    # Fill with our own values but use their prior index to keep color consistency when switching leaders
-                                    leaders[side][player_id]["index"] = old_index
-                                    leaders[side][player_id]["pos"] = pos
-                                    player_index = leaders[side][player_id]["index"]
-                                # If the leader is alive and present or if we are also dead
-                                else:
-                                    # We just grab our color
-                                    player_index = leaders[side][assigned_leader][
-                                        "index"
-                                    ]
-                            if image:
-                                frame_colors[frame_index][side][player_index].append(
-                                    colors_list[side][player_index]
-                                )
-                                frame_positions[frame_index][side][player_index].append(
-                                    pos
-                                )
-                            else:
+                            if trajectory:
                                 markers.append(rf"$ {frame_index} $")
-                                colors.append(colors_list[side][player_index])
+                                colors.append(
+                                    colors_list[side][
+                                        mappings[side][frame_index][player_index]
+                                    ]
+                                )
                                 positions.append(pos)
                                 # If we are an alive leader we get opaque and big markers
-                                if (
-                                    player_id in leaders[side]
-                                    and not player_id in checked_in
-                                ):
+                                if frame_index == 0:
                                     alphas.append(1)
                                     sizes.append(mpl.rcParams["lines.markersize"] ** 2)
                                 # If not we get partially transparent and small ones
@@ -1184,11 +1195,76 @@ class TrajectoryPredictor:
                                     sizes.append(
                                         0.3 * mpl.rcParams["lines.markersize"] ** 2
                                     )
-                            # If we are a leader we are now checked in so everyone knows our round has not ended yet
-                            if player_id in leaders[side]:
-                                checked_in.add(player_id)
-                        # Once we have done our first loop over a side we are initialized
-                        dict_initialized[side] = True
+                            else:
+                                player_id = f"{player_index}_{frame_index}_{side}"
+
+                                # If the leaders have not been initialized yet, do so
+                                if dict_initialized[side] is False:
+                                    leaders[side][player_id]["index"] = player_index
+                                    leaders[side][player_id]["pos"] = pos
+
+                                # This is relevant for all subsequent frames
+                                # If we are a leader we update our values
+                                # Should be able to be dropped as we already updated leaders in the earlier loop
+                                if player_id in leaders[side]:
+                                    # Grab our current player_index from what it was the previous round to achieve color consistency
+                                    player_index = leaders[side][player_id]["index"]
+                                    # Update our position
+                                    leaders[side][player_id]["pos"] = pos
+                                # If not a leader
+                                else:
+                                    # Grab the id of the leader assigned to this player
+                                    assigned_leader = mapping[player_index]
+                                    # If the assigned leader is now dead or has not been assigned (happens when his round is already over)
+                                    # Then we take over that position if we are not also dead
+                                    if assigned_leader not in checked_in:
+                                        # Remove the previous leaders entry from the dict
+                                        old_index = leaders[side][assigned_leader][
+                                            "index"
+                                        ]
+                                        del leaders[side][assigned_leader]
+                                        # Fill with our own values but use their prior index to keep color consistency when switching leaders
+                                        leaders[side][player_id]["index"] = old_index
+                                        leaders[side][player_id]["pos"] = pos
+                                        player_index = leaders[side][player_id]["index"]
+                                    # If the leader is alive and present or if we are also dead
+                                    else:
+                                        # We just grab our color
+                                        player_index = leaders[side][assigned_leader][
+                                            "index"
+                                        ]
+                                if image:
+                                    frame_colors[frame_index][side][
+                                        player_index
+                                    ].append(colors_list[side][player_index])
+                                    frame_positions[frame_index][side][
+                                        player_index
+                                    ].append(pos)
+                                else:
+                                    markers.append(rf"$ {frame_index} $")
+                                    colors.append(colors_list[side][player_index])
+                                    positions.append(pos)
+                                    # If we are an alive leader we get opaque and big markers
+                                    if (
+                                        player_id in leaders[side]
+                                        and not player_id in checked_in
+                                    ):
+                                        alphas.append(1)
+                                        sizes.append(
+                                            mpl.rcParams["lines.markersize"] ** 2
+                                        )
+                                    # If not we get partially transparent and small ones
+                                    else:
+                                        alphas.append(0.5)
+                                        sizes.append(
+                                            0.3 * mpl.rcParams["lines.markersize"] ** 2
+                                        )
+                                # If we are a leader we are now checked in so everyone knows our round has not ended yet
+                                if player_id in leaders[side]:
+                                    checked_in.add(player_id)
+                        if not trajectory:
+                            # Once we have done our first loop over a side we are initialized
+                            dict_initialized[side] = True
             if not image:
                 f, _ = plot_positions(
                     positions=positions,
@@ -1227,366 +1303,6 @@ class TrajectoryPredictor:
             f.savefig(filename, dpi=1000, bbox_inches="tight")
             plt.close()
         else:
-            images = []
-            for file in image_files:
-                images.append(imageio.imread(file))
-            imageio.mimsave(filename, images, fps=fps)
-            # shutil.rmtree("csgo_tmp/")
-        return True
-
-    # def plot_rounds_different_players_image(
-    #     self,
-    #     filename,
-    #     frames_list,
-    #     map_name="de_ancient",
-    #     map_type="original",
-    #     dark=False,
-    #     n_frames=9000,
-    #     dist_type="geodesic",
-    # ):
-    #     """Plots a list of rounds and saves as a .gif. Each player in the first round is assigned a separate color. Players in the other rounds are matched by proximity.
-    #     Only use untransformed coordinates.
-
-    #     Args:
-    #         filename (string): Filename to save the gif
-    #         frames_list (list): List of np arrays each frame should have shape (Time_steps,2|1(sides),5,3)
-    #         map_name (string): Map to search
-    #         map_type (string): "original" or "simpleradar"
-    #         dark (boolean): Only for use with map_type="simpleradar". Indicates if you want to use the SimpleRadar dark map type
-    #         n_frames (integer): The first how many frames should be plotted
-    #         dist_type (string): String indicating the type of distance to use. Can be graph, geodesic, euclidean, manhattan, canberra or cosine.
-
-    #     Returns:
-    #         True, saves .gif
-    #     """
-    #     # Needed to check if leaders have been fully initialized
-    #     dict_initialized = {0: False, 1: False}
-    #     # Used to store values for each round separately. Needed when a round ends.
-    #     frame_positions = collections.defaultdict(
-    #         lambda: collections.defaultdict(lambda: collections.defaultdict(list))
-    #     )
-    #     frame_colors = collections.defaultdict(
-    #         lambda: collections.defaultdict(lambda: collections.defaultdict(list))
-    #     )
-    #     colors_list = {
-    #         1: ["cyan", "yellow", "fuchsia", "lime", "orange"],
-    #         0: ["red", "green", "black", "white", "gold"],
-    #     }
-    #     # Determine how many frames are there in total
-    #     max_frames = max(frames.shape[0] for frames in frames_list)
-    #     # Build tree data structure for leaders
-    #     # Currently leaders={"t":{},"ct":{}} would probably do as well
-    #     # For each side the keys are a players steamd id + "_" + frame_number in case the same steamid occurs in multiple rounds
-    #     leaders = tree()
-    #     # Want to avoid unsafe defaults
-    #     for i in tqdm(range(min(max_frames, int(n_frames)))):
-    #         # Is used to determine if a specific leader has already been seen. Needed when a leader drops out because their round has already ended
-    #         checked_in = set()
-    #         # Loop over all the rounds and update the position and status of all leaders
-    #         for frame_index, frames in enumerate(frames_list):
-    #             # Check if the current frame has already ended
-    #             if i in range(frames.shape[0]):
-    #                 for side in range(frames.shape[1]):
-    #                     # Do not do this if leaders has not been fully initialized
-    #                     if dict_initialized[side] is True:
-    #                         for player_index, p in enumerate(frames[i][side]):
-    #                             player_id = f"{player_index}_{frame_index}_{side}"
-    #                             if (
-    #                                 player_id not in leaders[side]
-    #                                 or player_id in checked_in
-    #                             ):
-    #                                 continue
-    #                             # pos = (
-    #                             #     position_transform(map_name, p[0], "x"),
-    #                             #     position_transform(map_name, p[1], "y"),
-    #                             #     p[2],
-    #                             # )
-    #                             leaders[side][player_id]["pos"] = p
-    #         # Now do another loop to add all players in all frames with their appropriate colors.
-    #         for frame_index, frames in enumerate(frames_list):
-    #             # Initialize lists used to store values for this round for this frame
-    #             if i in range(frames.shape[0]):
-    #                 for side in range(frames.shape[1]):
-    #                     # If we have already initialized leaders
-    #                     if dict_initialized[side] is True:
-    #                         # Get the positions of all players in the current frame and round
-    #                         current_positions = []
-    #                         for player_index, p in enumerate(frames[i][side]):
-    #                             # pos = (
-    #                             #     position_transform(map_name, p[0], "x"),
-    #                             #     position_transform(map_name, p[1], "y"),
-    #                             #     p[2],
-    #                             # )
-    #                             current_positions.append(p)
-    #                         # Find the best mapping between current players and leaders
-    #                         mapping = get_shortest_distances_mapping(
-    #                             self.map_name,
-    #                             leaders[side],
-    #                             current_positions,
-    #                             dist_type=dist_type,
-    #                         )
-    #                     # Now do the actual plotting
-    #                     for player_index, p in enumerate(frames[i][side]):
-    #                         player_id = f"{player_index}_{frame_index}_{side}"
-    #                         # pos = (
-    #                         #     position_transform(map_name, p[0], "x"),
-    #                         #     position_transform(map_name, p[1], "y"),
-    #                         #     p[2],
-    #                         # )
-    #                         pos = p
-    #                         # If the leaders have not been initialized yet, do so
-    #                         if dict_initialized[side] is False:
-    #                             leaders[side][player_id]["index"] = player_index
-    #                             leaders[side][player_id]["pos"] = pos
-
-    #                         # This is relevant for all subsequent frames
-    #                         # If we are a leader we update our values
-    #                         # Should be able to be dropped as we already updated leaders in the earlier loop
-    #                         if player_id in leaders[side]:
-    #                             # Grab our current player_index from what it was the previous round to achieve color consistency
-    #                             player_index = leaders[side][player_id]["index"]
-    #                             # Update our position
-    #                             leaders[side][player_id]["pos"] = pos
-    #                         # If not a leader
-    #                         else:
-    #                             # Grab the id of the leader assigned to this player
-    #                             assigned_leader = mapping[player_index]
-    #                             # If the assigned leader is now dead or has not been assigned (happens when his round is already over)
-    #                             # Then we take over that position if we are not also dead
-    #                             if assigned_leader not in checked_in:
-    #                                 # Remove the previous leaders entry from the dict
-    #                                 old_index = leaders[side][assigned_leader]["index"]
-    #                                 del leaders[side][assigned_leader]
-    #                                 # Fill with our own values but use their prior index to keep color consistency when switching leaders
-    #                                 leaders[side][player_id]["index"] = old_index
-    #                                 leaders[side][player_id]["pos"] = pos
-    #                                 player_index = leaders[side][player_id]["index"]
-    #                             # If the leader is alive and present or if we are also dead
-    #                             else:
-    #                                 # We just grab our color
-    #                                 player_index = leaders[side][assigned_leader][
-    #                                     "index"
-    #                                 ]
-    #                         frame_colors[frame_index][side][player_index].append(
-    #                             colors_list[side][player_index]
-    #                         )
-    #                         frame_positions[frame_index][side][player_index].append(pos)
-    #                         # If we are a leader we are now checked in so everyone knows our round has not ended yet
-    #                         if player_id in leaders[side]:
-    #                             checked_in.add(player_id)
-    #                     # Once we have done our first loop over a side we are initialized
-    #                     dict_initialized[side] = True
-    #     f, a = plot_map(map_name=map_name, map_type=map_type, dark=dark)
-    #     for frame in frame_positions:
-    #         for side in frame_positions[frame]:
-    #             for player in frame_positions[frame][side]:
-    #                 a.plot(
-    #                     [
-    #                         position_transform(map_name, x[0], "x")
-    #                         for x in frame_positions[frame][side][player]
-    #                     ],
-    #                     [
-    #                         position_transform(map_name, x[1], "y")
-    #                         for x in frame_positions[frame][side][player]
-    #                     ],
-    #                     c=frame_colors[frame][side][player][0],
-    #                     linestyle="-",
-    #                     linewidth=0.5,
-    #                 )
-    #     a.get_xaxis().set_visible(False)
-    #     a.get_yaxis().set_visible(False)
-    #     f.savefig(filename, dpi=1000, bbox_inches="tight")
-    #     plt.close()
-    #     return True
-
-    # def plot_rounds_different_players_image_traj(
-    #     self,
-    #     filename,
-    #     frames_list,
-    #     map_name="de_ancient",
-    #     map_type="original",
-    #     dark=False,
-    #     n_frames=9000,
-    #     dist_type="geodesic",
-    # ):
-    #     """Plots a list of rounds and saves as a .gif. Each player in the first round is assigned a separate color. Players in the other rounds are matched by proximity.
-    #     Only use untransformed coordinates.
-
-    #     Args:
-    #         filename (string): Filename to save the gif
-    #         frames_list (list): List of np arrays each frame should have shape (Time_steps,2|1(sides),5,3)
-    #         map_name (string): Map to search
-    #         map_type (string): "original" or "simpleradar"
-    #         dark (boolean): Only for use with map_type="simpleradar". Indicates if you want to use the SimpleRadar dark map type
-    #         n_frames (integer): The first how many frames should be plotted
-    #         dist_type (string): String indicating the type of distance to use. Can be graph, geodesic, euclidean, manhattan, canberra or cosine.
-
-    #     Returns:
-    #         True, saves .gif
-    #     """
-    #     # Needed to check if leaders have been fully initialized
-    #     colors_list = {
-    #         1: ["cyan", "yellow", "fuchsia", "lime", "orange"],
-    #         0: ["red", "green", "black", "white", "gold"],
-    #     }
-    #     # Determine how many frames are there in total
-    #     # Want to avoid unsafe defaults
-    #     # Now do another loop to add all players in all frames with their appropriate colors.
-    #     f, a = plot_map(map_name=map_name, map_type=map_type, dark=dark)
-    #     for frame_index, frames in enumerate(tqdm(frames_list)):
-    #         # Initialize lists used to store values for this round for this frame
-    #         for side in range(frames.shape[1]):
-    #             mapping = get_shortest_distances_mapping(
-    #                 self.map_name,
-    #                 self.transform_to_traj_dimensions(frames_list[0][:, side, :, :]),
-    #                 self.transform_to_traj_dimensions(frames[:, side, :, :]),
-    #                 dist_type=dist_type,
-    #                 trajectory=True,
-    #             )
-    #             # If we have already initialized leaders
-    #             for player in range(frames.shape[2]):
-    #                 a.plot(
-    #                     [
-    #                         position_transform(map_name, x, "x")
-    #                         for x in frames[:, side, player, 0]
-    #                     ],
-    #                     [
-    #                         position_transform(map_name, y, "y")
-    #                         for y in frames[:, side, player, 1]
-    #                     ],
-    #                     c=colors_list[side][mapping[player]],
-    #                     linestyle="-",
-    #                     linewidth=0.5,
-    #                 )
-    #     a.get_xaxis().set_visible(False)
-    #     a.get_yaxis().set_visible(False)
-    #     f.savefig(filename, dpi=1000, bbox_inches="tight")
-    #     plt.close()
-    #     return True
-
-    def plot_rounds_different_players_traj(
-        self,
-        filename,
-        frames_list,
-        map_name="de_ancient",
-        map_type="original",
-        dark=False,
-        n_frames=9000,
-        dist_type="geodesic",
-        fps=10,
-        image=False,
-    ):
-        """Plots a list of rounds and saves as a .gif. Each player in the first round is assigned a separate color. Players in the other rounds are matched by proximity.
-        Only use untransformed coordinates.
-
-        Args:
-            filename (string): Filename to save the gif
-            frames_list (list): List of np arrays each frame should have shape (Time_steps,2|1(sides),5,3)
-            map_name (string): Map to search
-            map_type (string): "original" or "simpleradar"
-            dark (boolean): Only for use with map_type="simpleradar". Indicates if you want to use the SimpleRadar dark map type
-            n_frames (integer): The first how many frames should be plotted
-            dist_type (string): String indicating the type of distance to use. Can be graph, geodesic, euclidean, manhattan, canberra or cosine.
-            fps (integer): Number of frames per second in the gif
-            image (boolean): Boolean indicating whether a gif of positions or a singular image of trajectories should be produced
-
-        Returns:
-            True, saves .gif
-        """
-        if not image:
-            if os.path.isdir("csgo_tmp"):
-                shutil.rmtree("csgo_tmp/")
-            os.mkdir("csgo_tmp")
-            image_files = []
-            mappings = defaultdict(list)
-        else:
-            f, a = plot_map(map_name=map_name, map_type=map_type, dark=dark)
-        # Needed to check if leaders have been fully initialized
-        colors_list = {
-            1: ["cyan", "yellow", "fuchsia", "lime", "orange"],
-            0: ["red", "green", "black", "white", "gold"],
-        }
-        # Determine how many frames are there in total
-        # Want to avoid unsafe defaults
-        # Now do another loop to add all players in all frames with their appropriate colors.
-
-        for frame_index, frames in enumerate(tqdm(frames_list)):
-            # Initialize lists used to store values for this round for this frame
-            for side in range(frames.shape[1]):
-                mapping = get_shortest_distances_mapping(
-                    self.map_name,
-                    self.transform_to_traj_dimensions(frames_list[0][:, side, :, :]),
-                    self.transform_to_traj_dimensions(frames[:, side, :, :]),
-                    dist_type=dist_type,
-                    trajectory=True,
-                )
-                if image:
-                    for player in range(frames.shape[2]):
-                        a.plot(
-                            [
-                                position_transform(map_name, x, "x")
-                                for x in frames[:, side, player, 0]
-                            ],
-                            [
-                                position_transform(map_name, y, "y")
-                                for y in frames[:, side, player, 1]
-                            ],
-                            c=colors_list[side][mapping[player]],
-                            linestyle="-",
-                            linewidth=0.5,
-                        )
-                else:
-                    mappings[side].append(mapping)
-        if image:
-            a.get_xaxis().set_visible(False)
-            a.get_yaxis().set_visible(False)
-            f.savefig(filename, dpi=1000, bbox_inches="tight")
-            plt.close()
-        else:
-            max_frames = max(frames.shape[0] for frames in frames_list)
-            for i in tqdm(range(min(max_frames, int(n_frames)))):
-                positions = []
-                colors = []
-                markers = []
-                alphas = []
-                sizes = []
-                for frame_index, frames in enumerate(frames_list):
-                    if i in range(len(frames)):
-                        for side in range(frames.shape[1]):
-                            for player_index, p in enumerate(frames[i][side]):
-                                pos = p
-
-                                markers.append(rf"$ {frame_index} $")
-                                colors.append(
-                                    colors_list[side][
-                                        mappings[side][frame_index][player_index]
-                                    ]
-                                )
-                                positions.append(pos)
-                                # If we are an alive leader we get opaque and big markers
-                                if frame_index == 0:
-                                    alphas.append(1)
-                                    sizes.append(mpl.rcParams["lines.markersize"] ** 2)
-                                # If not we get partially transparent and small ones
-                                else:
-                                    alphas.append(0.5)
-                                    sizes.append(
-                                        0.3 * mpl.rcParams["lines.markersize"] ** 2
-                                    )
-                f, _ = plot_positions(
-                    positions=positions,
-                    colors=colors,
-                    markers=markers,
-                    alphas=alphas,
-                    sizes=sizes,
-                    map_name=map_name,
-                    map_type=map_type,
-                    dark=dark,
-                    apply_transformation=True,
-                )
-                image_files.append(f"csgo_tmp/{i}.png")
-                f.savefig(image_files[-1], dpi=300, bbox_inches="tight")
-                plt.close()
             images = []
             for file in image_files:
                 images.append(imageio.imread(file))
