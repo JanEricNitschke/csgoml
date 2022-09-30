@@ -28,11 +28,15 @@ import random
 from collections import defaultdict
 import pandas as pd
 import numpy as np
+import json
 import imageio
 from sympy.utilities.iterables import multiset_permutations
 import tensorflow as tf
 from tensorflow.keras import layers
 from sklearn.model_selection import train_test_split
+from sklearn.neighbors import NearestNeighbors
+from sklearn.cluster import DBSCAN
+from sklearn_extra.cluster import KMedoids
 import matplotlib.pyplot as plt
 import matplotlib as mpl
 from awpy.data import NAV
@@ -564,69 +568,197 @@ class TrajectoryPredictor:
         # logging.info(
         #     self.trajectory_distance(train_features[0], train_features[1], "geodesic")
         # )
+        precomputed_matrix_path = os.path.join(
+            os.path.dirname(os.path.abspath(self.input)),
+            f"pre_computed_round_distances_{self.map_name}.npy",
+        )
+        if os.path.exists(precomputed_matrix_path):
+            logging.info("Loading precomputed distances from file")
+            precomputed = np.load(precomputed_matrix_path)
+        else:
+            logging.info(
+                "Precomputing all round distances for %s combinations.",
+                len(train_features) ** 2,
+            )
+            precomputed = np.zeros((len(train_features), len(train_features)))
+            for i in range(len(train_features)):
+                logging.info(i)
+                for j in range(i, len(train_features)):
+                    precomputed[i][j] = self.trajectory_distance(
+                        train_features[i], train_features[j], "geodesic"
+                    )
+                    precomputed[j][i] = precomputed[i][j]
+            np.save(
+                precomputed_matrix_path,
+                precomputed,
+            )
+            logging.info("Saved distances to file.")
+        logging.info("Plotting histogram of distances")
+        self.plot_histogram(
+            precomputed,
+            os.path.join(
+                os.path.dirname(os.path.abspath(self.input)),
+                f"hist_round_distances_{self.map_name}.png",
+            ),
+            n_bins=20,
+        )
+
+        for k in [2, 3, 4, 5, 10, 20]:
+            self.plot_knn(k, precomputed)
+
+        distance_variant = "geodesic"
+        name = "ClusterTesting_KMed_Geo"
+        output = r"D:\CSGO\ML\CSGOML\Plots\multi_round_testing"
+        base_name = f"{name}_{configuration[0]}_{configuration[1]}"
+        distance_variant = "geodesic"
+        rounds_file_diff_play_img = os.path.join(
+            output, f"All_rounds_different_players_img.png"
+        )
+        rounds_file_diff_play_img_traj = os.path.join(
+            output, f"All_rounds_different_players_img_traj.png"
+        )
+
+        logging.info("Generating rounds_different_players image combined.")
+        self.plot_rounds_different_players(
+            rounds_file_diff_play_img,
+            train_features,
+            map_name=self.map_name,
+            map_type="simpleradar",
+            fps=1,
+            dist_type=distance_variant,
+            image=True,
+        )
+
+        logging.info("Generating rounds_different_players image trajectory")
+        self.plot_rounds_different_players(
+            rounds_file_diff_play_img_traj,
+            train_features,
+            map_name=self.map_name,
+            map_type="simpleradar",
+            fps=1,
+            dist_type=distance_variant,
+            image=True,
+            trajectory=True,
+        )
+
+        cluster_dict = self.run_kmed(5, precomputed)
+        # self.run_dbscan(1500, 20, precomputed)
+        # cluster_dict = self.run_dbscan(600, 4, precomputed)
+        for cluster_id, rounds in cluster_dict.items():
+            logging.info(cluster_id)
+            base_name = f"{name}_{cluster_id}"
+            # rounds_file_diff_play = os.path.join(
+            #     output, f"{base_name}_rounds_different_players.gif"
+            # )
+            # rounds_file_diff_play_traj = os.path.join(
+            #     output, f"{base_name}_rounds_different_players_traj.gif"
+            # )
+            # rounds_file_diff_play_img = os.path.join(
+            #     output, f"{base_name}_rounds_different_players_img.png"
+            # )
+            rounds_file_diff_play_img_traj = os.path.join(
+                output, f"{base_name}_rounds_different_players_img_traj.png"
+            )
+            # Normal baseline
+            # logging.info("Generating rounds_different_players.")
+            # self.plot_rounds_different_players(
+            #     rounds_file_diff_play,
+            #     [train_features[i] for i in rounds],
+            #     map_name=self.map_name,
+            #     map_type="simpleradar",
+            #     fps=1,
+            #     dist_type=distance_variant,
+            # )
+
+            # logging.info("Generating rounds_different_players image combined.")
+            # self.plot_rounds_different_players(
+            #     rounds_file_diff_play_img,
+            #     [train_features[i] for i in rounds],
+            #     map_name=self.map_name,
+            #     map_type="simpleradar",
+            #     fps=1,
+            #     dist_type=distance_variant,
+            #     image=True,
+            # )
+
+            # Trajectory from combined function
+            # logging.info("Generating rounds_different_players trajectory.")
+            # self.plot_rounds_different_players(
+            #     rounds_file_diff_play_traj,
+            #     [train_features[i] for i in rounds],
+            #     map_name=self.map_name,
+            #     map_type="simpleradar",
+            #     fps=1,
+            #     dist_type=distance_variant,
+            #     trajectory=True,
+            # )
+
+            logging.info("Generating rounds_different_players image trajectory")
+            self.plot_rounds_different_players(
+                rounds_file_diff_play_img_traj,
+                [train_features[i] for i in rounds],
+                map_name=self.map_name,
+                map_type="simpleradar",
+                fps=1,
+                dist_type=distance_variant,
+                image=True,
+                trajectory=True,
+            )
+
+        # self.run_dbscan(1250, 20, precomputed)
+
         # name = "Test_Geo"
         # output = r"D:\CSGO\ML\CSGOML\Plots\multi_round_testing"
         # round_num = 10
         # base_name = f"{name}_{round_num}"
 
-        name = "Test_Geo"
-        output = r"D:\CSGO\ML\CSGOML\Plots\multi_round_testing"
-        round_num = 10
-        base_name = f"{name}_{round_num}"
-
-        # logging.info("Generating token round file.")
-        # plot_round_tokens(
-        #     filename=plot_token_file,
-        #     frames=frames,
-        #     map_name=demo_map_name,
-        #     map_type="simpleradar",
-        #     dark=False,
-        #     fps=2,
+        # # logging.info("Generating token round file.")
+        # # plot_round_tokens(
+        # #     filename=plot_token_file,
+        # #     frames=frames,
+        # #     map_name=demo_map_name,
+        # #     map_type="simpleradar",
+        # #     dark=False,
+        # #     fps=2,
+        # # )
+        # # logging.info("Generating round file.")
+        # # plot_round(
+        # #     filename=plot_round_file,
+        # #     frames=frames,
+        # #     map_name=demo_map_name,
+        # #     map_type="simpleradar",
+        # #     dark=False,
+        # #     fps=2,
+        # # )
+        # distance_variant = "geodesic"
+        # n_rounds = 2
+        # rounds_file_diff_play = os.path.join(
+        #     output, f"{base_name}_{n_rounds}_rounds_different_players.gif"
         # )
-        # logging.info("Generating round file.")
-        # plot_round(
-        #     filename=plot_round_file,
-        #     frames=frames,
-        #     map_name=demo_map_name,
-        #     map_type="simpleradar",
-        #     dark=False,
-        #     fps=2,
+        # rounds_file_diff_play_traj = os.path.join(
+        #     output, f"{base_name}_{n_rounds}_rounds_different_players_traj.gif"
         # )
-        distance_variant = "geodesic"
-        n_rounds = 2
-        rounds_file_diff_play = os.path.join(
-            output, f"{base_name}_{n_rounds}_rounds_different_players.gif"
-        )
-        rounds_file_diff_play_traj = os.path.join(
-            output, f"{base_name}_{n_rounds}_rounds_different_players_traj.gif"
-        )
-        rounds_file_diff_play_img = os.path.join(
-            output, f"{base_name}_{n_rounds}_rounds_different_players_img.png"
-        )
-        rounds_file_diff_play_img_traj = os.path.join(
-            output, f"{base_name}_{n_rounds}_rounds_different_players_img_traj.png"
-        )
-        # Normal baseline
-        logging.info("Generating rounds_different_players.")
-        self.plot_rounds_different_players(
-            rounds_file_diff_play,
-            [
-                train_features[round_num + i]
-                for i in range(-n_rounds // 2, n_rounds // 2)
-            ],
-            map_name=self.map_name,
-            map_type="simpleradar",
-            fps=1,
-            dist_type=distance_variant,
-        )
+        # rounds_file_diff_play_img = os.path.join(
+        #     output, f"{base_name}_{n_rounds}_rounds_different_players_img.png"
+        # )
+        # rounds_file_diff_play_img_traj = os.path.join(
+        #     output, f"{base_name}_{n_rounds}_rounds_different_players_img_traj.png"
+        # )
+        # # Normal baseline
+        # logging.info("Generating rounds_different_players.")
+        # self.plot_rounds_different_players(
+        #     rounds_file_diff_play,
+        #     train_features,
+        #     map_name=self.map_name,
+        #     map_type="simpleradar",
+        #     fps=1,
+        #     dist_type=distance_variant,
+        # )
 
         # logging.info("Generating rounds_different_players image combined.")
         # self.plot_rounds_different_players(
         #     rounds_file_diff_play_img,
-        #     [
-        #         train_features[round_num + i]
-        #         for i in range(-n_rounds // 2, n_rounds // 2)
-        #     ],
+        #     train_features,
         #     map_name=self.map_name,
         #     map_type="simpleradar",
         #     fps=1,
@@ -638,10 +770,7 @@ class TrajectoryPredictor:
         # logging.info("Generating rounds_different_players trajectory.")
         # self.plot_rounds_different_players(
         #     rounds_file_diff_play_traj,
-        #     [
-        #         train_features[round_num + i]
-        #         for i in range(-n_rounds // 2, n_rounds // 2)
-        #     ],
+        #     train_features,
         #     map_name=self.map_name,
         #     map_type="simpleradar",
         #     fps=1,
@@ -652,10 +781,7 @@ class TrajectoryPredictor:
         # logging.info("Generating rounds_different_players image trajectory")
         # self.plot_rounds_different_players(
         #     rounds_file_diff_play_img_traj,
-        #     [
-        #         train_features[round_num + i]
-        #         for i in range(-n_rounds // 2, n_rounds // 2)
-        #     ],
+        #     train_features,
         #     map_name=self.map_name,
         #     map_type="simpleradar",
         #     fps=1,
@@ -664,43 +790,25 @@ class TrajectoryPredictor:
         #     trajectory=True,
         # )
 
-        name = "Test_Euc"
-        output = r"D:\CSGO\ML\CSGOML\Plots\multi_round_testing"
-        round_num = 10
-        base_name = f"{name}_{round_num}"
+        # name = "Test_Euc"
+        # output = r"D:\CSGO\ML\CSGOML\Plots\multi_round_testing"
+        # round_num = 10
+        # base_name = f"{name}_{round_num}"
 
-        # logging.info("Generating token round file.")
-        # plot_round_tokens(
-        #     filename=plot_token_file,
-        #     frames=frames,
-        #     map_name=demo_map_name,
-        #     map_type="simpleradar",
-        #     dark=False,
-        #     fps=2,
+        # distance_variant = "euclidean"
+        # n_rounds = 2
+        # rounds_file_diff_play = os.path.join(
+        #     output, f"{base_name}_{n_rounds}_rounds_different_players.gif"
         # )
-        # logging.info("Generating round file.")
-        # plot_round(
-        #     filename=plot_round_file,
-        #     frames=frames,
-        #     map_name=demo_map_name,
-        #     map_type="simpleradar",
-        #     dark=False,
-        #     fps=2,
+        # rounds_file_diff_play_traj = os.path.join(
+        #     output, f"{base_name}_{n_rounds}_rounds_different_players_traj.gif"
         # )
-        distance_variant = "euclidean"
-        n_rounds = 2
-        rounds_file_diff_play = os.path.join(
-            output, f"{base_name}_{n_rounds}_rounds_different_players.gif"
-        )
-        rounds_file_diff_play_traj = os.path.join(
-            output, f"{base_name}_{n_rounds}_rounds_different_players_traj.gif"
-        )
-        rounds_file_diff_play_img = os.path.join(
-            output, f"{base_name}_{n_rounds}_rounds_different_players_img.png"
-        )
-        rounds_file_diff_play_img_traj = os.path.join(
-            output, f"{base_name}_{n_rounds}_rounds_different_players_img_traj.png"
-        )
+        # rounds_file_diff_play_img = os.path.join(
+        #     output, f"{base_name}_{n_rounds}_rounds_different_players_img.png"
+        # )
+        # rounds_file_diff_play_img_traj = os.path.join(
+        #     output, f"{base_name}_{n_rounds}_rounds_different_players_img_traj.png"
+        # )
         # Normal baseline
         # logging.info("Generating rounds_different_players.")
         # self.plot_rounds_different_players(
@@ -995,8 +1103,6 @@ class TrajectoryPredictor:
             A float representing the distance between these two trajectories
         """
         distance = 0
-        logging.info(trajectory_array_1.shape)
-        logging.info(trajectory_array_2.shape)
         length = max(len(trajectory_array_1), len(trajectory_array_2))
         for time in range(length):
             if len(trajectory_array_1.shape) > 2.5:
@@ -1027,7 +1133,6 @@ class TrajectoryPredictor:
                     )
                     / length
                 )
-            logging.info(distance)
         return distance
 
     def plot_rounds_different_players(
@@ -1326,6 +1431,61 @@ class TrajectoryPredictor:
             return_array[i, :, :, :, :] = pos_array[:, np.newaxis, np.newaxis, i, :]
         return return_array
 
+    def plot_histogram(self, distance_matrix, path, n_bins=10):
+        """Plots a histogram of the distances in the precomputed distance matrix"""
+        plt.hist(
+            distance_matrix.flatten(), density=False, bins=n_bins
+        )  # density=False would make counts
+        plt.ylabel("Probability")
+        plt.xlabel("Data")
+        plt.savefig(path)
+        plt.close()
+
+    def plot_knn(self, n_nn, precomputed):
+        """Plot k-distance with k = n_nn for precomputed distance matrix"""
+        logging.info("NN %s", n_nn)
+        neighbors = NearestNeighbors(n_neighbors=n_nn, metric="precomputed")
+        neighbors_fit = neighbors.fit(precomputed)
+        distances, indices = neighbors_fit.kneighbors(precomputed)
+        # logging.info(distances)
+        # logging.info(indices)
+        distances = np.sort(distances, axis=0)
+        distance = distances[:, n_nn - 1]
+        plt.plot(distance)
+        plt.savefig(
+            os.path.join(
+                os.path.dirname(os.path.abspath(self.input)),
+                f"nearest_neighbors_{n_nn}_distances_{self.map_name}.png",
+            )
+        )
+        plt.close()
+
+    def run_dbscan(self, eps, minpt, precomputed):
+        """Run dbscan on the precomputed matrix with the given parameters"""
+        dbscan = DBSCAN(eps=eps, min_samples=minpt, metric="precomputed").fit(
+            precomputed
+        )  # fitting the model
+        labels = dbscan.labels_  # getting the labels
+        logging.info(labels)
+        cluster_dict = defaultdict(list)
+        for round_num, cluster in enumerate(labels):
+            cluster_dict[cluster].append(round_num)
+        logging.info(cluster_dict)
+        return cluster_dict
+
+    def run_kmed(self, n_cluster, precomputed):
+        """Run dbscan on the precomputed matrix with the given parameters"""
+        kmed = KMedoids(n_clusters=n_cluster, metric="precomputed").fit(
+            precomputed
+        )  # fitting the model
+        labels = kmed.labels_  # getting the labels
+        logging.info(labels)
+        cluster_dict = defaultdict(list)
+        for round_num, cluster in enumerate(labels):
+            cluster_dict[cluster].append(round_num)
+        logging.info(cluster_dict)
+        return cluster_dict
+
 
 def main(args):
     """Read input prepared by tensorflow_input_preparation.py and builds/trains DNNs to predict the round winner based on player trajectory data."""
@@ -1394,8 +1554,8 @@ def main(args):
     )
     predictor = TrajectoryPredictor(
         file,
-        times=[15, 15, 2],
-        sides=["BOTH"],
+        times=[20, 20, 2],
+        sides=["CT"],
         random_state=random_state,
         example_id=example_index,
         map_name="de_" + options.map,
