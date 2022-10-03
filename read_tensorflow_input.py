@@ -26,6 +26,7 @@ import argparse
 import sys
 import random
 from collections import defaultdict
+from multiprocessing import Pool
 import pandas as pd
 import numpy as np
 import json
@@ -599,7 +600,11 @@ class TrajectoryPredictor:
                 precomputed,
             )
             logging.info("Saved distances to file.")
-
+			# TODO: Use trajectory_distance that is not part of the class and build a wrapper function with 1 argument
+			#with Pool() as p:
+			#	res = p.map(trajectory_distance_wrapper, (precompute_array[i],precompute_array[j],map_name,"geodesic") for i in range(len(train_features)) for j in range(i+1,len(train_features)))
+			#precomputed[np.triu_indices(len(train_features,1))] = res
+			#precomputed += precomputed.T
         # logging.info("Plotting histogram of distances")
         # self.plot_histogram(
         #     precomputed,
