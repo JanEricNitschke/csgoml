@@ -46,6 +46,8 @@ import itertools
 import os
 import sys
 import math
+import time
+import timeit
 import logging
 import json
 import argparse
@@ -54,10 +56,18 @@ import numpy as np
 from shapely.geometry import Polygon
 from matplotlib import patches
 import matplotlib.pyplot as plt
-from awpy.visualization.plot import plot_map, position_transform, tree
-from awpy.data import NAV
-from awpy.analytics.nav import area_distance, find_closest_area
+from awpy.visualization.plot import plot_map, position_transform
+from awpy.data import NAV, AREA_DIST_MATRIX, PLACE_DIST_MATRIX
+from awpy.analytics.nav import (
+    area_distance,
+    find_closest_area,
+    generate_area_distance_matrix,
+    point_distance,
+    generate_place_distance_matrix,
+    tree,
+)
 from plotting_utils import get_areas_hulls_centers, stepped_hull
+from pathlib import Path
 
 
 def mark_areas(map_name, areas):
@@ -463,47 +473,10 @@ def main(args):
             datefmt="%Y-%m-%d %H:%M:%S",
         )
 
-    # with open("D:\CSGO\ML\CSGOML\data\\tile_dist_matrix.json") as f:
-    #     tiles_matrix = json.load(f)
-    # with open(
-    #     "D:\\CSGO\\ML\\CSGOML\\data\\area_dist_matrix.json", encoding="utf8"
-    # ) as f:
-    #     area_matrix = json.load(f)
-    area_matrix = get_area_distance_matrix()
-
-    logging.info(area_matrix["de_dust2"]["ExtendedA"]["CTSpawn"])
-    logging.info(area_matrix["de_dust2"]["CTSpawn"]["ExtendedA"])
-
-    centroids, reps = generate_centroids("de_dust2")
-    logging.info(centroids)
-    graph = area_distance(
-        "de_dust2", centroids["ExtendedA"], centroids["CTSpawn"], dist_type="graph"
-    )
-    geodesic = area_distance(
-        "de_dust2", centroids["ExtendedA"], centroids["CTSpawn"], dist_type="geodesic"
-    )
-    plot_path("de_dust2", graph, geodesic)
-    graph = area_distance(
-        "de_dust2", centroids["CTSpawn"], centroids["ExtendedA"], dist_type="graph"
-    )
-    geodesic = area_distance(
-        "de_dust2", centroids["CTSpawn"], centroids["ExtendedA"], dist_type="geodesic"
-    )
-    plot_path("de_dust2", graph, geodesic)
-    graph = area_distance(
-        "de_dust2", reps["ExtendedA"], reps["CTSpawn"], dist_type="graph"
-    )
-    geodesic = area_distance(
-        "de_dust2", reps["ExtendedA"], reps["CTSpawn"], dist_type="geodesic"
-    )
-    plot_path("de_dust2", graph, geodesic)
-    graph = area_distance(
-        "de_dust2", reps["CTSpawn"], reps["ExtendedA"], dist_type="graph"
-    )
-    geodesic = area_distance(
-        "de_dust2", reps["CTSpawn"], reps["ExtendedA"], dist_type="geodesic"
-    )
-    plot_path("de_dust2", graph, geodesic)
+    for map_name in NAV:
+        generate_area_distance_matrix(map_name, save=True)
+    # for map_name in NAV:
+    #     generate_place_distance_matrix(map_name, save=True)
 
 
 if __name__ == "__main__":
