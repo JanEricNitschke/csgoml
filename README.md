@@ -26,6 +26,9 @@ Contains a class designed to read in the json files produced by tensorflow_input
 It supports the option to chose between which side(s) to consider, limit the data to only contain the first n seconds and to chose
 between using each players full x, y and z coordinates or a tokenized version as described in [ggViz: Accelerating Large-Scale Esports Game Analysis](https://arxiv.org/pdf/2107.06495.pdf) and implemented in [awpy](https://github.com/pnxenopoulos/awpy).
 
+Is also being expanded to be able to cluster.
+Will be restructured soon.
+
 # download_demos.py and demo_watchdog.py
 Two scripts used to build a dataset large enough to enable machine learning techniques to fulfill their potential.
 
