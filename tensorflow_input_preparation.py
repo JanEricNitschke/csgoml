@@ -21,7 +21,7 @@ import argparse
 import json
 import copy
 import pandas as pd
-from awpy.analytics.nav import generate_position_token
+from awpy.analytics.nav import generate_position_token, find_closest_area
 from awpy.data import NAV
 
 
@@ -45,7 +45,7 @@ def initialize_round_positions():
     for side in ["CT", "T"]:
         round_positions[side + "token"] = []
         for number in range(1, 6):
-            for feature in ["Alive", "Name", "x", "y", "z"]:
+            for feature in ["Alive", "Name", "x", "y", "z", "Area"]:
                 round_positions[side + "Player" + str(number) + feature] = []
     return round_positions
 
@@ -299,7 +299,7 @@ def partial_step(current, previous, second_difference, step_value):
 
 
 def append_to_round_positions(
-    round_positions, side, id_number_dict, player_id, player, second_difference
+    round_positions, side, id_number_dict, player_id, player, second_difference, map_name
 ):
     """Append a players information from the most recent frame to their list entries in the round_position dictionary
 
@@ -312,6 +312,7 @@ def append_to_round_positions(
         player_id: An integer or string containing a players steamID or bots name
         player: A dictionary containing the players position and status for the most recent timestep
         second_difference: An integer corresponding the the time difference between this and the previous frame in seconds. If it is larger than 1 then interpolation has to be done.
+        map_name: A string of the maps name
 
     Returns:
         None (Dictionary is appended to in place)
@@ -319,67 +320,31 @@ def append_to_round_positions(
     # Add the relevant information of this player to the rounds dict.
     # Add name of the player. Mainly for debugging purposes. Can be removed for actual analysis
     for i in range(second_difference, 0, -1):
+        name_val = player["name"] if i == 1 else round_positions[side.upper() + "Player" + id_number_dict[side][str(player_id)] + "Name"][-1]
+        alive_val = int(player["isAlive"]) if i == 1 else round_positions[side.upper() + "Player" + id_number_dict[side][str(player_id)] + "Alive"][-1]
+        x_val = player["x"] if i == 1 else partial_step(player["x"], round_positions[side.upper() + "Player" + id_number_dict[side][str(player_id)] + "x"][-1], second_difference, i)
+        y_val = player["y"] if i == 1 else partial_step(player["y"], round_positions[side.upper() + "Player" + id_number_dict[side][str(player_id)] + "y"][-1], second_difference, i)
+        z_val = player["z"] if i == 1 else partial_step(player["z"], round_positions[side.upper() + "Player" + id_number_dict[side][str(player_id)] + "z"][-1], second_difference, i)
+        area_val = find_closest_area(map_name, [x_val, y_val, z_val])
         round_positions[
             side.upper() + "Player" + id_number_dict[side][str(player_id)] + "Name"
-        ].append(
-            player["name"]
-            if i == 1
-            else round_positions[
-                side.upper() + "Player" + id_number_dict[side][str(player_id)] + "Name"
-            ][-1]
-        )
+        ].append(name_val)
         # Is alive status so the model does not have to learn that from stopping trajectories
         round_positions[
             side.upper() + "Player" + id_number_dict[side][str(player_id)] + "Alive"
-        ].append(
-            int(player["isAlive"])
-            if i == 1
-            else round_positions[
-                side.upper() + "Player" + id_number_dict[side][str(player_id)] + "Alive"
-            ][-1]
-        )
+        ].append(alive_val)
         round_positions[
             side.upper() + "Player" + id_number_dict[side][str(player_id)] + "x"
-        ].append(
-            player["x"]
-            if i == 1
-            else partial_step(
-                player["x"],
-                round_positions[
-                    side.upper() + "Player" + id_number_dict[side][str(player_id)] + "x"
-                ][-1],
-                second_difference,
-                i,
-            )
-        )
+        ].append(x_val)
         round_positions[
             side.upper() + "Player" + id_number_dict[side][str(player_id)] + "y"
-        ].append(
-            player["y"]
-            if i == 1
-            else partial_step(
-                player["y"],
-                round_positions[
-                    side.upper() + "Player" + id_number_dict[side][str(player_id)] + "y"
-                ][-1],
-                second_difference,
-                i,
-            )
-        )
+        ].append(y_val)
         round_positions[
             side.upper() + "Player" + id_number_dict[side][str(player_id)] + "z"
-        ].append(
-            player["z"]
-            if i == 1
-            else partial_step(
-                player["z"],
-                round_positions[
-                    side.upper() + "Player" + id_number_dict[side][str(player_id)] + "z"
-                ][-1],
-                second_difference,
-                i,
-            )
-        )
+        ].append(z_val)
+        round_positions[
+            side.upper() + "Player" + id_number_dict[side][str(player_id)] + "Area"
+        ].append(area_val)
 
 
 def convert_winner_to_int(winner_string):
@@ -508,6 +473,7 @@ def analyze_rounds(data, position_dataset_dict, match_id):
                         player_id,
                         player,
                         second_difference,
+                        map_name
                     )
                 # After looping over each player in the team once the steamID matching has been initialized
                 dict_initialized[side] = True

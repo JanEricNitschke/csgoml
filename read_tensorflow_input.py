@@ -26,6 +26,7 @@ import argparse
 import sys
 import random
 from collections import defaultdict
+from multiprocessing import Pool
 import pandas as pd
 import numpy as np
 import json
@@ -283,7 +284,7 @@ class TrajectoryPredictor:
         # Pad each column if set size is larger than dataframe size
         # If the full coordinates should be used then for each player their alive status as well as their x,y,z coordinates are kept, everything else (player names and tokens) is discarded.
         if coordinates == "positions":
-            featurelist = ["x", "y", "z"]
+            featurelist = ["x", "y", "z", "Area"]
             # featurelist=["Alive","x","y","z"]
             position_df = self.__pad_to_length(position_df, time)
             if team == "BOTH":
@@ -578,7 +579,10 @@ class TrajectoryPredictor:
             precomputed = np.load(precomputed_matrix_path)
         else:
             logging.info("Precomputing areas")
-            plot_array = self.precompute_areas(train_features)
+            precompute_array = train_features[
+                :, :, :, :, (3,)
+            ]  # Indices should be round, time, side, player, features. Only keep the 'Area' feature here
+            # plot_array = self.precompute_areas(train_features)
             logging.info(
                 "Precomputing all round distances for %s combinations.",
                 len(plot_array) ** 2,
@@ -588,18 +592,21 @@ class TrajectoryPredictor:
                 logging.info(i)
                 for j in range(i + 1, len(train_features)):
                     precomputed[i][j] = self.trajectory_distance(
-                        plot_array[i],
-                        plot_array[j],
+                        precompute_array[i],
+                        precompute_array[j],
                         "geodesic",
-                        precomputed_areas=True,
                     )
+            precomputed += precomputed.T
             np.save(
                 precomputed_matrix_path,
                 precomputed,
             )
             logging.info("Saved distances to file.")
-        precomputed += precomputed.T
-
+        # TODO: Use trajectory_distance that is not part of the class and build a wrapper function with 1 argument
+        # with Pool() as p:
+        # 	res = p.map(trajectory_distance_wrapper, (precompute_array[i],precompute_array[j],map_name,"geodesic") for i in range(len(train_features)) for j in range(i+1,len(train_features)))
+        # precomputed[np.triu_indices(len(train_features,1))] = res
+        # precomputed += precomputed.T
         # logging.info("Plotting histogram of distances")
         # self.plot_histogram(
         #     precomputed,
@@ -880,7 +887,6 @@ class TrajectoryPredictor:
         trajectory_array_1,
         trajectory_array_2,
         distance_type="geodesic",
-        precomputed_areas=False,
     ):
         """Calculates a distance distance between two trajectories
 
@@ -907,7 +913,6 @@ class TrajectoryPredictor:
                         if time in range(len(trajectory_array_2))
                         else trajectory_array_2[-1],
                         distance_type=distance_type,
-                        precomputed_areas=precomputed_areas,
                     )
                     / length
                 )
@@ -987,21 +992,20 @@ class TrajectoryPredictor:
         if trajectory:
             reference_traj = {}
             for side in range(frames_list[0].shape[1]):
-                reference_traj[side] = self.precompute_areas(
-                    self.transform_to_traj_dimensions(frames_list[0][:, side, :, :])
-                )
+                reference_traj[side] = self.transform_to_traj_dimensions(
+                    frames_list[0][:, side, :, :]
+                )[:, :, :, (3,)]
             for frame_index, frames in enumerate(tqdm(frames_list)):
                 # Initialize lists used to store values for this round for this frame
                 for side in range(frames.shape[1]):
                     mapping = get_shortest_distances_mapping(
                         self.map_name,
                         reference_traj[side],
-                        self.precompute_areas(
-                            self.transform_to_traj_dimensions(frames[:, side, :, :])
-                        ),
+                        self.transform_to_traj_dimensions(frames[:, side, :, :])[
+                            :, :, :, (3,)
+                        ],
                         dist_type=dist_type,
                         trajectory=True,
-                        precomputed_areas=True,
                     )
                     if image:
                         for player in range(frames.shape[2]):
