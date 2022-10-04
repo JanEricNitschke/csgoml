@@ -299,7 +299,13 @@ def partial_step(current, previous, second_difference, step_value):
 
 
 def append_to_round_positions(
-    round_positions, side, id_number_dict, player_id, player, second_difference, map_name
+    round_positions,
+    side,
+    id_number_dict,
+    player_id,
+    player,
+    second_difference,
+    map_name,
 ):
     """Append a players information from the most recent frame to their list entries in the round_position dictionary
 
@@ -320,12 +326,57 @@ def append_to_round_positions(
     # Add the relevant information of this player to the rounds dict.
     # Add name of the player. Mainly for debugging purposes. Can be removed for actual analysis
     for i in range(second_difference, 0, -1):
-        name_val = player["name"] if i == 1 else round_positions[side.upper() + "Player" + id_number_dict[side][str(player_id)] + "Name"][-1]
-        alive_val = int(player["isAlive"]) if i == 1 else round_positions[side.upper() + "Player" + id_number_dict[side][str(player_id)] + "Alive"][-1]
-        x_val = player["x"] if i == 1 else partial_step(player["x"], round_positions[side.upper() + "Player" + id_number_dict[side][str(player_id)] + "x"][-1], second_difference, i)
-        y_val = player["y"] if i == 1 else partial_step(player["y"], round_positions[side.upper() + "Player" + id_number_dict[side][str(player_id)] + "y"][-1], second_difference, i)
-        z_val = player["z"] if i == 1 else partial_step(player["z"], round_positions[side.upper() + "Player" + id_number_dict[side][str(player_id)] + "z"][-1], second_difference, i)
-        area_val = find_closest_area(map_name, [x_val, y_val, z_val])
+        name_val = (
+            player["name"]
+            if i == 1
+            else round_positions[
+                side.upper() + "Player" + id_number_dict[side][str(player_id)] + "Name"
+            ][-1]
+        )
+        alive_val = (
+            int(player["isAlive"])
+            if i == 1
+            else round_positions[
+                side.upper() + "Player" + id_number_dict[side][str(player_id)] + "Alive"
+            ][-1]
+        )
+        x_val = (
+            player["x"]
+            if i == 1
+            else partial_step(
+                player["x"],
+                round_positions[
+                    side.upper() + "Player" + id_number_dict[side][str(player_id)] + "x"
+                ][-1],
+                second_difference,
+                i,
+            )
+        )
+        y_val = (
+            player["y"]
+            if i == 1
+            else partial_step(
+                player["y"],
+                round_positions[
+                    side.upper() + "Player" + id_number_dict[side][str(player_id)] + "y"
+                ][-1],
+                second_difference,
+                i,
+            )
+        )
+        z_val = (
+            player["z"]
+            if i == 1
+            else partial_step(
+                player["z"],
+                round_positions[
+                    side.upper() + "Player" + id_number_dict[side][str(player_id)] + "z"
+                ][-1],
+                second_difference,
+                i,
+            )
+        )
+        area_val = find_closest_area(map_name, [x_val, y_val, z_val])["areaId"]
         round_positions[
             side.upper() + "Player" + id_number_dict[side][str(player_id)] + "Name"
         ].append(name_val)
@@ -473,7 +524,7 @@ def analyze_rounds(data, position_dataset_dict, match_id):
                         player_id,
                         player,
                         second_difference,
-                        map_name
+                        map_name,
                     )
                 # After looping over each player in the team once the steamID matching has been initialized
                 dict_initialized[side] = True
@@ -557,7 +608,8 @@ def main(args):
     )
     parser.add_argument(
         "--dir",
-        default=r"E:\PhD\MachineLearning\CSGOData\ParsedDemos",
+        # default=r"E:\PhD\MachineLearning\CSGOData\ParsedDemos",
+        default=r"D:\CSGO\Demos\Maps",
         help="Path to directory containing the individual map directories.",
     )
     parser.add_argument(
@@ -600,6 +652,7 @@ def main(args):
     done = []
     # List of maps to specifically do -> only do those
     to_do = ["ancient"]
+    # to_do = []
     for directoryname in os.listdir(options.dir):
         directory = os.path.join(options.dir, directoryname)
         if os.path.isdir(directory):
@@ -619,7 +672,7 @@ def main(args):
                 + ".json"
             )
             seen_match_ids = set()
-            if not options.reanalyze:
+            if not options.reanalyze and os.path.exists(output_json_path):
                 with open(output_json_path, encoding="utf-8") as pre_analyzed:
                     prev_dataframe = pd.read_json(pre_analyzed)
                 seen_match_ids = set(prev_dataframe["MatchID"].unique())
@@ -644,7 +697,7 @@ def main(args):
                     analyze_rounds(data, position_dataset_dict, match_id)
             # Transform to dataset and write it to file as json
             position_dataset_df = pd.DataFrame(position_dataset_dict)
-            if not options.reanalyze:
+            if not options.reanalyze and os.path.exists(output_json_path):
                 position_dataset_df = pd.concat(
                     [prev_dataframe, position_dataset_df], ignore_index=True
                 )

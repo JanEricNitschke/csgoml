@@ -41,33 +41,18 @@
 """
 #!/usr/bin/env python
 
-from collections import defaultdict
-import itertools
-import os
 import sys
-import math
-import time
-import timeit
 import logging
-import json
 import argparse
-from statistics import mean, median
 import numpy as np
-from shapely.geometry import Polygon
 from matplotlib import patches
 import matplotlib.pyplot as plt
 from awpy.visualization.plot import plot_map, position_transform
-from awpy.data import NAV, AREA_DIST_MATRIX, PLACE_DIST_MATRIX
+from awpy.data import NAV
 from awpy.analytics.nav import (
-    area_distance,
-    find_closest_area,
-    generate_area_distance_matrix,
-    point_distance,
-    generate_place_distance_matrix,
-    tree,
+    position_state_distance,
+    token_state_distance,
 )
-from plotting_utils import get_areas_hulls_centers, stepped_hull
-from pathlib import Path
 
 
 def mark_areas(map_name, areas):
@@ -173,268 +158,93 @@ def plot_path(map_name, graph, geodesic):
     plt.close(fig)
 
 
-def plot_mid(map_name):
-    """Plots the given map with the hulls, centroid and a representative_point for each named area.
-
-    Args:
-        map_name (string): Map to plot
-
-    Returns:
-        None (Directly saves the plot to file)
-    """
-    cent_ids, rep_ids = generate_centroids(map_name)
-    output_path = r"D:\\CSGO\\ML\\CSGOML\\Plots\\"
-    fig, axis = plot_map(map_name=map_name, map_type="simpleradar", dark=True)
-    fig.set_size_inches(19.2, 10.8)
-    # Grab points, hull and centroid for each named area
-    area_points, hulls, _ = get_areas_hulls_centers(map_name)
-    for area in area_points:
-        # Dont plot the "" area as it stretches across the whole map and messes with clarity
-        # but add it to the legend
-        if not area:
-            axis.plot(np.NaN, np.NaN, label="None")
-            continue
-        axis.plot(hulls[area][:, 0], hulls[area][:, 1], "-", lw=3, label=area)
-    handles, labels = axis.get_legend_handles_labels()
-    lgd = axis.legend(handles, labels, loc="upper left", bbox_to_anchor=(1.01, 1.01))
-    for a in NAV[map_name]:
-        area = NAV[map_name][a]
-        if a not in cent_ids.values() and a not in rep_ids.values():
-            continue
-        # logging.info(a)
-        # logging.info(NAV["de_dust2"][a])
-        try:
-            south_east_x = position_transform(map_name, area["southEastX"], "x")
-            north_west_x = position_transform(map_name, area["northWestX"], "x")
-            south_east_y = position_transform(map_name, area["southEastY"], "y")
-            north_west_y = position_transform(map_name, area["northWestY"], "y")
-        except KeyError:
-            pass
-        # Get its lower left points, height and width
-        width = south_east_x - north_west_x
-        height = north_west_y - south_east_y
-        southwest_x = north_west_x
-        southwest_y = south_east_y
-        color = "yellow"
-        if a in cent_ids.values() and a in rep_ids.values():
-            color = "green"
-        elif a in cent_ids.values():
-            color = "red"
-        elif a in rep_ids.values():
-            color = "blue"
-        rect = patches.Rectangle(
-            (southwest_x, southwest_y),
-            width,
-            height,
-            linewidth=1,
-            edgecolor=color,
-            facecolor="None",
-        )
-        axis.add_patch(rect)
-    plt.savefig(
-        os.path.join(output_path, f"test_{map_name}.png"),
-        bbox_inches="tight",
-        bbox_extra_artists=(lgd,),
-        dpi=1000,
-    )
-    fig.clear()
-    plt.close(fig)
-
-
-def get_tile_distance_matrix(
-    save=False, json_path="D:\\CSGO\\ML\\CSGOML\\data\\tile_dist_matrix.json"
+def trajectory_distance(
+    map_name,
+    trajectory_array_1,
+    trajectory_array_2,
+    distance_type="geodesic",
 ):
-    """Generates or grabs a tree like nested dictionary containing distance matrices (as dicts) for each map for all tiles
-    Structures is [dist_type(euclidean,graph,geodesic)][map_name][area1id][area2id]
+    """Calculates a distance distance between two trajectories
 
     Args:
-        save (boolean): Whether to also save the dictionary as a json file
-        json_path (string): Path to either grab an existing matrix from a save a new one to
+        map_name (string): Map under consideration
+        trajectory_array_1: Numpy array with shape (n_Time,2|1, 5, 3) with the first index indicating the team, the second the player and the third the coordinate
+        trajectory_array_2: Numpy array with shape (n_Time,2|1, 5, 3) with the first index indicating the team, the second the player and the third the coordinate
+        distance_type: String indicating how the distance between two player positions should be calculated. Options are "geodesic", "graph", "euclidean" and "edit_distance"
+        precomputed_areas (boolean): Indicates whether the position arrays already contain the precomputed areas in the x coordinate of the position
 
     Returns:
-        Tree structure containing distances for all tile pairs on all maps
+        A float representing the distance between these two trajectories
     """
-    if os.path.exists(json_path):
-        with open(json_path, encoding="utf8") as f:
-            tile_distance_matrix = json.load(f)
-        return tile_distance_matrix
-    tile_distance_matrix = {
-        "euclidean": tree(),
-        "graph": tree(),
-        "geodesic": tree(),
-    }
-    for map_name, tiles in NAV.items():
-        logging.debug(map_name)
-        for area1 in tiles:
-            area1 = int(area1)
-            area1_x = (
-                NAV[map_name][area1]["southEastX"] + NAV[map_name][area1]["northWestX"]
-            ) / 2
-            area1_y = (
-                NAV[map_name][area1]["southEastY"] + NAV[map_name][area1]["northWestY"]
-            ) / 2
-            area1_z = (
-                NAV[map_name][area1]["southEastZ"] + NAV[map_name][area1]["northWestZ"]
-            ) / 2
-            for area2 in tiles:
-                area2 = int(area2)
-                area2_x = (
-                    NAV[map_name][area2]["southEastX"]
-                    + NAV[map_name][area2]["northWestX"]
-                ) / 2
-                area2_y = (
-                    NAV[map_name][area2]["southEastY"]
-                    + NAV[map_name][area2]["northWestY"]
-                ) / 2
-                area2_z = (
-                    NAV[map_name][area2]["southEastZ"]
-                    + NAV[map_name][area2]["northWestZ"]
-                ) / 2
-                tile_distance_matrix["euclidean"][map_name][area1][area2] = math.sqrt(
-                    (area1_x - area2_x) ** 2
-                    + (area1_y - area2_y) ** 2
-                    + (area1_z - area2_z) ** 2
+    distance = 0
+    length = max(len(trajectory_array_1), len(trajectory_array_2))
+    if len(trajectory_array_1.shape) > 2.5:
+        for time in range(length):
+            distance += (
+                position_state_distance(
+                    map_name=map_name,
+                    position_array_1=trajectory_array_1[time]
+                    if time in range(len(trajectory_array_1))
+                    else trajectory_array_1[-1],
+                    position_array_2=trajectory_array_2[time]
+                    if time in range(len(trajectory_array_2))
+                    else trajectory_array_2[-1],
+                    distance_type=distance_type,
                 )
-                graph = area_distance(map_name, area1, area2, dist_type="graph")
-                tile_distance_matrix["graph"][map_name][area1][area2] = graph[
-                    "distance"
-                ]
-                geodesic = area_distance(map_name, area1, area2, dist_type="geodesic")
-                tile_distance_matrix["geodesic"][map_name][area1][area2] = geodesic[
-                    "distance"
-                ]
-    if save:
-        with open(json_path, "w", encoding="utf8") as json_file:
-            json.dump(tile_distance_matrix, json_file)
-    return tile_distance_matrix
+                / length
+            )
+    else:
+        for time in range(length):
+            distance += (
+                token_state_distance(
+                    map_name=map_name,
+                    token_array_1=trajectory_array_1[time]
+                    if time in range(len(trajectory_array_1))
+                    else trajectory_array_1[-1],
+                    token_array_2=trajectory_array_2[time]
+                    if time in range(len(trajectory_array_2))
+                    else trajectory_array_2[-1],
+                    distance_type=distance_type,
+                )
+                / length
+            )
+    return distance
 
 
-def get_area_distance_matrix(
-    tile_distance_matrix=None,
-    save=False,
-    json_path="D:\\CSGO\\ML\\CSGOML\\data\\area_dist_matrix.json",
-):
-    """Generates or grabs a tree like nested dictionary containing distance matrices (as dicts) for each map for all regions
-    Structures is [map_name][area1id][area2id][dist_type(euclidean,graph,geodesic)][reference_point(centroid,representative_point,median)]
-
-    Args:
-        tile_distance_matrix (tree): A tree like structure containing the distances between all tile combinations
-        save (boolean): Whether to also save the dictionary as a json file
-        json_path (string): Path to either grab an existing matrix from a save a new one to
-
-    Returns:
-        Tree structure containing distances for all tile pairs on all maps
-    """
-    if os.path.exists(json_path):
-        with open(json_path, encoding="utf8") as f:
-            area_distance_matrix = json.load(f)
-        return area_distance_matrix
-    area_distance_matrix = tree()
-    for dist_type in tile_distance_matrix:
-        logging.debug("Dist_type: %s", dist_type)
-        for map_name, tiles in NAV.items():
-            logging.debug("Map_name: %s", map_name)
-            area_mapping = defaultdict(list)
-            for area in tiles:
-                area_mapping[tiles[area]["areaName"]].append(area)
-            centroids, reps = generate_centroids(map_name)
-            for area1, centroid1 in centroids.items():
-                logging.debug("area1: %s", area1)
-                for area2, centroid2 in centroids.items():
-                    logging.debug("area2: %s", area2)
-                    if tile_distance_matrix is None:
-                        area_distance_matrix[map_name][area1][area2][dist_type][
-                            "centroid"
-                        ] = area_distance(
-                            map_name, centroid1, centroid2, dist_type=dist_type
-                        )[
-                            "distance"
-                        ]
-                        area_distance_matrix[map_name][area1][area2][dist_type][
-                            "representative_point"
-                        ] = area_distance(
-                            map_name, reps[area1], reps[area2], dist_type=dist_type
-                        )[
-                            "distance"
-                        ]
-                        connections = []
-                        for sub_area1 in area_mapping[area1]:
-                            for sub_area2 in area_mapping[area2]:
-                                connections.append(
-                                    area_distance(
-                                        map_name,
-                                        sub_area1,
-                                        sub_area2,
-                                        dist_type=dist_type,
-                                    )["distance"]
-                                )
-                        area_distance_matrix[map_name][area1][area2][dist_type][
-                            "median_dist"
-                        ] = median(connections)
-                    else:
-                        area_distance_matrix[map_name][area1][area2][dist_type][
-                            "centroid"
-                        ] = tile_distance_matrix[dist_type][map_name][str(centroid1)][
-                            str(centroid2)
-                        ]
-                        area_distance_matrix[map_name][area1][area2][dist_type][
-                            "representative_point"
-                        ] = tile_distance_matrix[dist_type][map_name][str(reps[area1])][
-                            str(reps[area2])
-                        ]
-                        connections = []
-                        for sub_area1 in area_mapping[area1]:
-                            for sub_area2 in area_mapping[area2]:
-                                connections.append(
-                                    tile_distance_matrix[dist_type][map_name][
-                                        str(sub_area1)
-                                    ][str(sub_area2)]
-                                )
-                        area_distance_matrix[map_name][area1][area2][dist_type][
-                            "median_dist"
-                        ] = median(connections)
-    if save:
-        with open(json_path, "w", encoding="utf8") as json_file:
-            json.dump(area_distance_matrix, json_file)
-    return area_distance_matrix
-
-
-def generate_centroids(map_name):
-    """For each region in the given map calculates the centroid and a representative point and finds the closest tile for each
+def trajectory_distance_wrapper(args):
+    """Calculates a distance distance between two trajectories
 
     Args:
-        map_name (string): Name of the map for which to calculate the centroids
+        args (tuple): Contains the arguments to pass to trajectory_distance. Order in the tuple is (map_name,array1,array2,distance_type)
 
     Returns:
-        Tuple of dictionaries containing the centroid and representative tiles for each region of the map
+        A float representing the distance between these two trajectories
     """
-    area_points = defaultdict(list)
-    z_s = defaultdict(list)
-    area_ids_cent = {}
-    area_ids_rep = {}
-    for a in NAV[map_name]:
-        area = NAV[map_name][a]
-        cur_x = []
-        cur_y = []
-        cur_x.append(area["southEastX"])
-        cur_x.append(area["northWestX"])
-        cur_y.append(area["southEastY"])
-        cur_y.append(area["northWestY"])
-        z_s[area["areaName"]].append(area["northWestZ"])
-        z_s[area["areaName"]].append(area["southEastZ"])
-        for x, y in itertools.product(cur_x, cur_y):
-            area_points[area["areaName"]].append((x, y))
-    for area in area_points:
-        hull = np.array(stepped_hull(area_points[area]))
-        my_centroid = list(np.array(Polygon(hull).centroid.coords)[0]) + [
-            mean(z_s[area])
-        ]
-        rep_point = list(np.array(Polygon(hull).representative_point().coords)[0]) + [
-            mean(z_s[area])
-        ]
-        area_ids_cent[area] = find_closest_area(map_name, my_centroid)["areaId"]
-        area_ids_rep[area] = find_closest_area(map_name, rep_point)["areaId"]
-    return area_ids_cent, area_ids_rep
+    map_name, trajectory_array_1, trajectory_array_2, distance_type = args
+    return trajectory_distance(
+        map_name=map_name,
+        trajectory_array_1=trajectory_array_1,
+        trajectory_array_2=trajectory_array_2,
+        distance_type=distance_type,
+    )
+
+
+def transform_to_traj_dimensions(pos_array):
+    """Transforms a numpy array of shape (Time,5,3) to (5,Time,1,1,3) to allow for individual trajectory distances.
+    Only needed when trying to get the distance between single player trajectories within "get_shortest_distance_mapping"
+
+    Args:
+        pos_array (numpy array): Numpy array with shape (Time, 2|1, 5, 3)
+
+        Returns:
+            numpy array
+    """
+    shape = pos_array.shape
+    dimensions = [shape[1], len(pos_array), 1, 1, shape[2]]
+    return_array = np.zeros(tuple(dimensions))
+    for i in range(5):
+        return_array[i, :, :, :, :] = pos_array[:, np.newaxis, np.newaxis, i, :]
+    return return_array
 
 
 def main(args):
@@ -473,10 +283,8 @@ def main(args):
             datefmt="%Y-%m-%d %H:%M:%S",
         )
 
-    for map_name in NAV:
-        generate_area_distance_matrix(map_name, save=True)
-    # for map_name in NAV:
-    #     generate_place_distance_matrix(map_name, save=True)
+    # logging.info(PLACE_DIST_MATRIX["de_nuke"]["TSpawn"]["Silo"])
+    # logging.info(PLACE_DIST_MATRIX["de_nuke"]["Silo"]["TSpawn"])
 
 
 if __name__ == "__main__":
