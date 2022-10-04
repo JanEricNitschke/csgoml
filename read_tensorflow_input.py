@@ -23,18 +23,17 @@ import argparse
 import sys
 import random
 from collections import defaultdict
+from multiprocessing import Pool
 import pandas as pd
 import numpy as np
-
-# import tensorflow as tf
-# from tensorflow.keras import layers
+import tensorflow as tf
+from tensorflow.keras import layers
 from sklearn.model_selection import train_test_split
 from sklearn.neighbors import NearestNeighbors
 from sklearn.cluster import DBSCAN
 from sklearn_extra.cluster import KMedoids
 import matplotlib.pyplot as plt
 from awpy.data import NAV
-from multiprocessing import Pool
 from awpy.analytics.nav import (
     find_closest_area,
 )
@@ -657,8 +656,6 @@ class TrajectoryPredictor:
                 image=True,
                 trajectory=True,
             )
-
-        sys.exit()
 
         self.datasets[side][time][coordinate]["val"]["features"] = val_features
         self.datasets[side][time][coordinate]["train"]["features"] = train_features
