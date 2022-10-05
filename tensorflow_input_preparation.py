@@ -376,7 +376,11 @@ def append_to_round_positions(
                 i,
             )
         )
-        area_val = find_closest_area(map_name, [x_val, y_val, z_val])["areaId"]
+        area_val = (
+            find_closest_area(map_name, [x_val, y_val, z_val])["areaId"]
+            if map_name in NAV
+            else -1
+        )
         round_positions[
             side.upper() + "Player" + id_number_dict[side][str(player_id)] + "Name"
         ].append(name_val)
