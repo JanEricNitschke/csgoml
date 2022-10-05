@@ -135,22 +135,27 @@ with connection:
     # myresult = cursor.fetchall()
     # for x in myresult:
     #     logging.info(x)
+    logging.info("SHOW KEYS FROM Events")
     cursor.execute("SHOW KEYS FROM Events")
     myresult = cursor.fetchall()
     for x in myresult:
         logging.info(x)
+    logging.info("SHOW INDEXES FROM Events")
     cursor.execute("SHOW INDEXES FROM Events")
     myresult = cursor.fetchall()
     for x in myresult:
         logging.info(x)
+    logging.info("SHOW INDEXES FROM CTWeapons")
     cursor.execute("SHOW INDEXES FROM CTWeapons")
     myresult = cursor.fetchall()
     for x in myresult:
         logging.info(x)
+    logging.info("SHOW INDEXES FROM TWeapons")
     cursor.execute("SHOW INDEXES FROM TWeapons")
     myresult = cursor.fetchall()
     for x in myresult:
         logging.info(x)
+    logging.info("SHOW INDEXES FROM WeaponClasses")
     cursor.execute("SHOW INDEXES FROM WeaponClasses")
     myresult = cursor.fetchall()
     for x in myresult:
@@ -169,7 +174,7 @@ with connection:
     # myresult = cursor.fetchall()
     # for x in myresult:
     #     logging.info(x)
-
+    logging.info("SELECT DISTINCT e.MapName FROM Events e")
     sql = "SELECT DISTINCT e.MapName FROM Events e"
     cursor.execute(sql)
     myresult = cursor.fetchall()
@@ -178,48 +183,62 @@ with connection:
 
     cursor.execute("SELECT VERSION()")
     version = cursor.fetchone()
-    print(f"Database version: {version[0]} ")
     logging.info("Database version: %s ", version[0])
+
+    logging.info("Show tables;")
     cursor.execute("Show tables;")
     myresult = cursor.fetchall()
     for x in myresult:
         logging.info(x)
 
+    logging.info("DESCRIBE `Events`")
     sql = "DESCRIBE `Events`"
     cursor.execute(sql)
     result = cursor.fetchall()
     for i in result:
         logging.info(i)
+
+    logging.info("SELECT COUNT(`EventID`) FROM `Events`")
     sql = "SELECT COUNT(`EventID`) FROM `Events`"
     cursor.execute(sql)
     # Fetch all the records
     result = cursor.fetchall()
     for i in result:
         logging.info(i)
+
+    logging.info("SELECT MIN(`Time`) FROM `Events`")
     sql = "SELECT MIN(`Time`) FROM `Events`"
     cursor.execute(sql)
     # Fetch all the records
     result = cursor.fetchall()
     for i in result:
         logging.info(i)
+
+    logging.info("SELECT MAX(`Time`) FROM `Events`")
     sql = "SELECT MAX(`Time`) FROM `Events`"
     cursor.execute(sql)
     # Fetch all the records
     result = cursor.fetchall()
     for i in result:
         logging.info(i)
+
+    logging.info("SELECT * FROM `Events` WHERE `Time` < 0.0")
     sql = "SELECT * FROM `Events` WHERE `Time` < 0.0"
     cursor.execute(sql)
     # Fetch all the records
     result = cursor.fetchall()
     for i in result:
         logging.info(i)
+
+    # logging.info("SELECT * FROM `Events` WHERE `Time` > 190.0")
     # sql = "SELECT * FROM `Events` WHERE `Time` > 190.0"
     # cursor.execute(sql)
     # # Fetch all the records
     # result = cursor.fetchall()
     # for i in result:
     #     logging.info(i)
+
+    logging.info("SELECT * FROM `Events` LIMIT 10")
     sql = "SELECT * FROM `Events` LIMIT 10"
     cursor.execute(sql)
     # Fetch all the records
@@ -227,59 +246,69 @@ with connection:
     for i in result:
         logging.info(i)
 
+    logging.info("DESCRIBE `CTWeapons`")
     sql = "DESCRIBE `CTWeapons`"
     cursor.execute(sql)
     result = cursor.fetchall()
     for i in result:
         logging.info(i)
 
+    logging.info("SELECT COUNT(`EventID`) FROM `CTWeapons`")
     sql = "SELECT COUNT(`EventID`) FROM `CTWeapons`"
     cursor.execute(sql)
     # Fetch all the records
     result = cursor.fetchall()
     for i in result:
         logging.info(i)
+
+    logging.info("SELECT * FROM `CTWeapons` LIMIT 10")
     sql = "SELECT * FROM `CTWeapons` LIMIT 10"
     cursor.execute(sql)
     result = cursor.fetchall()
     for i in result:
         logging.info(i)
 
+    logging.info("DESCRIBE `TWeapons`")
     sql = "DESCRIBE `TWeapons`"
     cursor.execute(sql)
     result = cursor.fetchall()
     for i in result:
         logging.info(i)
 
+    logging.info("SELECT COUNT(`EventID`) FROM `TWeapons`")
     sql = "SELECT COUNT(`EventID`) FROM `TWeapons`"
     cursor.execute(sql)
     # Fetch all the records
     result = cursor.fetchall()
     for i in result:
         logging.info(i)
+
+    logging.info("SELECT * FROM `TWeapons` LIMIT 10")
     sql = "SELECT * FROM `TWeapons` LIMIT 10"
     cursor.execute(sql)
-
     # Fetch all the records
     result = cursor.fetchall()
     for i in result:
         logging.info(i)
 
+    logging.info("DESCRIBE `WeaponClasses`")
     sql = "DESCRIBE `WeaponClasses`"
     cursor.execute(sql)
     result = cursor.fetchall()
     for i in result:
         logging.info(i)
 
+    logging.info("SELECT COUNT(`WeaponName`) FROM `WeaponClasses`")
     sql = "SELECT COUNT(`WeaponName`) FROM `WeaponClasses`"
     cursor.execute(sql)
     # Fetch all the records
     result = cursor.fetchall()
     for i in result:
         logging.info(i)
+
+    logging.info("SELECT * FROM `WeaponClasses` LIMIT 100")
     sql = "SELECT * FROM `WeaponClasses` LIMIT 100"
     cursor.execute(sql)
-
     # Fetch all the records
     result = cursor.fetchall()
     for i in result:
