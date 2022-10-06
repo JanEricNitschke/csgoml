@@ -532,7 +532,8 @@ def plot_rounds_different_players(
                             ],
                             c=colors_list[side][mapping[player]],
                             linestyle="-",
-                            linewidth=0.5,
+                            linewidth=0.15,
+                            alpha=0.4,
                         )
                 else:
                     mappings[side].append(mapping)
@@ -713,7 +714,8 @@ def plot_rounds_different_players(
                         ],
                         c=frame_colors[frame][side][player][0],
                         linestyle="-",
-                        linewidth=0.5,
+                        linewidth=0.15,
+                        alpha=0.4,
                     )
         a.get_xaxis().set_visible(False)
         a.get_yaxis().set_visible(False)

@@ -44,7 +44,7 @@ Currently more than 1000 matches (>2000 maps with over 50000 rounds) have been a
 # plot_utils.py
 
 This is a module containing various functions that augment already existing plotting functions present in [awpy](https://github.com/pnxenopoulos/awpy).
-Specifically the plotting of position tokens and visualization of named areas.
+Specifically the plotting of position tokens, visualization of named areas and multi-round plotting.
 Run as a script it illustrates the basic functionality of these functions as well as the basic ones directly from awpy.
 
 # nav_utils.py

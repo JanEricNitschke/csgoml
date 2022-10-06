@@ -43,12 +43,15 @@
 
 import sys
 import logging
+import itertools
 import argparse
 import numpy as np
 from matplotlib import patches
 import matplotlib.pyplot as plt
+from cmath import inf
+from numba import njit, typeof, typed, types
 from awpy.visualization.plot import plot_map, position_transform
-from awpy.data import NAV
+from awpy.data import NAV, AREA_DIST_MATRIX
 from awpy.analytics.nav import (
     position_state_distance,
     token_state_distance,
@@ -165,14 +168,11 @@ def trajectory_distance(
     distance_type="geodesic",
 ):
     """Calculates a distance distance between two trajectories
-
     Args:
         map_name (string): Map under consideration
         trajectory_array_1: Numpy array with shape (n_Time,2|1, 5, 3) with the first index indicating the team, the second the player and the third the coordinate
         trajectory_array_2: Numpy array with shape (n_Time,2|1, 5, 3) with the first index indicating the team, the second the player and the third the coordinate
         distance_type: String indicating how the distance between two player positions should be calculated. Options are "geodesic", "graph", "euclidean" and "edit_distance"
-        precomputed_areas (boolean): Indicates whether the position arrays already contain the precomputed areas in the x coordinate of the position
-
     Returns:
         A float representing the distance between these two trajectories
     """
@@ -209,6 +209,119 @@ def trajectory_distance(
                 / length
             )
     return distance
+
+
+@njit
+def fast_trajectory_distance(
+    trajectory_array_1,
+    trajectory_array_2,
+    dist_matrix,
+):
+    """Calculates a distance distance between two trajectories
+
+    Args:
+        trajectory_array_1: Numpy array with shape (n_Time,2|1, 5, 3) with the first index indicating the team, the second the player and the third the coordinate
+        trajectory_array_2: Numpy array with shape (n_Time,2|1, 5, 3) with the first index indicating the team, the second the player and the third the coordinate
+
+    Returns:
+        A float representing the distance between these two trajectories
+    """
+    dtw = False
+    length = max(len(trajectory_array_1), len(trajectory_array_2))
+    if dtw:
+        DTW = typed.Dict.empty(types.UniTuple(types.int32, 2), types.float64)
+
+        for i in range(len(trajectory_array_1)):
+            DTW[(i, -1)] = inf
+        for i in range(len(trajectory_array_2)):
+            DTW[(-1, i)] = inf
+        DTW[(-1, -1)] = 0
+
+        for i in range(len(trajectory_array_1)):
+            for j in range(len(trajectory_array_2)):
+                dist = fast_position_state_distance(
+                    position_array_1=trajectory_array_1[i],
+                    position_array_2=trajectory_array_2[j],
+                    dist_matrix=dist_matrix,
+                )
+                DTW[(i, j)] = dist + min(
+                    DTW[(i - 1, j)], DTW[(i, j - 1)], DTW[(i - 1, j - 1)]
+                )
+
+        return (DTW[len(trajectory_array_1) - 1, len(trajectory_array_2) - 1]) / length
+    dist = 0
+    length = max(len(trajectory_array_1), len(trajectory_array_2))
+    for time in range(length):
+        dist += fast_position_state_distance(
+            position_array_1=trajectory_array_1[time]
+            if time in range(len(trajectory_array_1))
+            else trajectory_array_1[-1],
+            position_array_2=trajectory_array_2[time]
+            if time in range(len(trajectory_array_2))
+            else trajectory_array_2[-1],
+            dist_matrix=dist_matrix,
+        )
+    return dist / length
+
+
+@njit
+def permutations(A, k):
+    """Calculates permutation of k elements in A. Needed because numba doesnt like itertools"""
+    r = [[i for i in range(0)]]
+    for i in range(k):
+        r = [[a] + b for a in A for b in r if (a in b) == False]
+    return r
+
+
+@njit
+def fast_position_state_distance(
+    position_array_1,
+    position_array_2,
+    dist_matrix,
+):
+    """Calculates a distance between two game states based on player positions
+
+    Args:
+        position_array_1 (numpy array): Numpy array with shape (2|1, 5, 3) with the first index indicating the team, the second the player and the third the coordinate
+        position_array_2 (numpy array): Numpy array with shape (2|1, 5, 3) with the first index indicating the team, the second the player and the third the coordinate
+        distance_type (string): String indicating how the distance between two player positions should be calculated. Options are "geodesic", "graph" and "euclidean"
+
+    Returns:
+        A float representing the distance between these two game states
+    """
+    pos_distance = 0
+    for team in range(position_array_1.shape[0]):
+        side_distance = inf
+        # Generate all possible mappings between players from array1 and array2. (Map player1 from array1 to player1 from array2 and player2's to each other or match player1's with player2's and so on)
+        for mapping in permutations(
+            range(position_array_1.shape[1]), position_array_2.shape[1]
+        ):
+            # Distance team distance for the current mapping
+            cur_dist = 0
+            # Calculate the distance between each pair of players in the current mapping
+            for player2, player1 in enumerate(mapping):
+                # If x, y and z coordinates or the area are all 0 then this is filler and there was no actual player playing that round
+                if (
+                    not position_array_1[team][player1].any()
+                    or not position_array_2[team][player2].any()
+                ):
+                    continue
+                # Just take euclidian distance between the two players. Fast but ignores walls
+                area1 = int(position_array_1[team][player1][0])
+                area2 = int(position_array_2[team][player2][0])
+                this_dist = min(
+                    dist_matrix[area1][area2],
+                    dist_matrix[area2][area1],
+                )
+                if this_dist == inf:
+                    this_dist = sys.maxsize / 6
+                # Build up the overall distance for the current mapping of the current side
+                cur_dist += this_dist
+            # Only keep the smallest distance from all the mappings
+            side_distance = min(side_distance, cur_dist)
+        # Build the total distance as the sum of the individual side's distances
+        pos_distance += side_distance
+    return pos_distance / (position_array_1.shape[0] * position_array_2.shape[1])
 
 
 def trajectory_distance_wrapper(args):

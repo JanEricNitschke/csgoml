@@ -33,11 +33,16 @@ from sklearn.neighbors import NearestNeighbors
 from sklearn.cluster import DBSCAN
 from sklearn_extra.cluster import KMedoids
 import matplotlib.pyplot as plt
-from awpy.data import NAV
+from numba import njit, typeof, typed, types
+from awpy.data import NAV, AREA_DIST_MATRIX
 from awpy.analytics.nav import (
     find_closest_area,
 )
-from nav_utils import trajectory_distance, trajectory_distance_wrapper
+from nav_utils import (
+    trajectory_distance,
+    trajectory_distance_wrapper,
+    fast_trajectory_distance,
+)
 from plotting_utils import plot_rounds_different_players
 
 
@@ -554,15 +559,38 @@ class TrajectoryPredictor:
                 "geodesic",
             )
         )
+
         precomputed_matrix_path = os.path.join(
             os.path.dirname(os.path.abspath(self.input)),
             f"pre_computed_round_distances_{self.map_name}_{side}.npy",
         )
+
         if os.path.exists(precomputed_matrix_path):
             logging.info("Loading precomputed distances from file")
             precomputed = np.load(precomputed_matrix_path)
         else:
             logging.info("Precomputing areas")
+            old_dist_matrix = AREA_DIST_MATRIX[self.map_name]
+            d1_type = types.DictType(types.int64, types.float64)
+            dist_matrix = typed.Dict.empty(types.int64, d1_type)
+            for area1 in old_dist_matrix:
+                for area2 in old_dist_matrix[area1]:
+                    if (int(area1)) not in dist_matrix:
+                        dist_matrix[int(area1)] = typed.Dict.empty(
+                            key_type=types.int64,
+                            value_type=types.float64,
+                        )
+                    # logging.info("%s, %s, %s", area1, area2, old_dist_matrix[area1][area2]["geodesic"])
+                    dist_matrix[int(area1)][int(area2)] = old_dist_matrix[area1][area2][
+                        "geodesic"
+                    ]
+            logging.info(
+                fast_trajectory_distance(
+                    train_features[0][:, :, :, (3,)],
+                    train_features[1][:, :, :, (3,)],
+                    dist_matrix,
+                )
+            )
             precompute_array = train_features[
                 :, :, :, :, (3,)
             ]  # Indices should be round, time, side, player, features. Only keep the 'Area' feature here
@@ -588,13 +616,13 @@ class TrajectoryPredictor:
             #     )
             # precomputed[np.triu_indices(len(train_features), 1)] = res
             for i in range(len(train_features)):
-                logging.info(i)
+                if i % 50 == 0:
+                    logging.info(i)
                 for j in range(i + 1, len(train_features)):
-                    precomputed[i][j] = trajectory_distance(
-                        self.map_name,
+                    precomputed[i][j] = fast_trajectory_distance(
                         precompute_array[i],
                         precompute_array[j],
-                        "geodesic",
+                        dist_matrix,
                     )
             precomputed += precomputed.T
             np.save(
@@ -603,25 +631,26 @@ class TrajectoryPredictor:
             )
             logging.info("Saved distances to file.")
 
-        logging.info("Plotting histogram of distances")
-        self.plot_histogram(
-            precomputed,
-            os.path.join(
-                os.path.dirname(os.path.abspath(self.input)),
-                f"hist_round_distances_{self.map_name}.png",
-            ),
-            n_bins=20,
-        )
+        # logging.info("Plotting histogram of distances")
+        # self.plot_histogram(
+        #     precomputed,
+        #     os.path.join(
+        #         os.path.dirname(os.path.abspath(self.input)),
+        #         "plots",
+        #         f"hist_round_distances_{self.map_name}.png",
+        #     ),
+        #     n_bins=20,
+        # )
 
-        for k in [2, 3, 4, 5, 10, 20]:
-            self.plot_knn(k, precomputed)
+        # for k in [2, 3, 4, 5, 10, 20, 100, 500]:
+        #     self.plot_knn(k, precomputed)
 
         distance_variant = "geodesic"
-        name = "ClusterTesting_KMed_Geo"
+        name = "ClusterTesting"
         output = r"D:\CSGO\ML\CSGOML\Plots\multi_round_testing"
         base_name = f"{name}_{configuration[0]}_{configuration[1]}"
         rounds_file_diff_play_img_traj = os.path.join(
-            output, f"All_rounds_different_players_img_traj.png"
+            output, f"{base_name}_all_rounds.png"
         )
 
         logging.info("Generating rounds_different_players image trajectory")
@@ -638,12 +667,13 @@ class TrajectoryPredictor:
 
         # cluster_dict = self.run_kmed(5, precomputed)
         # self.run_dbscan(1500, 20, precomputed)
-        cluster_dict = self.run_dbscan(550, 4, precomputed)
+        mindist = 600
+        n_neightbors = 50
+        cluster_dict = self.run_dbscan(mindist, n_neightbors, precomputed)
         for cluster_id, rounds in cluster_dict.items():
             logging.info(cluster_id)
-            base_name = f"{name}_{cluster_id}"
             rounds_file_diff_play_img_traj = os.path.join(
-                output, f"{base_name}_rounds_different_players_img_traj.png"
+                output, f"{base_name}_dbscan_{n_neightbors}_{mindist}_{cluster_id}.png"
             )
             logging.info("Generating rounds_different_players image trajectory")
             plot_rounds_different_players(
@@ -656,6 +686,25 @@ class TrajectoryPredictor:
                 image=True,
                 trajectory=True,
             )
+
+        # n_clusters = 20
+        # cluster_dict = self.run_kmed(n_clusters, precomputed)
+        # for cluster_id, rounds in cluster_dict.items():
+        #     logging.info(cluster_id)
+        #     rounds_file_diff_play_img_traj = os.path.join(
+        #         output, f"{base_name}_kmed_{n_clusters}_{cluster_id}.png"
+        #     )
+        #     logging.info("Generating rounds_different_players image trajectory")
+        #     plot_rounds_different_players(
+        #         rounds_file_diff_play_img_traj,
+        #         [train_features[i] for i in rounds],
+        #         map_name=self.map_name,
+        #         map_type="simpleradar",
+        #         fps=1,
+        #         dist_type=distance_variant,
+        #         image=True,
+        #         trajectory=True,
+        #     )
 
         self.datasets[side][time][coordinate]["val"]["features"] = val_features
         self.datasets[side][time][coordinate]["train"]["features"] = train_features
@@ -880,7 +929,9 @@ class TrajectoryPredictor:
     def plot_histogram(self, distance_matrix, path, n_bins=10):
         """Plots a histogram of the distances in the precomputed distance matrix"""
         plt.hist(
-            distance_matrix.flatten(), density=False, bins=n_bins
+            [dist for dist in distance_matrix.flatten() if dist < 1e10],
+            density=False,
+            bins=n_bins,
         )  # density=False would make counts
         plt.ylabel("Probability")
         plt.xlabel("Data")
@@ -897,10 +948,12 @@ class TrajectoryPredictor:
         # logging.info(indices)
         distances = np.sort(distances, axis=0)
         distance = distances[:, n_nn - 1]
+        distance = [dist for dist in distance if dist < 1e10]
         plt.plot(distance)
         plt.savefig(
             os.path.join(
                 os.path.dirname(os.path.abspath(self.input)),
+                "plots",
                 f"nearest_neighbors_{n_nn}_distances_{self.map_name}.png",
             )
         )
@@ -916,7 +969,9 @@ class TrajectoryPredictor:
         cluster_dict = defaultdict(list)
         for round_num, cluster in enumerate(labels):
             cluster_dict[cluster].append(round_num)
-        logging.info(cluster_dict)
+        logging.info(
+            "%s", [(key, len(cluster_dict[key])) for key in cluster_dict.keys()]
+        )
         return cluster_dict
 
     def run_kmed(self, n_cluster, precomputed):
@@ -929,7 +984,9 @@ class TrajectoryPredictor:
         cluster_dict = defaultdict(list)
         for round_num, cluster in enumerate(labels):
             cluster_dict[cluster].append(round_num)
-        logging.info(cluster_dict)
+        logging.info(
+            "%s", [(key, len(cluster_dict[key])) for key in cluster_dict.keys()]
+        )
         return cluster_dict
 
     def precompute_areas(self, rounds_array):
@@ -952,7 +1009,7 @@ def main(args):
     parser.add_argument(
         "-d", "--debug", action="store_true", default=False, help="Enable debug output."
     )
-    parser.add_argument("-m", "--map", default="ancient", help="Map to analyze")
+    parser.add_argument("-m", "--map", default="cache", help="Map to analyze")
     parser.add_argument(
         "-l",
         "--log",
@@ -962,7 +1019,7 @@ def main(args):
     parser.add_argument(
         "--exampleid",
         type=int,
-        default=22,
+        default=536,
         help="For which round the position_df should be printed when debugging.",
     )
     parser.add_argument(
