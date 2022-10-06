@@ -465,6 +465,7 @@ def analyze_rounds(data, position_dataset_dict, match_id):
     token_length = get_token_length(map_name)
     for current_round in data["gameRounds"]:
         skip_round = False
+        last_good_frame = 1
         # If there are no frames in the round skip it.
         if frame_is_empty(current_round):
             continue
@@ -494,6 +495,13 @@ def analyze_rounds(data, position_dataset_dict, match_id):
                 )
                 skip_round = True
                 break
+            if frame["ct"]["players"] is None or frame["t"]["players"] is None:
+                logging.debug(
+                    "Side['players'] is none. Skipping this frame from round %s !",
+                    current_round["roundNum"],
+                )
+                last_good_frame += 1
+                continue
             # Loop over both sides
             ticks[0] = int(frame["tick"])
             if ticks[1] == 0:
@@ -502,12 +510,7 @@ def analyze_rounds(data, position_dataset_dict, match_id):
                 second_difference = int((ticks[0] - ticks[1]) / 128)
             for side in ["ct", "t"]:
                 # If the side does not contain any players for that frame skip it
-                if frame[side]["players"] is None:
-                    logging.debug(
-                        "Side['players'] is none. Skipping this frame from round %s !",
-                        current_round["roundNum"],
-                    )
-                    continue
+
                 # Loop over each player in the team.
                 for player_index, player in enumerate(frame[side]["players"]):
                     # logging.info(f)
@@ -541,10 +544,11 @@ def analyze_rounds(data, position_dataset_dict, match_id):
                     if second_difference == 1
                     else build_intermediate_frames(
                         frame,
-                        current_round["frames"][index - 1],
+                        current_round["frames"][index - last_good_frame],
                         second_difference,
                     )
                 )
+                last_good_frame = 1
                 for i in range(second_difference, 0, -1):
                     tokens = get_postion_token(
                         token_frames[second_difference - i],
@@ -653,9 +657,21 @@ def main(args):
     logging.info("Starting")
     # done=["ancient","cache","cbble","cs_rush","dust2","facade","inferno","marquis","mirage","mist","nuke","overpass","resort","santorini","santorini_playtest","season"]
     # List of maps already done -> Do not do them again
-    done = []
+    done = [
+        "ancient",
+        "cache",
+        "cbble",
+        "cs_rush",
+        "dust2",
+        "facade",
+        "inferno",
+        "marquis",
+        "mirage",
+        "mist",
+        "nuke",
+    ]
     # List of maps to specifically do -> only do those
-    to_do = ["ancient"]
+    to_do = []
     # to_do = []
     for directoryname in os.listdir(options.dir):
         directory = os.path.join(options.dir, directoryname)

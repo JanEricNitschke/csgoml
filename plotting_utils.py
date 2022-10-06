@@ -363,6 +363,7 @@ def get_shortest_distances_mapping(
     current_positions,
     dist_type="geodesic",
     trajectory=False,
+    dtw=False,
 ):
     """Gets the mapping between players in the current round and lead players that has the shortest total distance between mapped players.
 
@@ -372,6 +373,7 @@ def get_shortest_distances_mapping(
         dist_type (string): String indicating the type of distance to use. Can be graph, geodesic, euclidean, manhattan, canberra or cosine.
         trajectory (boolean): Boolean indicating whether the input contains full trajectories
         precomputed_areas (boolean): Indicates whether the position arrays already contain the precomputed areas in the x coordinate of the position
+        dtw: Boolean indicating whether matching should be performed via dynamic time warping (true) or euclidean (false)
 
     Returns:
         A list mapping the player at index i in the current round to the leader at position list[i] in the leaders dictionary.
@@ -390,6 +392,7 @@ def get_shortest_distances_mapping(
                     current_positions[current_i],
                     leaders[leader_i],
                     distance_type=dist_type,
+                    dtw=dtw,
                 )
             else:
                 if dist_type in ["geodesic", "graph"]:
@@ -457,6 +460,7 @@ def plot_rounds_different_players(
     dist_type="geodesic",
     image=False,
     trajectory=False,
+    dtw=False,
 ):
     """Plots a list of rounds and saves as a .gif. Each player in the first round is assigned a separate color. Players in the other rounds are matched by proximity.
     Only use untransformed coordinates.
@@ -472,6 +476,7 @@ def plot_rounds_different_players(
         dist_type (string): String indicating the type of distance to use. Can be graph, geodesic, euclidean, manhattan, canberra or cosine
         image (boolean): Boolean indicating whether a gif of positions or a singular image of trajectories should be produced
         trajectory (boolean): Indicates whether the clustering of players should be done for the whole trajectories instead of each individual time step
+        dtw: Boolean indicating whether matching should be performed via dynamic time warping (true) or euclidean (false)
 
     Returns:
         True, saves .gif
@@ -518,6 +523,7 @@ def plot_rounds_different_players(
                     ],
                     dist_type=dist_type,
                     trajectory=True,
+                    dtw=dtw,
                 )
                 if image:
                     for player in range(frames.shape[2]):
@@ -532,8 +538,8 @@ def plot_rounds_different_players(
                             ],
                             c=colors_list[side][mapping[player]],
                             linestyle="-",
-                            linewidth=0.15,
-                            alpha=0.4,
+                            linewidth=0.25,
+                            alpha=0.6,
                         )
                 else:
                     mappings[side].append(mapping)
@@ -714,8 +720,8 @@ def plot_rounds_different_players(
                         ],
                         c=frame_colors[frame][side][player][0],
                         linestyle="-",
-                        linewidth=0.15,
-                        alpha=0.4,
+                        linewidth=0.25,
+                        alpha=0.6,
                     )
         a.get_xaxis().set_visible(False)
         a.get_yaxis().set_visible(False)

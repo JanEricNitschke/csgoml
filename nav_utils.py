@@ -166,6 +166,7 @@ def trajectory_distance(
     trajectory_array_1,
     trajectory_array_2,
     distance_type="geodesic",
+    dtw=False,
 ):
     """Calculates a distance distance between two trajectories
     Args:
@@ -173,63 +174,80 @@ def trajectory_distance(
         trajectory_array_1: Numpy array with shape (n_Time,2|1, 5, 3) with the first index indicating the team, the second the player and the third the coordinate
         trajectory_array_2: Numpy array with shape (n_Time,2|1, 5, 3) with the first index indicating the team, the second the player and the third the coordinate
         distance_type: String indicating how the distance between two player positions should be calculated. Options are "geodesic", "graph", "euclidean" and "edit_distance"
+        dtw: Boolean indicating whether matching should be performed via dynamic time warping (true) or euclidean (false)
     Returns:
         A float representing the distance between these two trajectories
     """
-    distance = 0
+
     length = max(len(trajectory_array_1), len(trajectory_array_2))
     if len(trajectory_array_1.shape) > 2.5:
-        for time in range(length):
-            distance += (
-                position_state_distance(
-                    map_name=map_name,
-                    position_array_1=trajectory_array_1[time]
-                    if time in range(len(trajectory_array_1))
-                    else trajectory_array_1[-1],
-                    position_array_2=trajectory_array_2[time]
-                    if time in range(len(trajectory_array_2))
-                    else trajectory_array_2[-1],
-                    distance_type=distance_type,
-                )
-                / length
-            )
+        dist_func = position_state_distance
     else:
-        for time in range(length):
-            distance += (
-                token_state_distance(
+        dist_func = token_state_distance
+
+    if dtw:
+        DTW = typed.Dict.empty(key_float, value_float)
+
+        for i in range(len(trajectory_array_1)):
+            DTW[(i, -1)] = inf
+        for i in range(len(trajectory_array_2)):
+            DTW[(-1, i)] = inf
+        DTW[(-1, -1)] = 0
+
+        for i in range(len(trajectory_array_1)):
+            for j in range(len(trajectory_array_2)):
+                dist = position_state_distance(
                     map_name=map_name,
-                    token_array_1=trajectory_array_1[time]
-                    if time in range(len(trajectory_array_1))
-                    else trajectory_array_1[-1],
-                    token_array_2=trajectory_array_2[time]
-                    if time in range(len(trajectory_array_2))
-                    else trajectory_array_2[-1],
+                    position_array_1=trajectory_array_1[i],
+                    position_array_2=trajectory_array_2[j],
                     distance_type=distance_type,
                 )
-                / length
+                DTW[(i, j)] = dist + min(
+                    DTW[(i - 1, j)], DTW[(i, j - 1)], DTW[(i - 1, j - 1)]
+                )
+
+        return (DTW[len(trajectory_array_1) - 1, len(trajectory_array_2) - 1]) / length
+
+    distance = 0
+    for time in range(length):
+        distance += (
+            dist_func(
+                map_name=map_name,
+                position_array_1=trajectory_array_1[time]
+                if time in range(len(trajectory_array_1))
+                else trajectory_array_1[-1],
+                position_array_2=trajectory_array_2[time]
+                if time in range(len(trajectory_array_2))
+                else trajectory_array_2[-1],
+                distance_type=distance_type,
             )
+            / length
+        )
     return distance
+
+
+value_float = types.float64
+key_float = types.UniTuple(types.int64, 2)
 
 
 @njit
 def fast_trajectory_distance(
-    trajectory_array_1,
-    trajectory_array_2,
-    dist_matrix,
+    trajectory_array_1, trajectory_array_2, dist_matrix, dtw=False
 ):
     """Calculates a distance distance between two trajectories
 
     Args:
         trajectory_array_1: Numpy array with shape (n_Time,2|1, 5, 3) with the first index indicating the team, the second the player and the third the coordinate
         trajectory_array_2: Numpy array with shape (n_Time,2|1, 5, 3) with the first index indicating the team, the second the player and the third the coordinate
+        dist_matrix: Nested dict that contains the precomputed distance between any pair of areas
+        dtw: Boolean indicating whether matching should be performed via dynamic time warping (true) or euclidean (false)
 
     Returns:
         A float representing the distance between these two trajectories
     """
-    dtw = False
     length = max(len(trajectory_array_1), len(trajectory_array_2))
     if dtw:
-        DTW = typed.Dict.empty(types.UniTuple(types.int32, 2), types.float64)
+        DTW = typed.Dict.empty(key_float, value_float)
 
         for i in range(len(trajectory_array_1)):
             DTW[(i, -1)] = inf
@@ -250,7 +268,6 @@ def fast_trajectory_distance(
 
         return (DTW[len(trajectory_array_1) - 1, len(trajectory_array_2) - 1]) / length
     dist = 0
-    length = max(len(trajectory_array_1), len(trajectory_array_2))
     for time in range(length):
         dist += fast_position_state_distance(
             position_array_1=trajectory_array_1[time]
