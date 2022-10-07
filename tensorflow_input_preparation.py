@@ -253,6 +253,8 @@ def pad_to_full_length(round_positions):
         None. Dictionary is padded in place.
 
     """
+    if len(round_positions["Tick"]) == 0:
+        return
     for key in round_positions:
         if "Alive" in key:
             # If the Alive list is completely empty fill it with a dead player
@@ -574,17 +576,18 @@ def analyze_rounds(data, position_dataset_dict, match_id):
                     round_positions["interpolated"].append(0 if i == 1 else 1)
                 ticks[1] = ticks[0]
         # Skip the rest of the loop if the whole round should be skipped.
-        if skip_round:
+        # Pad to full length in case a player left
+        pad_to_full_length(round_positions)
+        if skip_round or len(round_positions["Tick"]) == 0:
             continue
-        # Append demo id, map name and round number to the final dataset dict.
+        # Append demo id, map name and round number to the final dataset dict.)
         position_dataset_dict["MatchID"].append(match_id)
         position_dataset_dict["MapName"].append(map_name)
         position_dataset_dict["Round"].append(
             current_round["endTScore"] + current_round["endCTScore"]
         )
         position_dataset_dict["Winner"].append(winner_id)
-        # Pad to full length in case a player left
-        pad_to_full_length(round_positions)
+
         # Make sure each entry in the round_positions has the same size now. Especially that nothing is longer than the Tick entry which would indicate multiple players filling on player number
         # Transform to dataframe
         round_positions_df = pd.DataFrame(round_positions)
@@ -616,8 +619,8 @@ def main(args):
     )
     parser.add_argument(
         "--dir",
-        # default=r"E:\PhD\MachineLearning\CSGOData\ParsedDemos",
-        default=r"D:\CSGO\Demos\Maps",
+        default=r"E:\PhD\MachineLearning\CSGOData\ParsedDemos",
+        # default=r"D:\CSGO\Demos\Maps",
         help="Path to directory containing the individual map directories.",
     )
     parser.add_argument(
@@ -655,23 +658,11 @@ def main(args):
         )
 
     logging.info("Starting")
-    # done=["ancient","cache","cbble","cs_rush","dust2","facade","inferno","marquis","mirage","mist","nuke","overpass","resort","santorini","santorini_playtest","season"]
+    # done={"ancient","cache","cbble","cs_rush","dust2","facade","inferno","marquis","mirage","mist","nuke","overpass","resort","santorini","santorini_playtest","season","train","vertigo"}
     # List of maps already done -> Do not do them again
-    done = [
-        "ancient",
-        "cache",
-        "cbble",
-        "cs_rush",
-        "dust2",
-        "facade",
-        "inferno",
-        "marquis",
-        "mirage",
-        "mist",
-        "nuke",
-    ]
+    done = set()
     # List of maps to specifically do -> only do those
-    to_do = []
+    to_do = set()
     # to_do = []
     for directoryname in os.listdir(options.dir):
         directory = os.path.join(options.dir, directoryname)
@@ -702,7 +693,7 @@ def main(args):
                 seen_match_ids,
             )
             position_dataset_dict = initialize_position_dataset_dict()
-            for filename in os.listdir(directory):
+            for files_done, filename in enumerate(os.listdir(directory)):
                 file_path = os.path.join(directory, filename)
                 match_id = filename.rsplit(".", 1)[0]
                 # checking if it is a file
@@ -715,6 +706,15 @@ def main(args):
                     with open(file_path, encoding="utf-8") as demo_json:
                         data = json.load(demo_json)
                     analyze_rounds(data, position_dataset_dict, match_id)
+                if files_done > 0 and files_done % 50 == 0:
+                    tempdf = pd.DataFrame(position_dataset_dict)
+                    temp_json_path = (
+                        directory
+                        + r"\Analysis\Prepared_Input_Tensorflow_"
+                        + directoryname
+                        + "_temp.json"
+                    )
+                    tempdf.to_json(temp_json_path)
             # Transform to dataset and write it to file as json
             position_dataset_df = pd.DataFrame(position_dataset_dict)
             if not options.reanalyze and os.path.exists(output_json_path):
