@@ -707,14 +707,16 @@ def main(args):
                         data = json.load(demo_json)
                     analyze_rounds(data, position_dataset_dict, match_id)
                 if files_done > 0 and files_done % 50 == 0:
-                    tempdf = pd.DataFrame(position_dataset_dict)
-                    temp_json_path = (
-                        directory
-                        + r"\Analysis\Prepared_Input_Tensorflow_"
-                        + directoryname
-                        + "_temp.json"
-                    )
-                    tempdf.to_json(temp_json_path)
+                    position_dataset_df = pd.DataFrame(position_dataset_dict)
+                    if os.path.exists(output_json_path):
+                        position_dataset_df = pd.concat(
+                            [prev_dataframe, position_dataset_df], ignore_index=True
+                        )
+                    position_dataset_df.to_json(output_json_path)  # , indent=2)
+                    logging.info("Wrote output json to: %s", output_json_path)
+                    position_dataset_dict = initialize_position_dataset_dict()
+                    with open(output_json_path, encoding="utf-8") as pre_analyzed:
+                        prev_dataframe = pd.read_json(pre_analyzed)
             # Transform to dataset and write it to file as json
             position_dataset_df = pd.DataFrame(position_dataset_dict)
             if not options.reanalyze and os.path.exists(output_json_path):
