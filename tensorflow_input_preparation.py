@@ -660,7 +660,7 @@ def main(args):
     logging.info("Starting")
     # done={"ancient","cache","cbble","cs_rush","dust2","facade","inferno","marquis","mirage","mist","nuke","overpass","resort","santorini","santorini_playtest","season","train","vertigo"}
     # List of maps already done -> Do not do them again
-    done = set()
+    done = {"ancient", "cache", "cbble", "dust2", "inferno", "mirage", "nuke"}
     # List of maps to specifically do -> only do those
     to_do = set()
     # to_do = []
@@ -687,6 +687,8 @@ def main(args):
                 with open(output_json_path, encoding="utf-8") as pre_analyzed:
                     prev_dataframe = pd.read_json(pre_analyzed)
                 seen_match_ids = set(prev_dataframe["MatchID"].unique())
+            else:
+                prev_dataframe = pd.DataFrame()
             logging.info(
                 "The following %s MatchIDs are already included in the existing json file and will be skipped: %s",
                 len(seen_match_ids),
@@ -698,31 +700,29 @@ def main(args):
                 match_id = filename.rsplit(".", 1)[0]
                 # checking if it is a file
                 if (
-                    os.path.isfile(file_path)
+                    match_id not in seen_match_ids
+                    and os.path.isfile(file_path)
                     and filename.endswith(".json")
-                    and match_id not in seen_match_ids
                 ):
                     logging.info("Analyzing file %s", filename)
                     with open(file_path, encoding="utf-8") as demo_json:
                         data = json.load(demo_json)
                     analyze_rounds(data, position_dataset_dict, match_id)
-                if files_done > 0 and files_done % 50 == 0:
-                    position_dataset_df = pd.DataFrame(position_dataset_dict)
-                    if os.path.exists(output_json_path):
+                    if files_done > 0 and files_done % 50 == 0:
+                        position_dataset_df = pd.DataFrame(position_dataset_dict)
                         position_dataset_df = pd.concat(
                             [prev_dataframe, position_dataset_df], ignore_index=True
                         )
-                    position_dataset_df.to_json(output_json_path)  # , indent=2)
-                    logging.info("Wrote output json to: %s", output_json_path)
-                    position_dataset_dict = initialize_position_dataset_dict()
-                    with open(output_json_path, encoding="utf-8") as pre_analyzed:
-                        prev_dataframe = pd.read_json(pre_analyzed)
+                        position_dataset_df.to_json(output_json_path)  # , indent=2)
+                        logging.info("Wrote output json to: %s", output_json_path)
+                        position_dataset_dict = initialize_position_dataset_dict()
+                        with open(output_json_path, encoding="utf-8") as pre_analyzed:
+                            prev_dataframe = pd.read_json(pre_analyzed)
             # Transform to dataset and write it to file as json
             position_dataset_df = pd.DataFrame(position_dataset_dict)
-            if not options.reanalyze and os.path.exists(output_json_path):
-                position_dataset_df = pd.concat(
-                    [prev_dataframe, position_dataset_df], ignore_index=True
-                )
+            position_dataset_df = pd.concat(
+                [prev_dataframe, position_dataset_df], ignore_index=True
+            )
             position_dataset_df.to_json(output_json_path)  # , indent=2)
             logging.info("Wrote output json to: %s", output_json_path)
             # Has to be read back in like
