@@ -50,6 +50,7 @@ from matplotlib import patches
 import matplotlib.pyplot as plt
 from cmath import inf
 from numba import njit, typeof, typed, types
+from sympy.utilities.iterables import multiset_permutations
 from awpy.visualization.plot import plot_map, position_transform
 from awpy.data import NAV, AREA_DIST_MATRIX
 from awpy.analytics.nav import (
@@ -161,6 +162,10 @@ def plot_path(map_name, graph, geodesic):
     plt.close(fig)
 
 
+value_float = types.float64
+key_float = types.UniTuple(types.int64, 2)
+
+
 def trajectory_distance(
     map_name,
     trajectory_array_1,
@@ -226,12 +231,8 @@ def trajectory_distance(
     return distance
 
 
-value_float = types.float64
-key_float = types.UniTuple(types.int64, 2)
-
-
 @njit
-def fast_trajectory_distance(
+def fast_area_trajectory_distance(
     trajectory_array_1, trajectory_array_2, dist_matrix, dtw=False
 ):
     """Calculates a distance distance between two trajectories
@@ -257,10 +258,113 @@ def fast_trajectory_distance(
 
         for i in range(len(trajectory_array_1)):
             for j in range(len(trajectory_array_2)):
-                dist = fast_position_state_distance(
+                dist = fast_area_state_distance(
                     position_array_1=trajectory_array_1[i],
                     position_array_2=trajectory_array_2[j],
                     dist_matrix=dist_matrix,
+                )
+                DTW[(i, j)] = dist + min(
+                    DTW[(i - 1, j)], DTW[(i, j - 1)], DTW[(i - 1, j - 1)]
+                )
+
+        return (DTW[len(trajectory_array_1) - 1, len(trajectory_array_2) - 1]) / length
+    dist = 0
+    for time in range(length):
+        dist += fast_area_state_distance(
+            position_array_1=trajectory_array_1[time]
+            if time in range(len(trajectory_array_1))
+            else trajectory_array_1[-1],
+            position_array_2=trajectory_array_2[time]
+            if time in range(len(trajectory_array_2))
+            else trajectory_array_2[-1],
+            dist_matrix=dist_matrix,
+        )
+    return dist / length
+
+
+# @njit
+def fast_token_trajectory_distance(
+    trajectory_array_1, trajectory_array_2, dist_matrix, map_area_names, dtw=False
+):
+    """Calculates a distance distance between two trajectories
+
+    Args:
+        trajectory_array_1: Numpy array with shape (n_Time,len(token))
+        trajectory_array_2: Numpy array with shape (n_Time,len(token))
+        dist_matrix: Nested dict that contains the precomputed distance between any pair of areas
+        dtw: Boolean indicating whether matching should be performed via dynamic time warping (true) or euclidean (false)
+
+    Returns:
+        A float representing the distance between these two trajectories
+    """
+    length = max(len(trajectory_array_1), len(trajectory_array_2))
+    if dtw:
+        DTW = typed.Dict.empty(key_float, value_float)
+
+        for i in range(len(trajectory_array_1)):
+            DTW[(i, -1)] = inf
+        for i in range(len(trajectory_array_2)):
+            DTW[(-1, i)] = inf
+        DTW[(-1, -1)] = 0
+
+        for i in range(len(trajectory_array_1)):
+            for j in range(len(trajectory_array_2)):
+                dist = fast_token_state_distance(
+                    token_array_1=trajectory_array_1[i],
+                    token_array_2=trajectory_array_2[j],
+                    dist_matrix=dist_matrix,
+                    map_area_names=map_area_names,
+                )
+                DTW[(i, j)] = dist + min(
+                    DTW[(i - 1, j)], DTW[(i, j - 1)], DTW[(i - 1, j - 1)]
+                )
+
+        return (DTW[len(trajectory_array_1) - 1, len(trajectory_array_2) - 1]) / length
+    dist = 0
+    for time in range(length):
+        dist += fast_token_state_distance(
+            token_array_1=trajectory_array_1[time]
+            if time in range(len(trajectory_array_1))
+            else trajectory_array_1[-1],
+            token_array_2=trajectory_array_2[time]
+            if time in range(len(trajectory_array_2))
+            else trajectory_array_2[-1],
+            dist_matrix=dist_matrix,
+            map_area_names=map_area_names,
+        )
+    return dist / length
+
+
+@njit
+def fast_position_trajectory_distance(
+    trajectory_array_1, trajectory_array_2, dtw=False
+):
+    """Calculates a distance distance between two trajectories
+
+    Args:
+        trajectory_array_1: Numpy array with shape (n_Time,len(token))
+        trajectory_array_2: Numpy array with shape (n_Time,len(token))
+        dist_matrix: Nested dict that contains the precomputed distance between any pair of areas
+        dtw: Boolean indicating whether matching should be performed via dynamic time warping (true) or euclidean (false)
+
+    Returns:
+        A float representing the distance between these two trajectories
+    """
+    length = max(len(trajectory_array_1), len(trajectory_array_2))
+    if dtw:
+        DTW = typed.Dict.empty(key_float, value_float)
+
+        for i in range(len(trajectory_array_1)):
+            DTW[(i, -1)] = inf
+        for i in range(len(trajectory_array_2)):
+            DTW[(-1, i)] = inf
+        DTW[(-1, -1)] = 0
+
+        for i in range(len(trajectory_array_1)):
+            for j in range(len(trajectory_array_2)):
+                dist = fast_position_state_distance(
+                    position_array_1=trajectory_array_1[i],
+                    position_array_2=trajectory_array_2[j],
                 )
                 DTW[(i, j)] = dist + min(
                     DTW[(i - 1, j)], DTW[(i, j - 1)], DTW[(i - 1, j - 1)]
@@ -276,14 +380,69 @@ def fast_trajectory_distance(
             position_array_2=trajectory_array_2[time]
             if time in range(len(trajectory_array_2))
             else trajectory_array_2[-1],
-            dist_matrix=dist_matrix,
         )
     return dist / length
 
 
+def get_traj_matrix_area(precompute_array, dist_matrix, dtw):
+    """Precompute the distance matrix for all trajectories"""
+    precomputed = np.zeros((len(precompute_array), len(precompute_array)))
+    for i in range(len(precompute_array)):
+        if i % 50 == 0:
+            logging.info(i)
+        for j in range(i + 1, len(precompute_array)):
+            precomputed[i][j] = fast_area_trajectory_distance(
+                precompute_array[i], precompute_array[j], dist_matrix, dtw=dtw
+            )
+    precomputed += precomputed.T
+    return precomputed
+
+
+def get_traj_matrix_token(precompute_array, dist_matrix, map_area_names, dtw):
+    """Precompute the distance matrix for all trajectories"""
+    precomputed = np.zeros((len(precompute_array), len(precompute_array)))
+    for i in range(len(precompute_array)):
+        if i % 50 == 0:
+            logging.info(i)
+        for j in range(i + 1, len(precompute_array)):
+            precomputed[i][j] = fast_token_trajectory_distance(
+                precompute_array[i],
+                precompute_array[j],
+                dist_matrix,
+                map_area_names=map_area_names,
+                dtw=dtw,
+            )
+    precomputed += precomputed.T
+    return precomputed
+
+
+def get_traj_matrix_position(precompute_array, dtw):
+    """Precompute the distance matrix for all trajectories"""
+    precomputed = np.zeros((len(precompute_array), len(precompute_array)))
+    for i in range(len(precompute_array)):
+        if i % 50 == 0:
+            logging.info(i)
+        for j in range(i + 1, len(precompute_array)):
+            precomputed[i][j] = fast_position_trajectory_distance(
+                precompute_array[i],
+                precompute_array[j],
+                dtw=dtw,
+            )
+    precomputed += precomputed.T
+    return precomputed
+
+
+# @njit
+# def permutations(A, k):
+#     """Calculates permutation of k elements in A. Needed because numba doesnt like itertools"""
+#     r = [[i for i in range(0)]]
+#     for i in range(k):
+#         r = [[a] + b for a in A for b in r if (a in b) == False]
+#     return r
+
+
 @njit
 def permutations(A, k):
-    """Calculates permutation of k elements in A. Needed because numba doesnt like itertools"""
     r = [[i for i in range(0)]]
     for i in range(k):
         r = [[a] + b for a in A for b in r if (a in b) == False]
@@ -291,7 +450,7 @@ def permutations(A, k):
 
 
 @njit
-def fast_position_state_distance(
+def fast_area_state_distance(
     position_array_1,
     position_array_2,
     dist_matrix,
@@ -299,9 +458,8 @@ def fast_position_state_distance(
     """Calculates a distance between two game states based on player positions
 
     Args:
-        position_array_1 (numpy array): Numpy array with shape (2|1, 5, 3) with the first index indicating the team, the second the player and the third the coordinate
-        position_array_2 (numpy array): Numpy array with shape (2|1, 5, 3) with the first index indicating the team, the second the player and the third the coordinate
-        distance_type (string): String indicating how the distance between two player positions should be calculated. Options are "geodesic", "graph" and "euclidean"
+        position_array_1 (numpy array): Numpy array with shape (2|1, 5, 1) with the first index indicating the team, the second the player and the third the area
+        position_array_2 (numpy array): Numpy array with shape (2|1, 5, 1) with the first index indicating the team, the second the player and the third the area
 
     Returns:
         A float representing the distance between these two game states
@@ -323,7 +481,6 @@ def fast_position_state_distance(
                     or not position_array_2[team][player2].any()
                 ):
                     continue
-                # Just take euclidian distance between the two players. Fast but ignores walls
                 area1 = int(position_array_1[team][player1][0])
                 area2 = int(position_array_2[team][player2][0])
                 this_dist = min(
@@ -339,6 +496,111 @@ def fast_position_state_distance(
         # Build the total distance as the sum of the individual side's distances
         pos_distance += side_distance
     return pos_distance / (position_array_1.shape[0] * position_array_2.shape[1])
+
+
+@njit
+def euclidean(a, b):
+    """Calculates the euclidean distance between two points"""
+    return np.sqrt(((a - b) ** 2).sum())
+
+
+@njit
+def fast_position_state_distance(
+    position_array_1,
+    position_array_2,
+):
+    """Calculates a distance between two game states based on player positions
+
+    Args:
+        position_array_1 (numpy array): Numpy array with shape (2|1, 5, 3) with the first index indicating the team, the second the player and the third the coordinate
+        position_array_2 (numpy array): Numpy array with shape (2|1, 5, 3) with the first index indicating the team, the second the player and the third the coordinate
+
+    Returns:
+        A float representing the distance between these two game states
+    """
+    pos_distance = 0
+    for team in range(position_array_1.shape[0]):
+        side_distance = inf
+        # Generate all possible mappings between players from array1 and array2. (Map player1 from array1 to player1 from array2 and player2's to each other or match player1's with player2's and so on)
+        for mapping in permutations(
+            range(position_array_1.shape[1]), position_array_2.shape[1]
+        ):
+            # Distance team distance for the current mapping
+            cur_dist = 0
+            # Calculate the distance between each pair of players in the current mapping
+            for player2, player1 in enumerate(mapping):
+                # If x, y and z coordinates or the area are all 0 then this is filler and there was no actual player playing that round
+                this_dist = euclidean(
+                    position_array_1[team][player1], position_array_2[team][player2]
+                )
+                # Build up the overall distance for the current mapping of the current side
+                cur_dist += this_dist
+            # Only keep the smallest distance from all the mappings
+            side_distance = min(side_distance, cur_dist)
+        # Build the total distance as the sum of the individual side's distances
+        pos_distance += side_distance
+    return pos_distance / (position_array_1.shape[0] * position_array_2.shape[1])
+
+
+# @njit
+def fast_token_state_distance(
+    token_array_1,
+    token_array_2,
+    dist_matrix,
+    map_area_names,
+):
+    """Calculates a distance between two game states based on player positions
+
+    Args:
+        map_name (string): Map to search
+        token_array_1 (numpy array): 1-D numpy array of a position token
+        token_array_2 (numpy array): 1-D numpy array of a position token
+        distance_type (string): String indicating how the distance between two player positions should be calculated. Options are "geodesic", "graph", "euclidean" and "edit_distance"
+        reference_point (string): String indicating which reference point to use to determine area distance. Options are "centroid" and "representative_point"
+
+    Returns:
+        A float representing the distance between these two game states
+    """
+    # More complicated distances based on actual area locations
+    side_distance = inf
+    # Get the sub arrays for this team from the total array
+    # Make sure array1 is the larger one
+    if sum(token_array_1) < sum(token_array_2):
+        token_array_1, token_array_2 = token_array_2, token_array_1
+    size = max(1, sum(token_array_2))
+    # Get the indices where array1 and array2 have larger values than the other.
+    # Use each index as often as it is larger
+    diff_array = np.subtract(token_array_1, token_array_2)
+    pos_indices = []
+    neg_indices = []
+    for i, difference in enumerate(diff_array):
+        if difference > 0:
+            pos_indices.extend([i] * int(difference))
+        elif difference < 0:
+            neg_indices.extend([i] * int((abs(difference))))
+    if len(pos_indices) < len(neg_indices):
+        neg_indices, pos_indices = pos_indices, neg_indices
+    # Get all possible mappings between the differences
+    # Eg: diff array is [1,1,-1,-1] then pos_indices is [0,1] and neg_indices is [2,3]
+    # The possible mappings are then [(0,2),(1,3)] and [(0,3),(1,2)]
+    for mapping in set(
+        tuple(sorted(zip(perm, neg_indices)))
+        for perm in multiset_permutations(pos_indices, len(neg_indices))
+    ):
+        # for perm in itertools.permutations(pos_indices, len(neg_indices)):
+        cur_dist = 0
+        # Iterate of the mapping. Eg: [(0,2),(1,3)] and get their total distance
+        # For the example this would be dist(0,2)+dist(1,3)
+        for area1, area2 in mapping:
+            this_dist = min(
+                dist_matrix[map_area_names[area1]][map_area_names[area2]],
+                dist_matrix[map_area_names[area2]][map_area_names[area1]],
+            )
+            if this_dist == inf:
+                this_dist = sys.maxsize / 6
+            cur_dist += this_dist
+        side_distance = min(side_distance, cur_dist)
+    return side_distance / size
 
 
 def trajectory_distance_wrapper(args):
