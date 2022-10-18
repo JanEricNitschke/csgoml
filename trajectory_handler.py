@@ -19,6 +19,7 @@ Done by just passing both arrays together in one train_test_split call
 import os
 import random
 import logging
+from typing import Optional
 import numpy as np
 import pandas as pd
 from sklearn.model_selection import train_test_split
@@ -40,9 +41,9 @@ class TrajectoryHandler:
 
     def __init__(
         self,
-        json_path,
-        random_state=None,
-        map_name="de_ancient",
+        json_path: str,
+        random_state: Optional[int] = None,
+        map_name: str = "de_ancient",
     ):
         logging.info("Starting init")
         self.map_name = map_name
@@ -91,7 +92,7 @@ class TrajectoryHandler:
         self.datasets["position"] = np.stack(dataframe["position_array"].to_numpy())
         logging.info("Finished init")
 
-    def __transform_to_data_frame(self, json_format_dict):
+    def __transform_to_data_frame(self, json_format_dict: dict) -> pd.DataFrame:
         """Transforms a json dictionary to a pandas dataframe and converts ticks to seconds.
 
         Args:
@@ -107,7 +108,7 @@ class TrajectoryHandler:
         )
         return return_dataframe
 
-    def __transform_ticks_to_seconds(self, tick, first_tick):
+    def __transform_ticks_to_seconds(self, tick: int, first_tick: int) -> int:
         """Transforms a tick value to a corresponding second value given a start_tick
 
         There is a tick every 128 seconds. Given the start tick the second value of the current tick is calculated as
@@ -123,7 +124,7 @@ class TrajectoryHandler:
         result = int((int(tick) - int(first_tick)) / 128)
         return result
 
-    def __get_token_array(self, position_df):
+    def __get_token_array(self, position_df: pd.DataFrame) -> np.ndarray:
         """Transforms a dataframe of player positions and tokens into an array corresponding to the token through the time steps.
 
                 Input dataframe is of the shape:
@@ -187,7 +188,7 @@ class TrajectoryHandler:
             return_array[:, ind] = position_df[column].to_numpy()
         return return_array
 
-    def __get_position_array(self, position_df):
+    def __get_position_array(self, position_df: pd.DataFrame) -> np.ndarray:
         """Transforms data frame by throwing away all unnecessary features
         and then turning it into a (multidimensional) array.
 
@@ -234,7 +235,9 @@ class TrajectoryHandler:
                     ] = position_df[side + "Player" + str(number) + feature].to_numpy()
         return return_array
 
-    def get_predictor_input(self, coordinate_type, side, time, consider_alive=False):
+    def get_predictor_input(
+        self, coordinate_type: str, side: str, time: int, consider_alive: bool = False
+    ) -> tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
         """Get the input for the DNN training to predict end of round result.
 
         First gets the array for the correct coordinate type and then slices it by the desired side and time.
@@ -298,7 +301,9 @@ class TrajectoryHandler:
             test_features,
         )
 
-    def get_clustering_input(self, n_rounds, coordinate_type_for_distance, side, time):
+    def get_clustering_input(
+        self, n_rounds: int, coordinate_type_for_distance: str, side: str, time: int
+    ) -> tuple[np.ndarray, np.ndarray]:
         """Get the input clustering of round.
 
         First gets the array for the correct coordinate type and then slices it by the desired side and time.
@@ -307,6 +312,7 @@ class TrajectoryHandler:
         Shape of the token numpy array is #Round,self.time,len(token(self.map_name)) First half of the token length is CT second is T.
 
         Args:
+            n_rounds (int): How many rounds should be in the final output. Can be necessary to not use all of them due to time constraints.
             coordinate_type_for_distance (string): A string indicating whether player coordinates should be used directly ("position"), the areas ("area") or the summarizing tokens ("token") instead.
             side (string): A string indicating whether to include positions for players on the CT side ('CT'), T  side ('T') or both sides ('BOTH')
             time (integer): An integer indicating the first how many seconds should be considered
@@ -316,9 +322,10 @@ class TrajectoryHandler:
             Shape of the clustering array depend son desired configuration. Order is array_for_plotting, array_for_clustering"""
         side_conversion = {"CT": (0,), "T": (1,), "BOTH": (0, 1)}
         array_for_plotting = self.datasets["position"][
-            :n_rounds, :time, side_conversion[side], :, :3
+            :n_rounds, :time, side_conversion[side], :, :4
         ]
         if coordinate_type_for_distance == "position":
+            array_for_plotting = array_for_plotting[:, :, :, :, :3]
             array_for_clustering = array_for_plotting
         elif coordinate_type_for_distance == "area":
             indices = np.ix_(

@@ -43,23 +43,22 @@
 
 import sys
 import logging
-import itertools
 import argparse
+from cmath import inf
 import numpy as np
 from matplotlib import patches
 import matplotlib.pyplot as plt
-from cmath import inf
-from numba import njit, typeof, typed, types
+from numba import njit, typed, types
 from sympy.utilities.iterables import multiset_permutations
 from awpy.visualization.plot import plot_map, position_transform
-from awpy.data import NAV, AREA_DIST_MATRIX
+from awpy.data import NAV
 from awpy.analytics.nav import (
     position_state_distance,
     token_state_distance,
 )
 
 
-def mark_areas(map_name, areas):
+def mark_areas(map_name: str, areas: list[float]) -> None:
     """Plots the given map and marks the tiles of the two given areas.
 
     Args:
@@ -102,7 +101,7 @@ def mark_areas(map_name, areas):
     plt.close(fig)
 
 
-def plot_path(map_name, graph, geodesic):
+def plot_path(map_name: str, graph: dict, geodesic: dict) -> None:
     """Plots the given map and two paths between two areas.
 
     Args:
@@ -167,12 +166,12 @@ key_float = types.UniTuple(types.int64, 2)
 
 
 def trajectory_distance(
-    map_name,
-    trajectory_array_1,
-    trajectory_array_2,
-    distance_type="geodesic",
-    dtw=False,
-):
+    map_name: str,
+    trajectory_array_1: np.ndarray,
+    trajectory_array_2: np.ndarray,
+    distance_type: str = "geodesic",
+    dtw: bool = False,
+) -> float:
     """Calculates a distance distance between two trajectories
     Args:
         map_name (string): Map under consideration
@@ -233,8 +232,11 @@ def trajectory_distance(
 
 @njit
 def fast_area_trajectory_distance(
-    trajectory_array_1, trajectory_array_2, dist_matrix, dtw=False
-):
+    trajectory_array_1: np.ndarray,
+    trajectory_array_2: np.ndarray,
+    dist_matrix: dict,
+    dtw: bool = False,
+) -> float:
     """Calculates a distance distance between two trajectories
 
     Args:
@@ -284,14 +286,19 @@ def fast_area_trajectory_distance(
 
 # @njit
 def fast_token_trajectory_distance(
-    trajectory_array_1, trajectory_array_2, dist_matrix, map_area_names, dtw=False
-):
+    trajectory_array_1: np.ndarray,
+    trajectory_array_2: np.ndarray,
+    dist_matrix: dict,
+    map_area_names: list[str],
+    dtw: bool = False,
+) -> float:
     """Calculates a distance distance between two trajectories
 
     Args:
         trajectory_array_1: Numpy array with shape (n_Time,len(token))
         trajectory_array_2: Numpy array with shape (n_Time,len(token))
         dist_matrix: Nested dict that contains the precomputed distance between any pair of areas
+        map_area_names: List of strings of area names
         dtw: Boolean indicating whether matching should be performed via dynamic time warping (true) or euclidean (false)
 
     Returns:
@@ -337,8 +344,8 @@ def fast_token_trajectory_distance(
 
 @njit
 def fast_position_trajectory_distance(
-    trajectory_array_1, trajectory_array_2, dtw=False
-):
+    trajectory_array_1: np.ndarray, trajectory_array_2: np.ndarray, dtw: bool = False
+) -> float:
     """Calculates a distance distance between two trajectories
 
     Args:
@@ -384,8 +391,19 @@ def fast_position_trajectory_distance(
     return dist / length
 
 
-def get_traj_matrix_area(precompute_array, dist_matrix, dtw):
-    """Precompute the distance matrix for all trajectories"""
+def get_traj_matrix_area(
+    precompute_array: np.ndarray, dist_matrix: dict, dtw: bool
+) -> np.ndarray:
+    """Precompute the distance matrix for all trajectories of areas
+
+    Args:
+        precompute_array: Numpy array of trajectories for which to compute the distance matrix
+        dist_matrix: Dict as distance matrix between areas
+        dtw: Boolean indicating whether matching should be performed via dynamic time warping (true) or euclidean (false)
+
+    Returns:
+        Numpy array of distances between trajectories
+    """
     precomputed = np.zeros((len(precompute_array), len(precompute_array)))
     for i in range(len(precompute_array)):
         if i % 50 == 0:
@@ -398,8 +416,22 @@ def get_traj_matrix_area(precompute_array, dist_matrix, dtw):
     return precomputed
 
 
-def get_traj_matrix_token(precompute_array, dist_matrix, map_area_names, dtw):
-    """Precompute the distance matrix for all trajectories"""
+def get_traj_matrix_token(
+    precompute_array: np.ndarray,
+    dist_matrix: dict,
+    map_area_names: list[str],
+    dtw: bool,
+) -> np.ndarray:
+    """Precompute the distance matrix for all trajectories of tokens
+
+    Args:
+        precompute_array: Numpy array of trajectories for which to compute the distance matrix
+        dist_matrix: Dict as distance matrix between places
+        map_area_names: List of strings of area names
+        dtw: Boolean indicating whether matching should be performed via dynamic time warping (true) or euclidean (false)
+
+    Returns:
+        Numpy array of distances between trajectories"""
     precomputed = np.zeros((len(precompute_array), len(precompute_array)))
     for i in range(len(precompute_array)):
         if i % 50 == 0:
@@ -416,8 +448,15 @@ def get_traj_matrix_token(precompute_array, dist_matrix, map_area_names, dtw):
     return precomputed
 
 
-def get_traj_matrix_position(precompute_array, dtw):
-    """Precompute the distance matrix for all trajectories"""
+def get_traj_matrix_position(precompute_array: np.ndarray, dtw: bool) -> np.ndarray:
+    """Precompute the distance matrix for all trajectories of positions
+
+    Args:
+        precompute_array: Numpy array of trajectories for which to compute the distance matrix
+        dtw: Boolean indicating whether matching should be performed via dynamic time warping (true) or euclidean (false)
+
+    Returns:
+        Numpy array of distances between trajectories"""
     precomputed = np.zeros((len(precompute_array), len(precompute_array)))
     for i in range(len(precompute_array)):
         if i % 50 == 0:
@@ -442,7 +481,15 @@ def get_traj_matrix_position(precompute_array, dtw):
 
 
 @njit
-def permutations(A, k):
+def permutations(A: list, k: int) -> list[list]:
+    """Calculates permutation of k elements in A. Needed because numba doesnt like itertools
+
+     Args:
+        A: List of elements for which to compute the permutations
+        k: Size of the permutations to be computed
+
+    Returns:
+        List of lists of all permutations of k elements in A"""
     r = [[i for i in range(0)]]
     for i in range(k):
         r = [[a] + b for a in A for b in r if (a in b) == False]
@@ -451,15 +498,16 @@ def permutations(A, k):
 
 @njit
 def fast_area_state_distance(
-    position_array_1,
-    position_array_2,
-    dist_matrix,
-):
+    position_array_1: np.ndarray,
+    position_array_2: np.ndarray,
+    dist_matrix: dict,
+) -> float:
     """Calculates a distance between two game states based on player positions
 
     Args:
         position_array_1 (numpy array): Numpy array with shape (2|1, 5, 1) with the first index indicating the team, the second the player and the third the area
         position_array_2 (numpy array): Numpy array with shape (2|1, 5, 1) with the first index indicating the team, the second the player and the third the area
+        dist_matrix: Dict as distance matrix between areas
 
     Returns:
         A float representing the distance between these two game states
@@ -506,9 +554,9 @@ def euclidean(a, b):
 
 @njit
 def fast_position_state_distance(
-    position_array_1,
-    position_array_2,
-):
+    position_array_1: np.ndarray,
+    position_array_2: np.ndarray,
+) -> float:
     """Calculates a distance between two game states based on player positions
 
     Args:
@@ -544,19 +592,19 @@ def fast_position_state_distance(
 
 # @njit
 def fast_token_state_distance(
-    token_array_1,
-    token_array_2,
-    dist_matrix,
-    map_area_names,
-):
-    """Calculates a distance between two game states based on player positions
+    token_array_1: np.ndarray,
+    token_array_2: np.ndarray,
+    dist_matrix: dict,
+    map_area_names: list[str],
+) -> float:
+    """Calculates a distance between two game states based on tokens
 
     Args:
-        map_name (string): Map to search
-        token_array_1 (numpy array): 1-D numpy array of a position token
-        token_array_2 (numpy array): 1-D numpy array of a position token
-        distance_type (string): String indicating how the distance between two player positions should be calculated. Options are "geodesic", "graph", "euclidean" and "edit_distance"
-        reference_point (string): String indicating which reference point to use to determine area distance. Options are "centroid" and "representative_point"
+        trajectory_array_1: Numpy array with shape (n_Time,len(token))
+        trajectory_array_2: Numpy array with shape (n_Time,len(token))
+        dist_matrix: Nested dict that contains the precomputed distance between any pair of areas
+        map_area_names: List of strings of area names
+        dtw: Boolean indicating whether matching should be performed via dynamic time warping (true) or euclidean (false)
 
     Returns:
         A float representing the distance between these two game states
@@ -603,7 +651,7 @@ def fast_token_state_distance(
     return side_distance / size
 
 
-def trajectory_distance_wrapper(args):
+def trajectory_distance_wrapper(args: tuple) -> float:
     """Calculates a distance distance between two trajectories
 
     Args:
@@ -621,15 +669,15 @@ def trajectory_distance_wrapper(args):
     )
 
 
-def transform_to_traj_dimensions(pos_array):
-    """Transforms a numpy array of shape (Time,5,3) to (5,Time,1,1,3) to allow for individual trajectory distances.
+def transform_to_traj_dimensions(pos_array: np.ndarray) -> np.ndarray:
+    """Transforms a numpy array of shape (Time,5,X) to (5,Time,1,1,X) to allow for individual trajectory distances.
     Only needed when trying to get the distance between single player trajectories within "get_shortest_distance_mapping"
 
     Args:
-        pos_array (numpy array): Numpy array with shape (Time, 2|1, 5, 3)
+        pos_array (numpy array): Numpy array with shape (Time,5,3)
 
         Returns:
-            numpy array
+            numpy array of shape  (5,Time,1,1,3)
     """
     shape = pos_array.shape
     dimensions = [shape[1], len(pos_array), 1, 1, shape[2]]
