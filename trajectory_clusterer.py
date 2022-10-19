@@ -1,4 +1,37 @@
-"""Will build up the clusterer here"""
+"""
+This module contains the TrajectoryClusterer.
+It gets its inputs properly formatted from a TrajectoryHandler and is then able to cluster rounds based on trajectories of different types
+
+Typical usage example:
+
+    handler = trajectory_handler.TrajectoryHandler(
+        json_path=file, random_state=random_state, map_name="de_" + options.map
+    )
+    clusterer = trajectory_clusterer.TrajectoryClusterer(
+        analysis_path="D:\\CSGO\\Demos\\Maps\\" + options.map + "\\Analysis\\",
+        trajectory_handler=handler,
+        random_state=random_state,
+        map_name="de_" + options.map,
+    )
+    traj_config = ("area", 50, 20, "T", True)
+    clust_config = {
+        "do_histogram": True,
+        "n_bins": 20,
+        "do_knn": True,
+        "knn_ks": [2, 3, 4, 5, 10, 20, 50, 100],
+        "plot_all_trajectories": True,
+        "do_dbscan": True,
+        "dbscan_eps": 700,
+        "dbscan_minpt": 4,
+        "do_kmed": True,
+        "kmed_n_clusters": 4,
+    }
+    logging.info(
+        clusterer.do_clustering(
+            trajectory_config=traj_config, clustering_config=clust_config
+        )
+    )
+"""
 
 import os
 from typing import Optional, Dict
@@ -22,7 +55,16 @@ from plotting_utils import plot_rounds_different_players
 
 
 class TrajectoryClusterer:
-    """Will be handling the actual clustering of trajectories"""
+    """Clusters rounds by trajectories of different configurations by grabbing them from its TrajetoryHandler.
+
+    Calculates a distance matrix between all trajectories and is able to call one of two clustering algorithms and visualize their results.
+
+    Attributes:
+        analysis_input (string): Path to where the results (distance matrix and plots) should be stored
+        trajectory_handler (trajectory_handler.TrajectoryHandler): trajectory_handler.TrajectoryHandler from which to grab requested datasets
+        random_state (int): Integer for random_states
+        map_name (string): Name of the map under consideration
+    """
 
     def __init__(
         self,
@@ -31,6 +73,9 @@ class TrajectoryClusterer:
         random_state: Optional[int] = None,
         map_name: str = "de_ancient",
     ):
+        self.analysis_path = os.path.join(analysis_path, "clustering")
+        if not os.path.exists(self.analysis_path):
+            os.makedirs(self.analysis_path)
         self.analysis_path = analysis_path
         self.map_name = map_name
         if random_state is None:
@@ -43,15 +88,16 @@ class TrajectoryClusterer:
         self,
         trajectory_config: tuple[str, int, int, str, bool],
         clustering_config: dict,
-    ):
+    ) -> True:
         """Does everything needed to cluster a configuration and plot the results
 
         Args:
             trajectory_config (tuple): Tuple of (coordinate_type, n_rounds, time, side, dtw) where:
-                n_rounds (int): How many rounds should be in the final output. Can be necessary to not use all of them due to time constraints.
                 coordinate_type_for_distance (string): A string indicating whether player coordinates should be used directly ("position"), the areas ("area") or the summarizing tokens ("token") instead.
+                n_rounds (int): How many rounds should be in the final output. Can be necessary to not use all of them due to time constraints.
                 side (string): A string indicating whether to include positions for players on the CT side ('CT'), T  side ('T') or both sides ('BOTH')
                 time (integer): An integer indicating the first how many seconds should be considered
+                dtw (boolean): Indicates whether trajectory distance should use dynamic time warping (True) or euclidean matching (False)
             clustering_config (dict): Dictionary containing settings for clustering. Contents:
                 'do_histogram' (bool): Whether to plot a histogram of all distances
                 'n_bins' (int): How many bins the histogram should have
@@ -99,7 +145,6 @@ class TrajectoryClusterer:
 
         # Plot histogram of distances
         if clustering_config["do_histogram"]:
-            logging.info("Plotting histogram of distances")
             self.plot_histogram(
                 precomputed_matrix,
                 os.path.join(
@@ -188,8 +233,6 @@ class TrajectoryClusterer:
                     dtw=dtw,
                 )
 
-        # THen plot different k-nearest-neightbors
-        # Then run different clustering settings
         return True
 
     def run_kmed(self, n_cluster: int, precomputed: np.ndarray) -> Dict[int, list[int]]:
@@ -270,6 +313,7 @@ class TrajectoryClusterer:
 
         Returns:
             None. Histogram is directly saved to disk"""
+        logging.info("Plotting histogram of distances")
         plt.hist(
             [dist for dist in distance_matrix.flatten() if dist < 1e10],
             density=False,

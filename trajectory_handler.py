@@ -1,19 +1,12 @@
 """
-Going to organize the ML parts here:
+This module contains the TrajectoryHandler that reads in the precomputed trajectories and makes them easily availalbe in the form of numpy array.
 
-3 Classes:
+Typical usage example:
 
-1. For just reading in the parsed json file, doing the final cleaning, transforming and shuffling.
-Then split it into positions np array, token np array, misc array (winner, map, round etc.)
-The other two will then be given one of these on __init__.
-Will have functions to get clustering or predictor input depending on side, time, features, etc.
-
-2. For handling clustering and plotting.
-Will need both the token and the position arrays. First for clustering second for plotting.
-
-3. For DNN prediction of winners. Will need the winner from the feature array and the token and/or position arrays for training.
-Need to take care with splitting into train, val, test sets coherently since label and feature will be gotten separately.
-Done by just passing both arrays together in one train_test_split call
+    handler = TrajectoryHandler(
+        json_path=file, random_state=random_state, map_name="de_" + options.map
+    )
+    print(handler.datasets["token"])
 """
 
 import os
@@ -32,11 +25,11 @@ class TrajectoryHandler:
     Requires as input a dataframe/json that for each round contains the winner and a dataframe of the players trajectories/ position token trajectories.
 
     Attributes:
-        input: Path to the json input file containing all the trajectory data for every round on a given map.
-        datasets: Dictionary of datasets derived from input. split by Pos/Token, CT,T,Both, time, train/test/val.
-        random_state: Integer for random_states
-        complete_dataframe: Pandas dataframe generated from input.
-        time: Maximum time that is reasonable for a round to have
+        input (string): Path to the json input file containing all the trajectory data for every round on a given map.
+        datasets (dict): Dictionary of datasets derived from input. split by Pos/Token, CT,T,Both, time, train/test/val.
+        random_state (int): Integer for random_states
+        time (int): Maximum time that is reasonable for a round to have
+        map_name (string): Name of the map under consideration
     """
 
     def __init__(
@@ -54,31 +47,28 @@ class TrajectoryHandler:
         self.input = json_path
         if os.path.isfile(self.input):
             with open(self.input, encoding="utf-8") as pre_analyzed:
-                self.complete_dataframe = pd.read_json(pre_analyzed)
+                complete_dataframe = pd.read_json(pre_analyzed)
         else:
             logging.error("File %s does not exist!", self.input)
             raise FileNotFoundError("File does not exist!")
         self.time = 175
 
         logging.debug("Initial dataframe:")
-        logging.debug(self.complete_dataframe)
+        logging.debug(complete_dataframe)
 
         self.datasets = {}
         self.datasets["Aux"] = {}
-        for column in self.complete_dataframe:
+        for column in complete_dataframe:
             if column != "position_df":
-                self.datasets["Aux"][column] = self.complete_dataframe[
-                    column
-                ].to_numpy()
+                self.datasets["Aux"][column] = complete_dataframe[column].to_numpy()
         # Transform the position_df from a json dict to df and also transform ticks to seconds
-        dataframe = self.complete_dataframe[["position_df"]]
+        dataframe = complete_dataframe[["position_df"]]
         dataframe["position_df"] = dataframe["position_df"].apply(
             self.__transform_to_data_frame
         )
 
-        if True:
-            logging.debug("Example for position_df dataframe entry before cleaning.")
-            logging.debug(dataframe.iloc[6]["position_df"])
+        logging.debug("Example for position_df dataframe entry before cleaning.")
+        logging.debug(dataframe.iloc[6]["position_df"])
 
         dataframe["token_array"] = dataframe["position_df"].apply(
             self.__get_token_array
@@ -236,7 +226,12 @@ class TrajectoryHandler:
         return return_array
 
     def get_predictor_input(
-        self, coordinate_type: str, side: str, time: int, consider_alive: bool = False
+        self,
+        n_rounds: int,
+        coordinate_type: str,
+        side: str,
+        time: int,
+        consider_alive: bool = False,
     ) -> tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
         """Get the input for the DNN training to predict end of round result.
 
@@ -246,6 +241,7 @@ class TrajectoryHandler:
         Shape of the token numpy array is #Round,self.time,len(token(self.map_name)) First half of the token length is CT second is T
 
         Args:
+            n_rounds (int): How many rounds should be in the final output.
             coordinate_type (string): A string indicating whether player coordinates should be used directly ("position") or the summarizing tokens ("token") instead.
             side (string): A string indicating whether to include positions for players on the CT side ('CT'), T  side ('T') or both sides ('BOTH')
             time (integer): An integer indicating the first how many seconds should be considered
@@ -253,14 +249,15 @@ class TrajectoryHandler:
 
         Returns:
             Numpy arrays for train, val and test labels and features. Shapes depend on desired configuration. Order is train_label, val_label, test_label, train_features, val_features, test_features"""
-        label = self.datasets["Aux"]["Winner"]
+        label = self.datasets["Aux"]["Winner"][:n_rounds]
+
         if coordinate_type == "position":
             side_conversion = {"CT": [0], "T": [1], "BOTH": [0, 1]}
             features_of_interest = [0, 1, 2]
             if consider_alive:
                 features_of_interest.append(4)
             indices = np.ix_(
-                range(self.datasets["position"].shape[0]),
+                range(min(self.datasets["position"].shape[0], n_rounds)),
                 range(time),
                 side_conversion[side],
                 range(self.datasets["position"].shape[3]),
@@ -276,8 +273,9 @@ class TrajectoryHandler:
                 "BOTH": (start, end),
             }
             first, last = side_conversion[side]
-            features = self.datasets["token"][:, :time, first:last]
-        train_label, test_label, train_features, test_features = train_test_split(
+            features = self.datasets["token"][:n_rounds, :time, first:last]
+
+        train_labels, test_labels, train_features, test_features = train_test_split(
             label,
             features,
             test_size=0.20,
@@ -285,17 +283,17 @@ class TrajectoryHandler:
             random_state=self.random_state,
         )
         # Use the same function above for the validation set  0.25 x 0.8 = 0.2
-        train_label, val_label, train_features, val_features = train_test_split(
-            train_label,
+        train_labels, val_labels, train_features, val_features = train_test_split(
+            train_labels,
             train_features,
             test_size=0.25,
             shuffle=True,
             random_state=self.random_state,
         )
         return (
-            train_label,
-            val_label,
-            test_label,
+            train_labels,
+            val_labels,
+            test_labels,
             train_features,
             val_features,
             test_features,
