@@ -3,23 +3,24 @@
     Typical usage example:
 
     analyzer = FightAnalyzer(
+        connection,
+        cursor,
+        options.dirs,
         debug=options.debug,
-        directories=options.dirs,
         log=options.log,
-        connection=connection,
-        cursor=cursor,
     )
     analyzer.analyze_demos()
     analyzer.print_ct_win_percentage_for_time_cutoffs(times, positions, weapons, classes, use_weapons_classes, options.map)
 """
 #!/usr/bin/env python
-
+# pylint: disable=invalid-name
 import os
 import argparse
 import sys
 import math
 import json
 import logging
+from typing import Optional, Union
 import numpy as np
 import boto3
 from awpy.analytics.nav import find_closest_area
@@ -31,20 +32,20 @@ class FightAnalyzer:
     """Determine whether a given engagement is favourable to the T or CT side.
 
     Attributes:
-        directories: A list of paths to the directories where the demos to be analyzed reside.
-        n_analyzed: An integer of the number of demos that have been analyzed
-        current_frame_index: An integer of the index of the current frame in the current round
+        directories (list[str]): A list of paths to the directories where the demos to be analyzed reside.
         connection: Connection to a mysql database
         cursor: A mysql cursor to the connection
+        n_analyzed (int): An integer of the number of demos that have been analyzed
+        current_frame_index (int): An integer of the index of the current frame in the current round
     """
 
     def __init__(
         self,
-        debug=False,
-        directories=None,
-        log=r"D:\CSGO\ML\CSGOML\logs\FightAnalyzer.log",
-        connection=None,
-        cursor=None,
+        connection: pymysql.connections.Connection,
+        cursor: pymysql.cursors.Cursor,
+        directories: Optional[list[str]] = None,
+        debug: bool = False,
+        log: str = r"D:\CSGO\ML\CSGOML\logs\FightAnalyzer.log",
     ):
         if debug:
             logging.basicConfig(
@@ -78,12 +79,12 @@ class FightAnalyzer:
         self.cursor = cursor
         self.connection = connection
 
-    def get_area_from_pos(self, map_name, pos):
+    def get_area_from_pos(self, map_name: str, pos: list[float]) -> Optional[str]:
         """Determine the area name for a given position.
 
         Args:
-            map: A string of the name of the map being considered
-            pos: A list of x, y and z coordinates
+            map (str): A string of the name of the map being considered
+            pos (list[float]): A list of x, y and z coordinates
 
         Return:
             A string of the name of the area that contains pos on map "map"
@@ -102,12 +103,14 @@ class FightAnalyzer:
             return None
         return NAV[map_name][area_id]["areaName"]
 
-    def check_position(self, event, map_name):
+    def check_position(
+        self, event: dict, map_name: str
+    ) -> Union[tuple[str, str], tuple[None, None]]:
         """Grabs the CT and T areas of the event
 
         Args:
-            event: Dictionary containing information about the kill or damage event
-            map_name: A string of the name of the map being considered
+            event (dict): Dictionary containing information about the kill or damage event
+            map_name (str): A string of the name of the map being considered
 
         Return:
             A tuple of strings containing the area that the CT and T player were in when the event occured
@@ -130,12 +133,12 @@ class FightAnalyzer:
         )
         return None, None
 
-    def get_game_time(self, event, ticks):
+    def get_game_time(self, event: dict, ticks: dict) -> int:
         """Convert event tick to seconds since roundstart
 
         Args:
-            event: Dictionary containing information about the kill or damage event
-            ticks: Dictionary containing the tick at which the round started and tickrate of the server
+            event (dict): Dictionary containing information about the kill or damage event
+            ticks (dict): Dictionary containing the tick at which the round started and tickrate of the server
 
         Return:
             An integer of the number of seconds since the round started
@@ -143,12 +146,14 @@ class FightAnalyzer:
         game_time = (event["tick"] - ticks["freezeTimeEndTick"]) / ticks["tickRate"]
         return game_time
 
-    def check_weapons(self, current_round, event):
+    def check_weapons(
+        self, current_round: dict, event: dict
+    ) -> tuple[str, list[str], list[str]]:
         """Grabs the attacker weapon and the weapons of the victim in the last frame before the event
 
         Args:
-            current_round: A dictionary containing all the information about the round the event occured in.
-            event: A dictionary containg all the information about the kill/damage event in question.
+            current_round (dict): A dictionary containing all the information about the round the event occured in.
+            event (dict): A dictionary containg all the information about the kill/damage event in question.
 
         Returns:
             A tuple of a string and list of tuples containing the attacker weapon and victim weapons
@@ -209,31 +214,32 @@ class FightAnalyzer:
 
     def summarize_round(
         self,
-        event,
-        game_time,
-        kill_weapon,
-        CT_weapons,
-        T_weapons,
-        CT_position,
-        T_position,
-        current_round,
-        match_id,
-        map_name,
-        is_pro_game,
-    ):
+        event: dict,
+        game_time: int,
+        kill_weapon: str,
+        CT_weapons: list[str],
+        T_weapons: list[str],
+        CT_position: str,
+        T_position: str,
+        current_round: dict,
+        match_id: str,
+        map_name: str,
+        is_pro_game: bool,
+    ) -> None:
         """Appends information of the round to MYSQL database
 
         Args:
-            event: A dictionary containg all the information about the kill/damage event in question.
-            game_time: An integer indicating how many seconds have passed since the start of the round
-            attacker_weapon: A string of the weapon used by the attacker of the event
-            victim_weapons: A list of strings of the weapons the victim of the event had in their inventory
-            CT_position: A string of the position of the CT in the event
-            T_position: A string of the position of the T in the event
-            current_round: A dictionary containing all the information about the round the event occured in.
-            match_id: A string containing the name of the demo file
-            map_name: The name of the map that the current game was played on
-            is_pro_game: A boolean indicating whether the current round is from a pro game or not
+            event (dict): A dictionary containg all the information about the kill/damage event in question.
+            game_time (int): An integer indicating how many seconds have passed since the start of the round
+            kill_weapon (str): A string of the weapon used by the attacker of the event
+            CT_weapons (list[str]): A list of strings of the weapons the CT of the event had in their inventory
+            T_weapons (list[str]): A list of strings of the weapons the T of the event had in their inventory
+            CT_position (str): A string of the position of the CT in the event
+            T_position (str): A string of the position of the T in the event
+            current_round (dict): A dictionary containing all the information about the round the event occured in.
+            match_id (str): A string containing the name of the demo file
+            map_name (str): The name of the map that the current game was played on
+            is_pro_game (bool): A boolean indicating whether the current round is from a pro game or not
 
         Returns:
             None (DB is appended to in place)
@@ -250,28 +256,30 @@ class FightAnalyzer:
             T_position,
             kill_weapon,
         )
-        logging.debug(sql, *val)
+        logging.debug("sql: %s, val:%s", sql, *val)
         self.cursor.execute(sql, val)
         event_id = self.cursor.lastrowid
         for weapon in CT_weapons:
             sql = "INSERT INTO CTWeapons (EventID, CTWeapon) VALUES (%s, %s)"
             val = (event_id, weapon)
-            logging.debug(sql, *val)
+            logging.debug("sql: %s, val:%s", sql, *val)
             self.cursor.execute(sql, val)
         for weapon in T_weapons:
             sql = "INSERT INTO TWeapons (EventID, TWeapon) VALUES (%s, %s)"
             val = (event_id, weapon)
-            logging.debug(sql, *val)
+            logging.debug("sql: %s, val:%s", sql, *val)
             self.cursor.execute(sql, val)
 
-    def analyze_map(self, data, map_name, match_id, is_pro_game):
+    def analyze_map(
+        self, data: dict, map_name: str, match_id: str, is_pro_game: bool
+    ) -> None:
         """Loop over all rounds and their events and add them to a MYSQL database.
 
         Args:
-            data: Json object of the parsed demo file
-            map_name: String of the name of the map
-            match_id: String of the demo file name
-            is_pro_game: A boolean indicating whether the current map is from a pro game
+            data (json/dict): Json object of the parsed demo file
+            map_name (str): String of the name of the map
+            match_id (str): String of the demo file name
+            is_pro_game (bool): A boolean indicating whether the current map is from a pro game
 
         Returns:
             None (DB is modified in place)
@@ -315,24 +323,22 @@ class FightAnalyzer:
                     is_pro_game,
                 )
 
-    def check_exists(self, match_id):
+    def check_exists(self, match_id: str) -> bool:
         """Checks if the MYSQL DB already contains events from this match
         Args:
-            match_id: String of the demo file name
+            match_id (str): String of the demo file name
 
         Returns:
             A boolean indicating whether there are already events from this match in the DB
         """
-        sql = (
-            f"""SELECT COUNT(e.MatchID) FROM Events e WHERE e.MatchID = "{match_id}" """
-        )
+        sql = "SELECT COUNT(e.MatchID) FROM Events e WHERE e.MatchID = %s"
         logging.debug(sql)
-        self.cursor.execute(sql)
+        self.cursor.execute(sql, (match_id,))
         result = list(self.cursor.fetchone())
         logging.debug(result)
         return int(result[0]) > 0
 
-    def analyze_demos(self):
+    def analyze_demos(self) -> None:
         """Loops over the specified directory and analyzes each demo file.
 
         Collects information about each kill event.
@@ -383,24 +389,29 @@ class FightAnalyzer:
         logging.info("Analyzed a total of %s demos!", self.n_analyzed)
 
     def calculate_CT_win_percentage(
-        self, times, positions, weapons, classes, use_weapons_classes, map_name
-    ):
+        self,
+        times: list[float],
+        positions: dict,
+        weapons: dict,
+        classes: dict,
+        use_weapons_classes: dict,
+        map_name: str,
+    ) -> tuple[float, float]:
         """Calculates CT win percentage from CT and T kills
 
         Queries information from a database to determine CT win percentage of events fitting the criteria
 
         Args:
-            dataframe: dataframe containing winner side of each kill event
-            times: A list of two floats indicating between which times the event should have occured
-            positions: A dicitionary of positions that are allowed/forbidden for each side of an event
-            weapons: A dictionary of weapons that are allowed/forbidden for each side of an event
-            classes: A dictionary of weapon classes that are allowed/forbidden for each side of an event
-            use_weapons_classes: A dictionary determining if weapons or classes should be used for each side
-            map_name: A string of the map that should be used for the query
+            times (list[float]): A list of two floats indicating between which times the event should have occured
+            positions (dict): A dicitionary of positions that are allowed/forbidden for each side of an event
+            weapons (dict): A dictionary of weapons that are allowed/forbidden for each side of an event
+            classes (dict): A dictionary of weapon classes that are allowed/forbidden for each side of an event
+            use_weapons_classes (dict): A dictionary determining if weapons or classes should be used for each side
+            map_name (str): A string of the map that should be used for the query
 
         Returns:
             Tuples consisting of total number of kills and CT win percentage.
-            If not kills happend then return (0, 0)
+            If no kills happend then return (0, 0)
         """
         ct_pos = ", ".join(f'"{val}"' for val in positions["CT"]["Allowed"])
         t_pos = ", ".join(f'"{val}"' for val in positions["T"]["Allowed"])
@@ -418,6 +429,8 @@ class FightAnalyzer:
         not_CT_classes = ", ".join(f'"{val}"' for val in classes["CT"]["Forbidden"])
         not_T_classes = ", ".join(f'"{val}"' for val in classes["T"]["Forbidden"])
 
+        # not sql injection save, but this only gets executed with my own input, so it should be fine.
+        # The actual lambda function is injection save
         sql = (
             f"""SELECT AVG(t.CTWon), COUNT(t.CTWon) """
             f"""FROM ( """
@@ -484,23 +497,27 @@ class FightAnalyzer:
         return 0, 0
 
     def print_ct_win_percentage_for_time_cutoffs(
-        self, edge_times, positions, weapons, classes, use_weapons_classes, map_name
-    ):
+        self,
+        edge_times: list[float],
+        positions: dict,
+        weapons: dict,
+        classes: dict,
+        use_weapons_classes: dict,
+        map_name: str,
+    ) -> None:
         """Prints the total number of kills and CT win percentage for time slices starting from the lowest and always going to the lates
 
          Args:
-            dataframe: dataframe containing winner side of each kill event
-            edge_times: A list of two floats determining the times that should be considered for the event
-            positions: A dicitionary of positions that are allowed/forbidden for each side of an event
-            weapons: A dictionary of weapons that are allowed/forbidden for each side of an event
-            classes: A dictionary of weapon classes that are allowed/forbidden for each side of an event
-            use_weapons_classes: A dictionary determining if weapons or classes should be used for each side
-            map_name: A string of the map that should be used for the query
+            edge_times (list[float]): A list of two floats determining the times that should be considered for the event
+            positions (dict): A dicitionary of positions that are allowed/forbidden for each side of an event
+            weapons (dict): A dictionary of weapons that are allowed/forbidden for each side of an event
+            classes (dict): A dictionary of weapon classes that are allowed/forbidden for each side of an event
+            use_weapons_classes (dict): A dictionary determining if weapons or classes should be used for each side
+            map_name (str): A string of the map that should be used for the query
 
         Returns:
             None (just prints)
         """
-        # Todo: Also plot
         if edge_times[0] == 0 and edge_times[1] == 175:
             game_times = [edge_times]
         elif edge_times[0] == 0:
@@ -698,11 +715,11 @@ def main(args):
     cursor = connection.cursor()
 
     analyzer = FightAnalyzer(
-        debug=options.debug,
+        connection,
+        cursor,
         directories=options.dirs,
+        debug=options.debug,
         log=options.log,
-        connection=connection,
-        cursor=cursor,
     )
 
     if options.analyze:

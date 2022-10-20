@@ -1,14 +1,17 @@
 """DB testing
 """
 #!/usr/bin/env python
+# pylint: disable=invalid-name
 
-import boto3
 import os
 import logging
-import json
-import pandas as pd
+import boto3
+
+# import json
+# import pandas as pd
 import pymysql
-from sqlalchemy import create_engine
+
+# from sqlalchemy import create_engine
 
 
 logging.basicConfig(

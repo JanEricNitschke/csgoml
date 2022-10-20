@@ -77,7 +77,6 @@ class TrajectoryPredictor:
 
         # Set input_shape properly
         dnn_config["input_shape"] = tensors[3][0].shape  # train_features[0].shape
-        logging.info(tensors[3][0][0])
         # Generate batched datasets
         batch_size = dnn_config["batch_size"]
         train_dataset, val_dataset, test_dataset = self.get_datasets_from_tensors(

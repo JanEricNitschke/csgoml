@@ -17,6 +17,7 @@ The dataframe is finally exported to a json file.
 import os
 import sys
 import logging
+from typing import Union
 import argparse
 import json
 import copy
@@ -25,7 +26,7 @@ from awpy.analytics.nav import generate_position_token, find_closest_area
 from awpy.data import NAV
 
 
-def initialize_round_positions():
+def initialize_round_positions() -> dict:
     """Initializes dictionary of lists for one rounds positions.
 
     The positions dictinary contains the following keys:
@@ -50,16 +51,18 @@ def initialize_round_positions():
     return round_positions
 
 
-def build_intermediate_frames(current_frame, previous_frame, second_difference):
+def build_intermediate_frames(
+    current_frame: dict, previous_frame: dict, second_difference: int
+) -> list[dict]:
     """Builds intermediate frames if fewer than 1 were recorded per second due to the server configuration.
 
     Linearly interpolates the players x,y,z positions from one frame to the next while keeping everything else as it is in the first frame.
     This has to be done to be able to generate intermediate position tokens.
 
     Args:
-        current_frame: Dictionary the contains all information about player positions at the most recent timestep
-        previous_frame: Dictionary the contains all information about player positions one timestep previously
-        second_difference: Difference in the number of seconds between the previous and current frames
+        current_frame (dict): Dictionary the contains all information about player positions at the most recent timestep
+        previous_frame (dict): Dictionary the contains all information about player positions one timestep previously
+        second_difference (int): Difference in the number of seconds between the previous and current frames
 
     Returns:
         A list of intermediate frames from after previous_frame to including current_frame
@@ -70,7 +73,7 @@ def build_intermediate_frames(current_frame, previous_frame, second_difference):
         for side in ["t", "ct"]:
             if current_frame[side]["players"] is None:
                 logging.debug(
-                    "Side['players'] is none. Skipping this side for frame interpolation !",
+                    "Side['players'] is none. Skipping this side for frame interpolation!",
                 )
                 continue
             for index, player in enumerate(current_frame[side]["players"]):
@@ -94,16 +97,16 @@ def build_intermediate_frames(current_frame, previous_frame, second_difference):
     return intermdiate_frames
 
 
-def get_postion_token(frame, map_name, token_length):
+def get_postion_token(frame: dict, map_name: str, token_length: int) -> dict:
     """Generate a dictionary of position tokens from frame dictionary and map_name.
 
     The position token is a string of integers representing the number of players in a given unique named area.
     If token generation fails because of empty players or unsupported map then strings of 0 are returned instead.
 
     Args:
-        frame: Dictionary containing all information about both teams status and each players position and status
-        map_name: A string of the maps name
-        token_length: An integer of the length of one sides position token on the played map
+        frame (dict): Dictionary containing all information about both teams status and each players position and status
+        map_name (str): A string of the maps name
+        token_length (int): An integer of the length of one sides position token on the played map
 
     Returns:
         Dictionary of three position tokens. One for each side and aditionally a combined one
@@ -140,7 +143,7 @@ def get_postion_token(frame, map_name, token_length):
     return tokens
 
 
-def initialize_position_dataset_dict():
+def initialize_position_dataset_dict() -> dict:
     """Initializes the dictionary of lists containing one entry per round.
 
     The dictinary contains the following keys:
@@ -161,16 +164,16 @@ def initialize_position_dataset_dict():
     return position_dataset_dict
 
 
-def check_size(dictionary):
+def check_size(dictionary: dict) -> int:
     """Checks that the size of each list behind every dictionary key is the same.
 
     The input dictionary is expected to have a list corresponding to each key and that each list has the same size.
 
     Args:
-        dictionary: dictionary of lists with the expactation that each list has the same size
+        dictionary (dict): dictionary of lists with the expactation that each list has the same size
 
     Returns:
-        length: An integer corresponding to the length of every list in the dictionary.
+        length (int): An integer corresponding to the length of every list in the dictionary.
 
     Raises:
         sys.exit if not all lists have the same size
@@ -197,14 +200,14 @@ def check_size(dictionary):
     return length
 
 
-def frame_is_empty(current_round):
+def frame_is_empty(current_round: dict) -> bool:
     """Checks whether a round dicionary contains None or an empty list frames.
 
     None or empty frames will raise exceptions when trying to extract player information out of them.
     This method checks if a frame is empty or None and logs and error message if either is the case.
 
     Args:
-        current_round: A dictionary containing all the information about a single CS:GO round.
+        current_round (dict): A dictionary containing all the information about a single CS:GO round.
 
     Returns:
         A boolean whether the value behind the frames key is None or the list has a length of zero.
@@ -219,7 +222,7 @@ def frame_is_empty(current_round):
     return False
 
 
-def get_player_id(player):
+def get_player_id(player: dict) -> Union[int, str]:
     """Extracts a players steamID from their player dictionary in a given frame.
 
     Each player has a unique steamID by which they can be identified.
@@ -227,7 +230,7 @@ def get_player_id(player):
     To avoid overlap bots are instead identified by their name which is unique in any given game.
 
     Args:
-        player: Dictionary about a players position and status in a given frame
+        player (dict): Dictionary about a players position and status in a given frame
 
     Returns:
         An integer corresponding to their steamID if they are a player or a string corresponding to the bots name if not.
@@ -237,7 +240,7 @@ def get_player_id(player):
     return player["steamID"]
 
 
-def pad_to_full_length(round_positions):
+def pad_to_full_length(round_positions: dict) -> None:
     """Pads each entry in a given round_positions dictionary to the full length.
 
     For every player their name, status and position should be stored for every timestep in the round.
@@ -247,7 +250,7 @@ def pad_to_full_length(round_positions):
     Afterwards a check is performed to assert that every entry in the dictionary has the same length.
 
     Args:
-        round_positions: Dictionary containing information about all players for each timestep
+        round_positions (dict): Dictionary containing information about all players for each timestep
 
     Returns:
         None. Dictionary is padded in place.
@@ -281,16 +284,18 @@ def pad_to_full_length(round_positions):
     _ = check_size(round_positions)
 
 
-def partial_step(current, previous, second_difference, step_value):
+def partial_step(
+    current: float, previous: float, second_difference: int, step_value: int
+) -> float:
     """Calculates intermediate values between two positions.
 
     Calculates the step_value'th step between previous and current with a total of second_difference steps needed.
 
     Args:
-        current: Float corresponding to the most recent value to interpolate towards
-        previous: Float corresponding to the value at the previous time step to interpolate away from
-        second_difference: Integer determining how many intermediary steps are needed
-        step_value: Integer describing the how many'th intermediate step is to be calculated
+        current (float): Float corresponding to the most recent value to interpolate towards
+        previous (float): Float corresponding to the value at the previous time step to interpolate away from
+        second_difference (int): Integer determining how many intermediary steps are needed
+        step_value (int): Integer describing the how many'th intermediate step is to be calculated
 
     Returns:
         A float corresponding to the needed intermediate step
@@ -301,26 +306,26 @@ def partial_step(current, previous, second_difference, step_value):
 
 
 def append_to_round_positions(
-    round_positions,
-    side,
-    id_number_dict,
-    player_id,
-    player,
-    second_difference,
-    map_name,
-):
+    round_positions: dict,
+    side: str,
+    id_number_dict: dict,
+    player_id: Union[int, str],
+    player: dict,
+    second_difference: int,
+    map_name: str,
+) -> None:
     """Append a players information from the most recent frame to their list entries in the round_position dictionary
 
     If the time difference between the most recent and the previous frame is larger than expected also add interpolated values for the missing time steps.
 
     Args:
-        round_positions: Dictionary containing information about all players for each timestep
-        side: A string describing the side the given player is currently playing on. Should be either "ct" or "t"
-        id_number_dict: A dictionary correlating a players steamID with their ranking number.
-        player_id: An integer or string containing a players steamID or bots name
-        player: A dictionary containing the players position and status for the most recent timestep
-        second_difference: An integer corresponding the the time difference between this and the previous frame in seconds. If it is larger than 1 then interpolation has to be done.
-        map_name: A string of the maps name
+        round_positions (dict): Dictionary containing information about all players for each timestep
+        side (str): A string describing the side the given player is currently playing on. Should be either "ct" or "t"
+        id_number_dict (dict): A dictionary correlating a players steamID with their ranking number.
+        player_id (int/str): An integer or string containing a players steamID or bots name
+        player (dict): A dictionary containing the players position and status for the most recent timestep
+        second_difference (int): An integer corresponding the the time difference between this and the previous frame in seconds. If it is larger than 1 then interpolation has to be done.
+        map_name (str): A string of the maps name
 
     Returns:
         None (Dictionary is appended to in place)
@@ -404,7 +409,7 @@ def append_to_round_positions(
         ].append(area_val)
 
 
-def convert_winner_to_int(winner_string):
+def convert_winner_to_int(winner_string: str) -> int:
     """Converts the string of the winning side into 0 or 1.
 
     CT -> 1
@@ -448,7 +453,7 @@ def get_token_length(map_name):
     return len(area_names)
 
 
-def analyze_rounds(data, position_dataset_dict, match_id):
+def analyze_rounds(data: dict, position_dataset_dict: dict, match_id: str) -> None:
     """Analyzes all rounds in a game and adds their relevant data to position_dataset_dict.
 
     Loops over every round in "data, every frame in each rounds, every side in each frame and every player in each side
@@ -456,9 +461,9 @@ def analyze_rounds(data, position_dataset_dict, match_id):
     is then appended to the overall dictionary containing all information about matches on this map.
 
     Args:
-        data: Dictionary containing all information about a CS:GO game
-        position_dataset_dict: Dictionary containing trajectory information about rounds on a given map
-        match_id: String representing the name of an input demo file
+        data (dict): Dictionary containing all information about a CS:GO game
+        position_dataset_dict (dict): Dictionary containing trajectory information about rounds on a given map
+        match_id (str): String representing the name of an input demo file
 
     Returns:
         None position_dataset_dict is modified inplace

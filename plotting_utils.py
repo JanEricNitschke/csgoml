@@ -25,13 +25,13 @@
         )
 """
 #!/usr/bin/env python
+# pylint: disable=consider-using-enumerate
 
 import collections
 import itertools
 import os
 import sys
 import logging
-import json
 import shutil
 import argparse
 import numpy as np
@@ -40,7 +40,6 @@ import imageio
 from tqdm import tqdm
 import matplotlib as mpl
 import matplotlib.pyplot as plt
-from awpy.parser import DemoParser
 from awpy.visualization.plot import (
     plot_map,
     position_transform,
@@ -57,30 +56,11 @@ from awpy.data import NAV, MAP_DATA, AREA_DIST_MATRIX
 from nav_utils import transform_to_traj_dimensions, trajectory_distance
 
 
-def get_ids(filename, mmid):
-    """Fetches map ID from filename.
-    For file names of the type '510.dem' is grabs the ID before the file ending.
-    If that is not an integer it instead returns a default defined at class initialization.
-    Args:
-        filename: A string corresponding to the filename of a demo.
-    Returns:
-        ID: The file name without the file ending.
-        NumberID: The ID converted into an integer or a default if that is not possible.
-    """
-    name = filename.split(".")[0]
-    logging.debug(("Using ID: %s", name))
-    try:
-        number_id = int(name)
-    except ValueError:
-        number_id = mmid
-    return name, number_id
-
-
-def get_areas_hulls_centers(map_name):
+def get_areas_hulls_centers(map_name: str) -> tuple[dict, dict, dict]:
     """Gets the sets of points making up the named areas of a map. Then builds their hull and centroid.
 
     Args:
-        map_name: A string specifying the map for which the features should be build.
+        map_name (str): A string specifying the map for which the features should be build.
 
     Returns:
         Three dictionary containing the points, hull and centroid of each named area in the map
@@ -115,8 +95,13 @@ def get_areas_hulls_centers(map_name):
 
 
 def plot_round_tokens(
-    filename, frames, map_name="de_ancient", map_type="original", dark=False, fps=10
-):
+    filename: str,
+    frames: list,
+    map_name: str = "de_ancient",
+    map_type: str = "original",
+    dark: bool = False,
+    fps: int = 10,
+) -> True:
     """Plots the position tokens of a round and saves as a .gif. CTs are blue, Ts are orange. Only use untransformed coordinates.
 
     Args:
@@ -128,7 +113,7 @@ def plot_round_tokens(
         fps (integer): Number of frames per second in the gif
 
     Returns:
-        matplotlib fig and ax, saves .gif
+        True (result is directly saved to disk)
     """
     if os.path.isdir("csgo_tmp"):
         shutil.rmtree("csgo_tmp/")
@@ -192,7 +177,12 @@ def plot_round_tokens(
     return True
 
 
-def plot_map_areas(output_path, map_name="de_ancient", map_type="original", dark=False):
+def plot_map_areas(
+    output_path: str,
+    map_name: str = "de_ancient",
+    map_type: str = "original",
+    dark: bool = False,
+) -> None:
     """Plot all named areas in the given map.
 
     Args:
@@ -236,7 +226,7 @@ def plot_map_areas(output_path, map_name="de_ancient", map_type="original", dark
     plt.close()
 
 
-def plot_mid(map_name):
+def plot_mid(map_name: str) -> None:
     """Plots the given map with the hulls, centroid and a representative_point for each named area.
 
     Args:
@@ -304,7 +294,12 @@ def plot_mid(map_name):
     plt.close(fig)
 
 
-def plot_map_tiles(output_path, map_name="de_ancient", map_type="original", dark=False):
+def plot_map_tiles(
+    output_path: str,
+    map_name: str = "de_ancient",
+    map_type: str = "original",
+    dark: bool = False,
+) -> None:
     """Plot all navigation mesh tiles in a given map.
 
     Args:
@@ -358,16 +353,17 @@ def plot_map_tiles(output_path, map_name="de_ancient", map_type="original", dark
 
 
 def get_shortest_distances_mapping(
-    map_name,
-    leaders,
-    current_positions,
-    dist_type="geodesic",
-    trajectory=False,
-    dtw=False,
-):
+    map_name: str,
+    leaders: dict,
+    current_positions: list[tuple[float, float, float]],
+    dist_type: str = "geodesic",
+    trajectory: bool = False,
+    dtw: bool = False,
+) -> list[int]:
     """Gets the mapping between players in the current round and lead players that has the shortest total distance between mapped players.
 
     Args:
+        map_name (str): Name of the current map
         leaders (dictionary): Dictionary of leaders position, alive status and color index in the current frame
         current_positions (list): List of tuples of players x, y, z coordinates in the current round and frame
         dist_type (string): String indicating the type of distance to use. Can be graph, geodesic, euclidean, manhattan, canberra or cosine.
@@ -450,18 +446,18 @@ def get_shortest_distances_mapping(
 
 
 def plot_rounds_different_players(
-    filename,
-    frames_list,
-    map_name="de_ancient",
-    map_type="original",
-    dark=False,
-    fps=10,
-    n_frames=9000,
-    dist_type="geodesic",
-    image=False,
-    trajectory=False,
-    dtw=False,
-):
+    filename: str,
+    frames_list: list[np.ndarray],
+    map_name: str = "de_ancient",
+    map_type: str = "original",
+    dark: bool = False,
+    fps: str = 10,
+    n_frames: int = 9000,
+    dist_type: str = "geodesic",
+    image: bool = False,
+    trajectory: bool = False,
+    dtw: bool = False,
+) -> True:
     """Plots a list of rounds and saves as a .gif. Each player in the first round is assigned a separate color. Players in the other rounds are matched by proximity.
     Only use untransformed coordinates.
 
@@ -784,116 +780,20 @@ def main(args):
             datefmt="%Y-%m-%d %H:%M:%S",
         )
 
-    # os.chdir(options.output)
-    # logging.info("file %s", options.file)
-    # name, number_id = get_ids(os.path.basename(options.file), -1)
-    # logging.info("name %s", name)
-    # logging.info("number_id %s", number_id)
-    # json_path = os.path.join(options.output, name + ".json")
-    # if os.path.isfile(json_path):
-    #     logging.info("Reading json from file.")
-    #     with open(json_path, encoding="utf-8") as demo_json:
-    #         data = json.load(demo_json)
-    # else:
-    #     logging.info("Running DemoParser to generate json file.")
-    #     demo_parser = DemoParser(
-    #         demofile=options.file,
-    #         demo_id=name,
-    #         log=True,
-    #         parse_rate=128,
-    #         buy_style="hltv",
-    #         dmg_rolled=True,
-    #         parse_frames=True,
-    #         json_indentation=True,
-    #         outpath=r"D:\CSGO\ML\CSGOML\Plots",
-    #     )
-    #     data = demo_parser.parse(clean=True)
-    # demo_map_name = data["mapName"]
-
-    # round_num = 10
-    # frames = data["gameRounds"][round_num]["frames"]
-    # base_name = f"{name}_{round_num}"
-    # plot_round_file = os.path.join(options.output, f"{base_name}_normal_positions.gif")
-    # plot_token_file = os.path.join(options.output, f"{base_name}__token_positions.gif")
-
-    # # logging.info("Generating token round file.")
-    # # plot_round_tokens(
-    # #     filename=plot_token_file,
-    # #     frames=frames,
-    # #     map_name=demo_map_name,
-    # #     map_type="simpleradar",
-    # #     dark=False,
-    # #     fps=2,
-    # # )
-    # # logging.info("Generating round file.")
-    # # plot_round(
-    # #     filename=plot_round_file,
-    # #     frames=frames,
-    # #     map_name=demo_map_name,
-    # #     map_type="simpleradar",
-    # #     dark=False,
-    # #     fps=2,
-    # # )
-
-    # n_rounds = 5
-    # rounds_file_diff_play = os.path.join(
-    #     options.output, f"{base_name}_{n_rounds}_rounds_different_players.gif"
-    # )
-    # rounds_file_diff_play_img = os.path.join(
-    #     options.output, f"{base_name}_{n_rounds}_rounds_different_players_img.png"
-    # )
-    # rounds_file_same_play = os.path.join(
-    #     options.output, f"{base_name}_{n_rounds}_rounds_same_players.gif"
-    # )
-    # # nades_file = os.path.join(
-    # #     options.output, f"{base_name}_{n_rounds}_rounds_nades.png"
-    # # )
-    # # logging.info("Generating rounds_same_players.")
-    # # plot_rounds_same_players(
-    # #     rounds_file_same_play,
-    # #     [
-    # #         data["gameRounds"][round_num + i]["frames"]
-    # #         for i in range(-n_rounds // 2, n_rounds // 2)
-    # #     ],
-    # #     map_name=demo_map_name,
-    # #     map_type="simpleradar",
-    # #     sides=["ct", "t"],
-    # #     fps=1,
-    # #     n_frames=20,
-    # # )
-    # # logging.info("Generating nades_file.")
-    # # _, _ = plot_nades(
-    # #     rounds=[
-    # #         data["gameRounds"][round_num + i]
-    # #         for i in range(-n_rounds // 2, n_rounds // 2)
-    # #     ],
-    # #     nades=[
-    # #         "Flashbang",
-    # #         "HE Grenade",
-    # #         "Smoke Grenade",
-    # #         "Molotov",
-    # #         "Incendiary Grenade",
-    # #     ],
-    # #     side="CT",
-    # #     map_name=demo_map_name,
-    # # )
-    # # plt.savefig(nades_file, bbox_inches="tight", dpi=300)
-    # # plt.close()
-
-    # # logging.info("Generating tile and area files for all maps.")
-    # # for map_name in NAV:
-    # #     plot_map_areas(
-    # #         output_path=options.output,
-    # #         map_name=map_name,
-    # #         map_type="simpleradar",
-    # #         dark=False,
-    # #     )
-    # #     plot_map_tiles(
-    # #         output_path=options.output,
-    # #         map_name=map_name,
-    # #         map_type="simpleradar",
-    # #         dark=False,
-    # #     )
+    logging.info("Generating tile and area files for all maps.")
+    for map_name in NAV:
+        plot_map_areas(
+            output_path=options.output,
+            map_name=map_name,
+            map_type="simpleradar",
+            dark=False,
+        )
+        plot_map_tiles(
+            output_path=options.output,
+            map_name=map_name,
+            map_type="simpleradar",
+            dark=False,
+        )
 
 
 if __name__ == "__main__":

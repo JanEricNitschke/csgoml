@@ -8,7 +8,6 @@
 
     python demo_watchdog.py --dir "D:\\Downloads\\Demos"
 """
-
 #!/usr/bin/env python
 
 import os
@@ -23,13 +22,13 @@ from watchdog.events import PatternMatchingEventHandler
 import demo_analyzer_sorter
 
 
-def wait_till_file_is_created(source_path):
+def wait_till_file_is_created(source_path: str) -> None:
     """Waits until creation of a file is finished.
 
     Keeps checking a files size every second. Only if it has not changed during that time this function returns.
 
     Args:
-        source_path: A string of the patch of the file to be monitored for finishing of creation.
+        source_path (str): A string of the patch of the file to be monitored for finishing of creation.
 
     Returns:
         None (when creation has finished)

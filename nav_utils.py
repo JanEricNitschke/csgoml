@@ -40,6 +40,7 @@
 
 """
 #!/usr/bin/env python
+# pylint: disable=invalid-name, consider-using-enumerate
 
 import sys
 import logging
@@ -490,6 +491,7 @@ def permutations(A: list, k: int) -> list[list]:
 
     Returns:
         List of lists of all permutations of k elements in A"""
+    # pylint: disable=singleton-comparison
     r = [[i for i in range(0)]]
     for i in range(k):
         r = [[a] + b for a in A for b in r if (a in b) == False]

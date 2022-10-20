@@ -16,7 +16,7 @@ import requests
 from requests_ip_rotator import ApiGateway, EXTRA_REGIONS
 
 
-def find_missing(lst):
+def find_missing(lst: list[int]) -> list[int]:
     """Finds missing elements in a sorted list
 
     Args:
@@ -25,7 +25,8 @@ def find_missing(lst):
     Returns:
         A list of all integers that are missing in the original list (between the start and end of it)
     """
-    return [x for x in range(lst[0], lst[-1] + 1) if x not in lst]
+    my_set = set(lst)
+    return [x for x in range(lst[0], lst[-1] + 1) if x not in my_set]
 
 
 def main(args):

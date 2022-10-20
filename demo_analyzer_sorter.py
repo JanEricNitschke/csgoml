@@ -21,6 +21,7 @@ import sys
 import logging
 import shutil
 import argparse
+from typing import Optional
 from awpy.parser import DemoParser
 
 
@@ -28,28 +29,28 @@ class DemoAnalyzerSorter:
     """Runs awpy demo parser on multiple demo files and organizes the results by map.
 
     Attributes:
-        indentation: A boolean indicating if json files should be indented
-        dirs: A list of directory paths to scan for demo files
-        log: Path of the log file
-        start_id: An integer that determines at which demo parsing should start
-        end_id: An integer indicating at which demo parsing should stop
-        mm_id: An integer that determines how demos that do not have an id should be treated
-        maps_dir: A directory path determining where the parsed json files should be stored.
-        json_ending: A string that will be appended to the end of the parsed json.
-        n_analyzed: An integer keeping track of the number of demos that have been analyzed.
+        indentation (bool): A boolean indicating if json files should be indented
+        dirs (list[str]): A list of directory paths to scan for demo files
+        log (str): Path of the log file
+        start_id (int): An integer that determines at which demo parsing should start
+        end_id (int): An integer indicating at which demo parsing should stop
+        mm_id (int): An integer that determines how demos that do not have an id should be treated
+        maps_dir (str): A directory path determining where the parsed json files should be stored.
+        json_ending (str): A string that will be appended to the end of the parsed json.
+        n_analyzed (int): An integer keeping track of the number of demos that have been analyzed.
     """
 
     def __init__(
         self,
-        indentation=False,
-        dirs=None,
-        log=r"D:\CSGO\ML\CSGOML\logs\DemoAnalyzerSorter.log",
-        start_id=1,
-        end_id=99999,
-        mm_id=10000,
-        maps_dir=r"D:\CSGO\Demos\Maps",
-        json_ending="",
-        debug=False,
+        indentation: bool = False,
+        dirs: Optional[list[str]] = None,
+        log: str = r"D:\CSGO\ML\CSGOML\logs\DemoAnalyzerSorter.log",
+        start_id: int = 1,
+        end_id: int = 99999,
+        mm_id: int = 10000,
+        maps_dir: str = r"D:\CSGO\Demos\Maps",
+        json_ending: str = "",
+        debug: bool = False,
     ):
 
         if debug:
@@ -87,18 +88,18 @@ class DemoAnalyzerSorter:
         self.json_ending = json_ending
         self.n_analyzed = 0
 
-    def get_ids(self, filename):
+    def get_ids(self, filename: str) -> tuple[str, int]:
         """Fetches map ID from filename.
 
         For file names of the type '510.dem' is grabs the ID before the file ending.
         If that is not an integer it instead returns a default defined at class initialization.
 
         Args:
-            filename: A string corresponding to the filename of a demo.
+            filename (str): A string corresponding to the filename of a demo.
 
         Returns:
-            ID: The file name without the file ending.
-            NumberID: The ID converted into an integer or a default if that is not possible.
+            ID (str): The file name without the file ending.
+            NumberID (int): The ID converted into an integer or a default if that is not possible.
         """
         name = filename.split(".")[0]
         logging.debug(("Using ID: %s", id))
@@ -108,7 +109,7 @@ class DemoAnalyzerSorter:
             number_id = self.mm_id
         return name, number_id
 
-    def clean_rounds(self, demo_parser):
+    def clean_rounds(self, demo_parser: DemoParser) -> None:
         """Cleans rounds and handles exceptions
 
         Tells the demo parser to clean the rounds of its currently active demo and catches exceptions.
@@ -126,7 +127,7 @@ class DemoAnalyzerSorter:
         except TypeError:
             logging.exception("This demo has a type error while cleaning.")
 
-    def get_map_name(self, data):
+    def get_map_name(self, data: dict) -> str:
         """Extracts the map name from CS:GO demo parsed to json.
 
         Most of the commonly used CS:GO maps have a name of the format de_XYZ
@@ -143,12 +144,12 @@ class DemoAnalyzerSorter:
             return data["mapName"].split("_")[1]
         return data["mapName"]
 
-    def move_json(self, source, destination):
+    def move_json(self, source: str, destination: str) -> None:
         """Moves json files from source to destination while handling exceptions.
 
         Args:
-            source: String corresponding to the current path of the json file
-            destination: String corresponding to the path the json file should be moved to.
+            source (str): String corresponding to the current path of the json file
+            destination (str): String corresponding to the path the json file should be moved to.
 
         Returns:
             None
@@ -164,7 +165,7 @@ class DemoAnalyzerSorter:
             shutil.move(source, destination)
         logging.info("Moved json to: %s", destination)
 
-    def parse_demos(self):
+    def parse_demos(self) -> None:
         """Run awpy demo parser on all demos in dirs and move them to their corresponding directory in map_dirs.
 
         Args:
