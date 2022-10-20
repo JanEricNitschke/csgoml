@@ -37,6 +37,7 @@ class TrajectoryHandler:
         json_path: str,
         random_state: Optional[int] = None,
         map_name: str = "de_ancient",
+        time: int = 175,
     ):
         logging.info("Starting init")
         self.map_name = map_name
@@ -51,7 +52,7 @@ class TrajectoryHandler:
         else:
             logging.error("File %s does not exist!", self.input)
             raise FileNotFoundError("File does not exist!")
-        self.time = 175
+        self.time = time
 
         logging.debug("Initial dataframe:")
         logging.debug(complete_dataframe)
@@ -227,7 +228,6 @@ class TrajectoryHandler:
 
     def get_predictor_input(
         self,
-        n_rounds: int,
         coordinate_type: str,
         side: str,
         time: int,
@@ -241,7 +241,6 @@ class TrajectoryHandler:
         Shape of the token numpy array is #Round,self.time,len(token(self.map_name)) First half of the token length is CT second is T
 
         Args:
-            n_rounds (int): How many rounds should be in the final output.
             coordinate_type (string): A string indicating whether player coordinates should be used directly ("position") or the summarizing tokens ("token") instead.
             side (string): A string indicating whether to include positions for players on the CT side ('CT'), T  side ('T') or both sides ('BOTH')
             time (integer): An integer indicating the first how many seconds should be considered
@@ -249,7 +248,7 @@ class TrajectoryHandler:
 
         Returns:
             Numpy arrays for train, val and test labels and features. Shapes depend on desired configuration. Order is train_label, val_label, test_label, train_features, val_features, test_features"""
-        label = self.datasets["Aux"]["Winner"][:n_rounds]
+        label = self.datasets["Aux"]["Winner"]
 
         if coordinate_type == "position":
             side_conversion = {"CT": [0], "T": [1], "BOTH": [0, 1]}
@@ -257,7 +256,7 @@ class TrajectoryHandler:
             if consider_alive:
                 features_of_interest.append(4)
             indices = np.ix_(
-                range(min(self.datasets["position"].shape[0], n_rounds)),
+                range(self.datasets["position"].shape[0]),
                 range(time),
                 side_conversion[side],
                 range(self.datasets["position"].shape[3]),
@@ -273,7 +272,7 @@ class TrajectoryHandler:
                 "BOTH": (start, end),
             }
             first, last = side_conversion[side]
-            features = self.datasets["token"][:n_rounds, :time, first:last]
+            features = self.datasets["token"][:, :time, first:last]
 
         train_labels, test_labels, train_features, test_features = train_test_split(
             label,

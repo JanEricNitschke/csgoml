@@ -76,7 +76,6 @@ class TrajectoryClusterer:
         self.analysis_path = os.path.join(analysis_path, "clustering")
         if not os.path.exists(self.analysis_path):
             os.makedirs(self.analysis_path)
-        self.analysis_path = analysis_path
         self.map_name = map_name
         if random_state is None:
             self.random_state = random.randint(1, 10**8)
@@ -147,28 +146,16 @@ class TrajectoryClusterer:
         if clustering_config["do_histogram"]:
             self.plot_histogram(
                 precomputed_matrix,
-                os.path.join(
-                    plot_path,
-                    f"hist_distances_{config_snippet}.png",
-                ),
+                plot_path,
+                config_snippet,
                 n_bins=clustering_config["n_bins"],
             )
 
         # Plot k nearest neighbors for different k's
         if clustering_config["do_knn"]:
-            logging.info("Plotting knns")
-            for k in clustering_config[
-                "knn_ks"
-            ]:  # [2, 3, 4, 5, 10, 20, 50, 100]:  # , 250, 500, 1000]
-                if k < len(precomputed_matrix):
-                    self.plot_knn(
-                        k,
-                        precomputed_matrix,
-                        os.path.join(
-                            plot_path,
-                            f"knn_{k}_{config_snippet}.png",
-                        ),
-                    )
+            self.do_knn(
+                clustering_config, precomputed_matrix, plot_path, config_snippet
+            )
 
         # Plot ALL trajectories in the current dataset
         distance_variant = "euclidean" if coordinate_type == "position" else "geodesic"
@@ -189,8 +176,8 @@ class TrajectoryClusterer:
                 dtw=dtw,
             )
 
+        # Do actual clustering
         if clustering_config["do_dbscan"]:
-            logging.info("Running dbscan clustering")
             # eps = 500
             # minpt = 4
             eps = clustering_config["dbscan_eps"]
@@ -213,7 +200,6 @@ class TrajectoryClusterer:
                 )
 
         if clustering_config["do_kmed"]:
-            logging.info("Running kmedoids clustering")
             # n_clusters = 4
             n_clusters = clustering_config["kmed_n_clusters"]
             kmed_dict = self.run_kmed(n_clusters, precomputed_matrix)
@@ -244,6 +230,7 @@ class TrajectoryClusterer:
 
         Returns:
             Dictionary of cluster id's and all indixes that belong to the cluster as values"""
+        logging.info("Running kmedoids clustering")
         kmed = KMedoids(n_clusters=n_cluster, metric="precomputed").fit(
             precomputed
         )  # fitting the model
@@ -268,6 +255,7 @@ class TrajectoryClusterer:
 
         Returns:
             Dictionary of cluster id's and all indixes that belong to the cluster as values"""
+        logging.info("Running dbscan clustering")
         dbscan = DBSCAN(eps=eps, min_samples=minpt, metric="precomputed").fit(
             precomputed
         )  # fitting the model
@@ -280,6 +268,37 @@ class TrajectoryClusterer:
             "%s", [(key, len(cluster)) for key, cluster in dbscan_dict.items()]
         )
         return dbscan_dict
+
+    def do_knn(
+        self,
+        clustering_config: dict,
+        precomputed_matrix: np.ndarray,
+        plot_path: str,
+        config_snippet: str,
+    ) -> None:
+        """Runs and plots k-nearest-neighbors distance for all trajectories.
+
+        Args:
+            clustering_config (dict): Dictionary containing all settings needed for clustering.
+            precomputed_matrix (numpy array): Numpy array of the distance matrix of all trajectories under consideration
+            plot_path (str): Path of the directory where all plots should be saved to
+            config_snippet (str): String containing all dataset configurations to include in the file name
+
+        Returns:
+            None (files are directly saved to disk)"""
+        logging.info("Plotting knns")
+        for k in clustering_config[
+            "knn_ks"
+        ]:  # [2, 3, 4, 5, 10, 20, 50, 100]:  # , 250, 500, 1000]
+            if k < len(precomputed_matrix):
+                self.plot_knn(
+                    k,
+                    precomputed_matrix,
+                    os.path.join(
+                        plot_path,
+                        f"knn_{k}_{config_snippet}.png",
+                    ),
+                )
 
     def plot_knn(self, k: int, precomputed: np.ndarray, path: str) -> None:
         """Plot k-distance distribution with for precomputed distance matrix
@@ -302,13 +321,18 @@ class TrajectoryClusterer:
         plt.close()
 
     def plot_histogram(
-        self, distance_matrix: np.ndarray, path: str, n_bins: int = 20
+        self,
+        distance_matrix: np.ndarray,
+        plot_path: str,
+        config_snippet: str,
+        n_bins: int = 20,
     ) -> None:
         """Plots a histogram of the distances in the precomputed distance matrix
 
         Args:
             distance_matrix (numpy array): Distance matrix for which to plot the histogram
-            path (path/string): Path to save the histogram to
+            plot_path (str): Path of the directory where all plots should be saved to
+            config_snippet (str): String containing all dataset configurations to include in the file name
             n_bins (int): Integer of the number of bins the histogram should have
 
         Returns:
@@ -321,7 +345,12 @@ class TrajectoryClusterer:
         )  # density=False would make counts
         plt.ylabel("Probability")
         plt.xlabel("Data")
-        plt.savefig(path)
+        plt.savefig(
+            os.path.join(
+                plot_path,
+                f"hist_distances_{config_snippet}.png",
+            ),
+        )
         plt.close()
 
     def get_trajectory_distance_matrix(
