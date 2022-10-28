@@ -214,8 +214,6 @@ class DemoAnalyzerSorter:
                             )
                             self.move_json(source, destination)
                             self.n_analyzed += 1
-                            if self.n_analyzed > 5:
-                                break
         logging.info("Analyzed a total of %s demos!", self.n_analyzed)
 
 
