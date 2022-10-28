@@ -33,6 +33,7 @@ Typical usage example:
     )
 """
 
+import sys
 import os
 from typing import Optional, Dict
 import random
@@ -136,6 +137,7 @@ class TrajectoryClusterer:
             coordinate_type,
             dtw,
         )
+        logging.info(precomputed_matrix)
 
         # Create path for plots
         plot_path = os.path.join(config_path, "plots")
@@ -182,10 +184,11 @@ class TrajectoryClusterer:
             # minpt = 4
             eps = clustering_config["dbscan_eps"]
             minpt = clustering_config["dbscan_minpt"]
+            logging.info("eps: %s, minpt: %s", eps, minpt)
             dbscan_dict = self.run_dbscan(eps, minpt, precomputed_matrix)
             for cluster_id, rounds in dbscan_dict.items():
                 dbscan_path = os.path.join(
-                    plot_path, f"dbscan_{cluster_id}_{minpt}_{eps}_{config_snippet}.png"
+                    plot_path, f"dbscan_{minpt}_{eps}_{cluster_id}_{config_snippet}.png"
                 )
                 plot_rounds_different_players(
                     dbscan_path,
@@ -205,7 +208,7 @@ class TrajectoryClusterer:
             kmed_dict = self.run_kmed(n_clusters, precomputed_matrix)
             for cluster_id, rounds in kmed_dict.items():
                 kmed_path = os.path.join(
-                    plot_path, f"kmed_{cluster_id}_{n_clusters}_{config_snippet}.png"
+                    plot_path, f"kmed_{n_clusters}_{cluster_id}_{config_snippet}.png"
                 )
                 plot_rounds_different_players(
                     kmed_path,
@@ -259,6 +262,15 @@ class TrajectoryClusterer:
         dbscan = DBSCAN(eps=eps, min_samples=minpt, metric="precomputed").fit(
             precomputed
         )  # fitting the model
+        logging.info(
+            "core indices: %s, %s",
+            len(dbscan.core_sample_indices_),
+            dbscan.core_sample_indices_,
+        )
+        # for core_index in dbscan.core_sample_indices_:
+        #     logging.info(core_index)
+        #     logging.info(precomputed[core_index])
+        logging.info("featrues: %s", dbscan.n_features_in_)
         labels = dbscan.labels_  # getting the labels
         logging.info(labels)
         dbscan_dict = defaultdict(list)
@@ -377,7 +389,7 @@ class TrajectoryClusterer:
             logging.info("Precomputing areas")
             logging.info(
                 "Precomputing all round distances for %s combinations.",
-                len(clustering_array) ** 2,
+                (len(clustering_array) ** 2) // 2,
             )
             if coordinate_type in ["area", "token"]:
                 if coordinate_type == "area":

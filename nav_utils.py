@@ -514,6 +514,8 @@ def fast_area_state_distance(
     Returns:
         A float representing the distance between these two game states
     """
+    if (not np.any(position_array_1)) or (not np.any(position_array_2)):
+        return sys.maxsize
     pos_distance = 0
     for team in range(position_array_1.shape[0]):
         side_distance = inf
@@ -523,6 +525,7 @@ def fast_area_state_distance(
         ):
             # Distance team distance for the current mapping
             cur_dist = 0
+            n_skipped = 0
             # Calculate the distance between each pair of players in the current mapping
             for player2, player1 in enumerate(mapping):
                 # If x, y and z coordinates or the area are all 0 then this is filler and there was no actual player playing that round
@@ -530,6 +533,7 @@ def fast_area_state_distance(
                     not position_array_1[team][player1].any()
                     or not position_array_2[team][player2].any()
                 ):
+                    n_skipped += 1
                     continue
                 area1 = int(position_array_1[team][player1][0])
                 area2 = int(position_array_2[team][player2][0])
@@ -539,13 +543,17 @@ def fast_area_state_distance(
                 )
                 if this_dist == inf:
                     this_dist = sys.maxsize / 6
-                # Build up the overall distance for the current mapping of the current side
+                    # Build up the overall distance for the current mapping of the current side
                 cur_dist += this_dist
             # Only keep the smallest distance from all the mappings
+            if n_skipped >= position_array_1.shape[1]:
+                cur_dist = sys.maxsize
+            else:
+                cur_dist /= position_array_1.shape[1] - n_skipped
             side_distance = min(side_distance, cur_dist)
         # Build the total distance as the sum of the individual side's distances
         pos_distance += side_distance
-    return pos_distance / (position_array_1.shape[0] * position_array_2.shape[1])
+    return pos_distance / position_array_1.shape[0]
 
 
 @njit
@@ -589,7 +597,7 @@ def fast_position_state_distance(
             side_distance = min(side_distance, cur_dist)
         # Build the total distance as the sum of the individual side's distances
         pos_distance += side_distance
-    return pos_distance / (position_array_1.shape[0] * position_array_2.shape[1])
+    return pos_distance / (position_array_1.shape[0] * position_array_1.shape[1])
 
 
 # @njit
@@ -617,7 +625,9 @@ def fast_token_state_distance(
     # Make sure array1 is the larger one
     if sum(token_array_1) < sum(token_array_2):
         token_array_1, token_array_2 = token_array_2, token_array_1
-    size = max(1, sum(token_array_2))
+    size = sum(token_array_2)
+    if size < 0.5:
+        return sys.maxsize
     # Get the indices where array1 and array2 have larger values than the other.
     # Use each index as often as it is larger
     diff_array = np.subtract(token_array_1, token_array_2)

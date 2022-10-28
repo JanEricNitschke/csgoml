@@ -3,12 +3,16 @@ and builds/trains DNNs to predict the round winner based on player trajectory da
 """
 #!/usr/bin/env python
 
+import os
 import logging
 import argparse
 import sys
+from awpy.data import NAV
 import trajectory_handler
 import trajectory_clusterer
-import trajectory_predictor
+
+
+# import trajectory_predictor
 
 
 def main(args):
@@ -65,36 +69,56 @@ def main(args):
         + options.map
         + ".json"
     )
-    handler = trajectory_handler.TrajectoryHandler(
-        json_path=file, random_state=random_state, map_name="de_" + options.map
+
+    analysis_path = os.path.join(
+        r"E:\PhD\MachineLearning\CSGOData\ParsedDemos", options.map, "Analysis"
     )
+    map_name = "de_" + options.map
+
+    handler = trajectory_handler.TrajectoryHandler(
+        json_path=file, random_state=random_state, map_name=map_name
+    )
+
+    # logging.info(NAV[map_name])
 
     for info in handler.datasets["Aux"]:
-        logging.info(info)
-        logging.info(handler.datasets["Aux"][info])
-    logging.info(handler.datasets["token"].shape)
-    logging.info(handler.datasets["token"])
-    logging.info(handler.datasets["position"].shape)
-    logging.info(handler.datasets["position"])
+        logging.debug(info)
+        logging.debug(handler.datasets["Aux"][info])
+    logging.debug(handler.datasets["token"].shape)
+    logging.debug(handler.datasets["token"])
+    logging.debug(handler.datasets["position"].shape)
+    logging.debug(handler.datasets["position"])
 
     clusterer = trajectory_clusterer.TrajectoryClusterer(
-        analysis_path="D:\\CSGO\\Demos\\Maps\\" + options.map + "\\Analysis\\",
+        analysis_path=analysis_path,
         trajectory_handler=handler,
         random_state=random_state,
-        map_name="de_" + options.map,
+        map_name=map_name,
     )
-    traj_config = ("area", 50, 20, "T", True)
+    traj_config = ("token", 500, 20, "T", True)
+    # clust_config = {
+    #     "do_histogram": False,
+    #     "n_bins": 50,
+    #     "do_knn": False,
+    #     "knn_ks": [2, 3, 4, 5, 10, 20, 50, 100, 200, 400, 500, 600],
+    #     "plot_all_trajectories": False,
+    #     "do_dbscan": True,
+    #     "dbscan_eps": 1,
+    #     "dbscan_minpt": 400,
+    #     "do_kmed": False,
+    #     "kmed_n_clusters": 6,
+    # }
     clust_config = {
         "do_histogram": True,
-        "n_bins": 20,
+        "n_bins": 50,
         "do_knn": True,
-        "knn_ks": [2, 3, 4, 5, 10, 20, 50, 100],
+        "knn_ks": [2, 3, 4, 5, 10, 20, 50, 100, 200, 400, 500, 600],
         "plot_all_trajectories": True,
         "do_dbscan": True,
-        "dbscan_eps": 700,
-        "dbscan_minpt": 4,
+        "dbscan_eps": 500,
+        "dbscan_minpt": 10,
         "do_kmed": True,
-        "kmed_n_clusters": 4,
+        "kmed_n_clusters": 6,
     }
     logging.info(
         clusterer.do_clustering(
@@ -102,13 +126,13 @@ def main(args):
         )
     )
 
-    predictor = trajectory_predictor.TrajectoryPredictor(
-        analysis_path="D:\\CSGO\\Demos\\Maps\\" + options.map + "\\Analysis\\",
-        trajectory_handler=handler,
-        random_state=random_state,
-        map_name="de_" + options.map,
-    )
-    traj_config = ("position", 20, "T", False)
+    # predictor = trajectory_predictor.TrajectoryPredictor(
+    #     analysis_path=analysis_path,
+    #     trajectory_handler=handler,
+    #     random_state=random_state,
+    #     map_name=map_name,
+    # )
+    # traj_config = ("position", 20, "T", False)
     # dnn_config = {
     #     "batch_size": 32,
     #     "learning_rate": 0.00007,
@@ -116,8 +140,8 @@ def main(args):
     #     "patience": 5,
     #     "nodes_per_layer": 32,
     # }
-    dnn_config = {}
-    predictor.do_predicting(trajectory_config=traj_config, dnn_config=dnn_config)
+    # dnn_config = {}
+    # predictor.do_predicting(trajectory_config=traj_config, dnn_config=dnn_config)
 
 
 if __name__ == "__main__":
