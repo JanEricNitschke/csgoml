@@ -78,8 +78,8 @@ def on_modified(event):
         ending = "_" + os.path.basename(os.path.normpath(path))
         try:
             patoolib.extract_archive(event.src_path, outdir=path, interactive=False)
-        except:  # pylint: disable=bare-except
-            logging.info("Could not extract from archive. Skipping!")
+        except Exception as e:
+            logging.info("Could not extract from archive due to exception %s. Skipping!", e)
             return
         os.remove(event.src_path)
         analyzer = demo_analyzer_sorter.DemoAnalyzerSorter(
