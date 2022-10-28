@@ -290,7 +290,7 @@ class FightAnalyzer:
         ticks["tickRate"] = 1 << (data["tickRate"] - 1).bit_length()
         for current_round in data["gameRounds"]:
             self.current_frame_index = 0
-            ticks["roundStartTick"] = current_round["startTick"]
+            ticks["freezeTimeEndTick"] = current_round["freezeTimeEndTick"]
             logging.debug("Round:")
             logging.debug(current_round)
             # Go through all kill events
