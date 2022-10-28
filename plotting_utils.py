@@ -669,7 +669,7 @@ def plot_rounds_different_players(
                                 # If we are an alive leader we get opaque and big markers
                                 if (
                                     player_id in leaders[side]
-                                    and not player_id in checked_in
+                                    and player_id not in checked_in
                                 ):
                                     alphas.append(1)
                                     sizes.append(mpl.rcParams["lines.markersize"] ** 2)
