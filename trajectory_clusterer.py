@@ -33,7 +33,6 @@ Typical usage example:
     )
 """
 
-import sys
 import os
 from typing import Optional, Dict
 import random

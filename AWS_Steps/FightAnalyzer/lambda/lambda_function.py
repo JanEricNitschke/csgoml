@@ -1,9 +1,12 @@
-import sys
+"""AWS Lambda function to call to query database for fight scenarios"""
+
+# pylint: disable=invalid-name
+
 import logging
-import rds_config
-import pymysql
 import json
 import math
+import pymysql
+import rds_config
 
 # rds settings
 rds_host = "fightanalyzer.ctox3zthjpph.eu-central-1.rds.amazonaws.com"
@@ -25,7 +28,17 @@ logger.info("SUCCESS: Connection to RDS MySQL instance succeeded")
 
 
 def get_wilson_interval(success_percent, total_n, z):
-    success_percent = float(success_percent)
+    """Calculates the Wilson score interval for a series of success–failure experiments
+
+    Calcualtes the Wilson score interval as an approximation of the binomial proportion confidence interval.
+
+    Args:
+        success_percent (float): Percentage of experiments that ended in success
+        total_n (int): Total number of experiments
+        z (float): Number of standard deviations that the interval should cover
+    Returns:
+        A list of floats of the form [lower_bound_of_interval, success_percent, upper_bound_of_interval]
+    """
     lower = (
         success_percent
         + z * z / (2 * total_n)
@@ -51,67 +64,67 @@ def lambda_handler(event, context):
     """
     try:
         sql = (
-            f"""SELECT AVG(t.CTWon), COUNT(t.CTWon) """
-            f"""FROM ( """
-            f"""SELECT DISTINCT e.EventID, e.CTWon """
-            f"""FROM Events e JOIN CTWeapons ctw """
-            f"""ON e.EventID = ctw.EventID """
-            f"""JOIN TWeapons tw """
-            f"""ON e.EventID = tw.EventID """
-            f"""JOIN WeaponClasses wcct """
-            f"""ON ctw.CTWeapon = wcct.WeaponName """
-            f"""JOIN WeaponClasses wct """
-            f"""ON tw.TWeapon = wct.WeaponName """
-            f"""JOIN WeaponClasses wck """
-            f"""ON e.KillWeapon = wck.WeaponName """
-            f"""WHERE e.MapName = %s """
-            f"""AND e.Time BETWEEN %s AND %s """
+            """SELECT AVG(t.CTWon), COUNT(t.CTWon) """
+            """FROM ( """
+            """SELECT DISTINCT e.EventID, e.CTWon """
+            """FROM Events e JOIN CTWeapons ctw """
+            """ON e.EventID = ctw.EventID """
+            """JOIN TWeapons tw """
+            """ON e.EventID = tw.EventID """
+            """JOIN WeaponClasses wcct """
+            """ON ctw.CTWeapon = wcct.WeaponName """
+            """JOIN WeaponClasses wct """
+            """ON tw.TWeapon = wct.WeaponName """
+            """JOIN WeaponClasses wck """
+            """ON e.KillWeapon = wck.WeaponName """
+            """WHERE e.MapName = %s """
+            """AND e.Time BETWEEN %s AND %s """
         )
         param = [event["map_name"], event["times"]["start"], event["times"]["end"]]
 
         if event["positions"]["CT"]:
-            sql += f"""AND e.CTArea in %s """
+            sql += """AND e.CTArea in %s """
             param.append(event["positions"]["CT"])
         if event["positions"]["T"]:
-            sql += f"""AND e.TArea in %s """
+            sql += """AND e.TArea in %s """
             param.append(event["positions"]["T"])
         if event["use_weapons_classes"]["CT"] == "weapons":
             if event["weapons"]["CT"]["Allowed"]:
-                sql += f"""AND ctw.CTWeapon in %s """
+                sql += """AND ctw.CTWeapon in %s """
                 param.append(event["weapons"]["CT"]["Allowed"])
             if event["weapons"]["CT"]["Forbidden"]:
-                sql += f"""AND ctw.CTWeapon NOT in %s """
+                sql += """AND ctw.CTWeapon NOT in %s """
                 param.append(event["weapons"]["CT"]["Forbidden"])
         elif event["use_weapons_classes"]["CT"] == "classes":
             if event["classes"]["CT"]["Allowed"]:
-                sql += f"""AND wcct.Class in %s """
+                sql += """AND wcct.Class in %s """
                 param.append(event["classes"]["CT"]["Allowed"])
             if event["classes"]["CT"]["Forbidden"]:
-                sql += f"""AND wcct.Class NOT in %s """
+                sql += """AND wcct.Class NOT in %s """
                 param.append(event["classes"]["CT"]["Forbidden"])
 
         if event["use_weapons_classes"]["T"] == "weapons":
             if event["weapons"]["T"]["Allowed"]:
-                sql += f"""AND tw.TWeapon in %s """
+                sql += """AND tw.TWeapon in %s """
                 param.append(event["weapons"]["T"]["Allowed"])
             if event["weapons"]["T"]["Forbidden"]:
-                sql += f"""AND tw.TWeapon NOT in %s """
+                sql += """AND tw.TWeapon NOT in %s """
                 param.append(event["weapons"]["T"]["Forbidden"])
         elif event["use_weapons_classes"]["T"] == "classes":
             if event["classes"]["T"]["Allowed"]:
-                sql += f"""AND wct.Class in %s """
+                sql += """AND wct.Class in %s """
                 param.append(event["classes"]["T"]["Allowed"])
             if event["classes"]["T"]["Forbidden"]:
-                sql += f"""AND wct.Class NOT in %s """
+                sql += """AND wct.Class NOT in %s """
                 param.append(event["classes"]["T"]["Forbidden"])
 
         if event["use_weapons_classes"]["Kill"] == "weapons":
             if event["weapons"]["Kill"]:
-                sql += f"""AND e.KillWeapon in %s """
+                sql += """AND e.KillWeapon in %s """
                 param.append(event["weapons"]["Kill"])
         elif event["use_weapons_classes"]["Kill"] == "classes":
             if event["classes"]["Kill"]:
-                sql += f"""AND wck.Class in %s """
+                sql += """AND wck.Class in %s """
                 param.append(event["classes"]["Kill"])
 
         sql += """) t"""
@@ -130,7 +143,7 @@ def lambda_handler(event, context):
                 result[1],
                 [
                     round(100 * x)
-                    for x in get_wilson_interval(result[0], result[1], 1.0)
+                    for x in get_wilson_interval(float(result[0]), result[1], 1.0)
                 ],  # number of standard deviations
             )
         else:

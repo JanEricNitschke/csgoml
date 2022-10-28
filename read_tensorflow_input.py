@@ -7,10 +7,8 @@ import os
 import logging
 import argparse
 import sys
-from awpy.data import NAV
 import trajectory_handler
 import trajectory_clusterer
-
 
 # import trajectory_predictor
 
@@ -78,8 +76,6 @@ def main(args):
     handler = trajectory_handler.TrajectoryHandler(
         json_path=file, random_state=random_state, map_name=map_name
     )
-
-    # logging.info(NAV[map_name])
 
     for info in handler.datasets["Aux"]:
         logging.debug(info)

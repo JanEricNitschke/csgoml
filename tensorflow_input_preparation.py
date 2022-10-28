@@ -11,7 +11,6 @@ The dataframe is finally exported to a json file.
         python tensorflow_input_preparation --dir 'E:\\PhD\\MachineLearning\\CSGOData\\ParsedDemos'
 
 """
-
 #!/usr/bin/env python
 
 import os
