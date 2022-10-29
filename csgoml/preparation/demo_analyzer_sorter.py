@@ -31,10 +31,10 @@ class DemoAnalyzerSorter:
     Attributes:
         indentation (bool): A boolean indicating if json files should be indented
         dirs (list[str]): A list of directory paths to scan for demo files
-        log (str): Path of the log file
-        start_id (int): An integer that determines at which demo parsing should start
-        end_id (int): An integer indicating at which demo parsing should stop
-        mm_id (int): An integer that determines how demos that do not have an id should be treated
+        ids (list[int]): A list of integers determining the id range to parse and default values [start_id, end_id, mm_id]
+            start_id (int): An integer that determines at which demo parsing should start
+            end_id (int): An integer indicating at which demo parsing should stop
+            mm_id (int): An integer that determines how demos that do not have an id should be treated
         maps_dir (str): A directory path determining where the parsed json files should be stored.
         json_ending (str): A string that will be appended to the end of the parsed json.
         n_analyzed (int): An integer keeping track of the number of demos that have been analyzed.
@@ -44,34 +44,10 @@ class DemoAnalyzerSorter:
         self,
         indentation: bool = False,
         dirs: Optional[list[str]] = None,
-        log: str = r"D:\CSGO\ML\CSGOML\logs\DemoAnalyzerSorter.log",
-        start_id: int = 1,
-        end_id: int = 99999,
-        mm_id: int = 10000,
+        ids: Optional[list[int]] = None,
         maps_dir: str = r"D:\CSGO\Demos\Maps",
         json_ending: str = "",
-        debug: bool = False,
     ):
-
-        if debug:
-            logging.basicConfig(
-                filename=log,
-                encoding="utf-8",
-                level=logging.DEBUG,
-                filemode="w",
-                format="%(asctime)s %(levelname)-8s %(message)s",
-                datefmt="%Y-%m-%d %H:%M:%S",
-            )
-        else:
-            logging.basicConfig(
-                filename=log,
-                encoding="utf-8",
-                level=logging.INFO,
-                filemode="w",
-                format="%(asctime)s %(levelname)-8s %(message)s",
-                datefmt="%Y-%m-%d %H:%M:%S",
-            )
-        DemoAnalyzerSorter.logger = logging.getLogger("DemoAnalyzerSorter")
         self.indentation = indentation
         if dirs is None:
             self.dirs = [
@@ -80,10 +56,10 @@ class DemoAnalyzerSorter:
             ]
         else:
             self.dirs = dirs
-        self.log = log
-        self.start_id = start_id
-        self.end_id = end_id
-        self.mm_id = mm_id
+        if ids is None:
+            self.start_id, self.end_id, self.mm_id = [1, 99999, 10000]
+        else:
+            self.start_id, self.end_id, self.mm_id = ids
         self.maps_dir = maps_dir
         self.json_ending = json_ending
         self.n_analyzed = 0
@@ -275,13 +251,29 @@ def main(args):
     )
     options = parser.parse_args(args)
 
+    if options.debug:
+        logging.basicConfig(
+            filename=options.log,
+            encoding="utf-8",
+            level=logging.DEBUG,
+            filemode="w",
+            format="%(asctime)s %(levelname)-8s %(message)s",
+            datefmt="%Y-%m-%d %H:%M:%S",
+        )
+    else:
+        logging.basicConfig(
+            filename=options.log,
+            encoding="utf-8",
+            level=logging.INFO,
+            filemode="w",
+            format="%(asctime)s %(levelname)-8s %(message)s",
+            datefmt="%Y-%m-%d %H:%M:%S",
+        )
+
     analyzer = DemoAnalyzerSorter(
         indentation=(not options.noindentation),
         dirs=options.dirs,
-        log=options.log,
-        start_id=options.startid,
-        end_id=options.endid,
-        mm_id=options.mmid,
+        ids=[options.startid, options.endid, options.mmid],
         maps_dir=options.mapsdir,
         json_ending=options.jsonending,
     )

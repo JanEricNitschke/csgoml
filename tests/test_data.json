@@ -1,0 +1,32 @@
+{
+    "cache_demo_1": {
+        "url": "https://cernbox.cern.ch/remote.php/dav/public-files/zhHlpXKXzLWZFKc/034.dem"
+    },
+    "ancient_demo_1": {
+        "url": "https://cernbox.cern.ch/remote.php/dav/public-files/umFkretUPGZfPRC/595.dem"
+    },
+    "cbble_demo_1": {
+        "url": "https://cernbox.cern.ch/remote.php/dav/public-files/nDnNKXTuLvomXMI/match730_003088286727278690550_1176193512_134.dem"
+    },
+    "dust2_demo_1": {
+        "url": "https://cernbox.cern.ch/remote.php/dav/public-files/paiCFCeJVUMGUpT/match730_003190181731852353635_1252766003_900.dem"
+    },
+    "mirage_demo_1": {
+        "url": "https://cernbox.cern.ch/remote.php/dav/public-files/BsaLfIAYGabfuue/741.dem"
+    },
+    "nuke_demo_1": {
+        "url": "https://cernbox.cern.ch/remote.php/dav/public-files/mVUzPIuezDiWtMZ/649.dem"
+    },
+    "overpass_demo_1": {
+        "url": "https://cernbox.cern.ch/remote.php/dav/public-files/tQGHBEpkUWVVUXr/725.dem"
+    },
+    "train_demo_1": {
+        "url": "https://cernbox.cern.ch/remote.php/dav/public-files/rZmEDHxnxExNiXs/555.dem"
+    },
+    "vertigo_demo_1": {
+        "url": "https://cernbox.cern.ch/remote.php/dav/public-files/TGnPdlZaHGvLZvi/694.dem"
+    },
+    "inferno_demo_1": {
+        "url": "https://cernbox.cern.ch/remote.php/dav/public-files/PaExRscJsMVkYlp/418.dem"
+    }
+}

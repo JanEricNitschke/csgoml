@@ -17,6 +17,7 @@ data/area_distance_matrix_de_nuke.json
 data/area_distance_matrix_de_overpass.json
 *.code-workspace
 *.zip
+*.dem
 log.txt
 # Byte-compiled / optimized / DLL files
 __pycache__/
