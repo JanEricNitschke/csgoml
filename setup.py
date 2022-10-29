@@ -6,7 +6,7 @@ this_directory = Path(__file__).parent
 long_description = (this_directory / "README.md").read_text()
 
 setup(
-    name="csgo_ml",
+    name="csgoml",
     version="0.0.1",
     packages=find_packages(),
     # Project uses reStructuredText, so ensure that the docutils get
@@ -36,10 +36,10 @@ setup(
     long_description=long_description,
     long_description_content_type="text/markdown",
     keywords="esports sports-analytics csgo counter-strike",
-    url="https://github.com/JanEricNitschke/csgo_ml",
+    url="https://github.com/JanEricNitschke/csgoml",
     project_urls={
-        "Issues": "https://github.com/JanEricNitschke/csgo_ml/issues",
-        "GitHub": "https://github.com/JanEricNitschke/csgo_ml/",
+        "Issues": "https://github.com/JanEricNitschke/csgoml/issues",
+        "GitHub": "https://github.com/JanEricNitschke/csgoml/",
     },
     classifiers=["License :: OSI Approved :: MIT License"],
 )
