@@ -11,7 +11,7 @@ import matplotlib.pyplot as plt
 from numpy import ndarray
 import tensorflow as tf
 from tensorflow import keras
-from trajectory_handler import TrajectoryHandler
+from csgoml.trajectories.trajectory_handler import TrajectoryHandler
 
 
 class TrajectoryPredictor:

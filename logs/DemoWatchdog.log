@@ -1,27 +1,75 @@
-2022-02-09 15:25:11 INFO     D:\Downloads\Demos\69809.rar has been created!
-2022-02-09 15:28:04 INFO     D:\Downloads\Demos\69809.rar has been modified!
-2022-02-09 15:28:05 INFO     D:\Downloads\Demos\69809\
-2022-02-09 15:28:09 INFO     python d:/CSGO/ML/CSGOML/DemoAnalyzer_Sorter.py -l None --dirs D:\Downloads\Demos\69809\ -m "D:\CSGO\Demos\Pro\Maps" --jsonending _69809
-2022-02-09 15:28:16 INFO     got line from subprocess: b'INFO:root:Maps considered: \r'
-2022-02-09 15:28:16 INFO     got line from subprocess: b'INFO:root:Scanning directory: D:\\Downloads\\Demos\\69809\\\r'
-2022-02-09 15:28:16 INFO     got line from subprocess: b'INFO:root:At file: g2-vs-nip-inferno.dem\r'
-2022-02-09 15:28:16 INFO     got line from subprocess: b'INFO:CSGODemoParser:Initialized CSGODemoParser with demofile D:\\Downloads\\Demos\\69809\\g2-vs-nip-inferno.dem\r'
-2022-02-09 15:28:16 INFO     got line from subprocess: b'INFO:CSGODemoParser:Setting demo id to g2-vs-nip-inferno\r'
-2022-02-09 15:28:16 INFO     got line from subprocess: b'INFO:CSGODemoParser:Setting parse rate to 128\r'
-2022-02-09 15:28:16 INFO     got line from subprocess: b'INFO:CSGODemoParser:Setting trade time to 5\r'
-2022-02-09 15:28:16 INFO     got line from subprocess: b'INFO:CSGODemoParser:Setting buy style to hltv\r'
-2022-02-09 15:28:16 INFO     got line from subprocess: b'INFO:CSGODemoParser:Rollup damages set to True\r'
-2022-02-09 15:28:16 INFO     got line from subprocess: b'INFO:CSGODemoParser:Parse frames set to True\r'
-2022-02-09 15:28:16 INFO     got line from subprocess: b'INFO:CSGODemoParser:Output json indentation set to True\r'
-2022-02-09 15:28:16 INFO     got line from subprocess: b'INFO:CSGODemoParser:Go version>=1.14.0\r'
-2022-02-09 15:28:16 INFO     got line from subprocess: b'INFO:CSGODemoParser:Running Golang parser from D:\\CSGO\\ML\\csgo\\awpy\\parser\\\r'
-2022-02-09 15:28:16 INFO     got line from subprocess: b'INFO:CSGODemoParser:Looking for file at D:\\Downloads\\Demos\\69809\\g2-vs-nip-inferno.dem\r'
-2022-02-09 15:28:16 INFO     got line from subprocess: b'INFO:CSGODemoParser:Wrote demo parse output to g2-vs-nip-inferno.json\r'
-2022-02-09 15:28:16 INFO     got line from subprocess: b'INFO:CSGODemoParser:JSON data loaded, available in the `json` attribute to parser\r'
-2022-02-09 15:28:16 INFO     got line from subprocess: b'INFO:CSGODemoParser:JSON output found\r'
-2022-02-09 15:28:16 INFO     got line from subprocess: b'INFO:root:Source: D:\\Downloads\\Demos\\69809\\g2-vs-nip-inferno.json\r'
-2022-02-09 15:28:16 INFO     got line from subprocess: b'INFO:root:Destination: D:\\CSGO\\Demos\\Pro\\Maps\\inferno\\g2-vs-nip-inferno_69809.json\r'
-2022-02-09 15:28:16 INFO     got line from subprocess: b'INFO:root:Moved json to: D:\\CSGO\\Demos\\Pro\\Maps\\inferno\\g2-vs-nip-inferno_69809.json\r'
-2022-02-09 15:28:16 INFO     got line from subprocess: b'INFO:root:Analyzed a total of 1 demos!\r'
-2022-02-09 15:28:16 INFO     got line from subprocess: b''
-2022-02-09 15:28:16 INFO     D:\Downloads\Demos\69809.rar has been deleted!
+2022-10-10 06:39:13 INFO     D:\Downloads\Demos\16834.rar has been created!
+2022-10-10 06:39:13 INFO     D:\Downloads\Demos\16834.rar has been modified!
+2022-10-10 06:39:14 INFO     Calling analyzer_sorter: analyzer = demo_analyzer_sorter.DemoAnalyzerSorter(indentation=True,dirs=[D:\Downloads\Demos\16834\],log=None,maps_dir='E:\PhD\MachineLearning\CSGOData\ParsedDemos',json_ending=_16834)
+2022-10-10 06:39:14 INFO     Scanning directory: D:\Downloads\Demos\16834\
+2022-10-10 06:39:14 INFO     At file: 43203_dignitas-virtus-pro_de_inferno.dem
+2022-10-10 06:39:18 INFO     Source: D:\Downloads\Demos\16834\43203_dignitas-virtus-pro_de_inferno.json
+2022-10-10 06:39:18 INFO     Destination: E:\PhD\MachineLearning\CSGOData\ParsedDemos\inferno\43203_dignitas-virtus-pro_de_inferno_16834.json
+2022-10-10 06:39:18 INFO     Moved json to: E:\PhD\MachineLearning\CSGOData\ParsedDemos\inferno\43203_dignitas-virtus-pro_de_inferno_16834.json
+2022-10-10 06:39:18 INFO     At file: 43376_virtus-pro-team-dignitas_de_inferno.dem
+2022-10-10 06:39:20 INFO     Source: D:\Downloads\Demos\16834\43376_virtus-pro-team-dignitas_de_inferno.json
+2022-10-10 06:39:20 INFO     Destination: E:\PhD\MachineLearning\CSGOData\ParsedDemos\inferno\43376_virtus-pro-team-dignitas_de_inferno_16834.json
+2022-10-10 06:39:20 INFO     Moved json to: E:\PhD\MachineLearning\CSGOData\ParsedDemos\inferno\43376_virtus-pro-team-dignitas_de_inferno_16834.json
+2022-10-10 06:39:20 INFO     At file: 43427_virtus-pro-team-dignitas_de_season.dem
+2022-10-10 06:39:22 INFO     Source: D:\Downloads\Demos\16834\43427_virtus-pro-team-dignitas_de_season.json
+2022-10-10 06:39:22 INFO     Destination: E:\PhD\MachineLearning\CSGOData\ParsedDemos\season\43427_virtus-pro-team-dignitas_de_season_16834.json
+2022-10-10 06:39:22 INFO     Moved json to: E:\PhD\MachineLearning\CSGOData\ParsedDemos\season\43427_virtus-pro-team-dignitas_de_season_16834.json
+2022-10-10 06:39:22 INFO     Analyzed a total of 3 demos!
+2022-10-10 06:39:22 INFO     D:\Downloads\Demos\16834.rar has been modified!
+2022-10-10 06:39:22 INFO     D:\Downloads\Demos\16834.rar has been deleted!
+2022-10-10 06:39:45 INFO     D:\Downloads\Demos\48938.rar has been created!
+2022-10-10 06:39:45 INFO     D:\Downloads\Demos\48938.rar has been modified!
+2022-10-10 06:39:48 INFO     Calling analyzer_sorter: analyzer = demo_analyzer_sorter.DemoAnalyzerSorter(indentation=True,dirs=[D:\Downloads\Demos\48938\],log=None,maps_dir='E:\PhD\MachineLearning\CSGOData\ParsedDemos',json_ending=_48938)
+2022-10-10 06:39:48 INFO     Scanning directory: D:\Downloads\Demos\48938\
+2022-10-10 06:39:48 INFO     At file: liquid-vs-complexity-m1-cache.dem
+2022-10-10 06:39:58 INFO     Source: D:\Downloads\Demos\48938\liquid-vs-complexity-m1-cache.json
+2022-10-10 06:39:58 INFO     Destination: E:\PhD\MachineLearning\CSGOData\ParsedDemos\cache\liquid-vs-complexity-m1-cache_48938.json
+2022-10-10 06:39:58 INFO     Moved json to: E:\PhD\MachineLearning\CSGOData\ParsedDemos\cache\liquid-vs-complexity-m1-cache_48938.json
+2022-10-10 06:39:58 INFO     At file: liquid-vs-complexity-m2-dust2.dem
+2022-10-10 06:40:05 INFO     Source: D:\Downloads\Demos\48938\liquid-vs-complexity-m2-dust2.json
+2022-10-10 06:40:05 INFO     Destination: E:\PhD\MachineLearning\CSGOData\ParsedDemos\dust2\liquid-vs-complexity-m2-dust2_48938.json
+2022-10-10 06:40:05 INFO     Moved json to: E:\PhD\MachineLearning\CSGOData\ParsedDemos\dust2\liquid-vs-complexity-m2-dust2_48938.json
+2022-10-10 06:40:05 INFO     At file: liquid-vs-complexity-m3-inferno.dem
+2022-10-10 06:40:12 INFO     Source: D:\Downloads\Demos\48938\liquid-vs-complexity-m3-inferno.json
+2022-10-10 06:40:12 INFO     Destination: E:\PhD\MachineLearning\CSGOData\ParsedDemos\inferno\liquid-vs-complexity-m3-inferno_48938.json
+2022-10-10 06:40:13 INFO     Moved json to: E:\PhD\MachineLearning\CSGOData\ParsedDemos\inferno\liquid-vs-complexity-m3-inferno_48938.json
+2022-10-10 06:40:13 INFO     Analyzed a total of 3 demos!
+2022-10-10 06:40:13 INFO     D:\Downloads\Demos\48938.rar has been modified!
+2022-10-10 06:40:13 INFO     D:\Downloads\Demos\48938.rar has been deleted!
+2022-10-10 06:40:52 INFO     D:\Downloads\Demos\64384.rar has been created!
+2022-10-10 06:40:52 INFO     D:\Downloads\Demos\64384.rar has been modified!
+2022-10-10 06:40:55 INFO     Calling analyzer_sorter: analyzer = demo_analyzer_sorter.DemoAnalyzerSorter(indentation=True,dirs=[D:\Downloads\Demos\64384\],log=None,maps_dir='E:\PhD\MachineLearning\CSGOData\ParsedDemos',json_ending=_64384)
+2022-10-10 06:40:55 INFO     Scanning directory: D:\Downloads\Demos\64384\
+2022-10-10 06:40:55 INFO     At file: budapest-five-vs-navi-junior-m1-train.dem
+2022-10-10 06:41:06 INFO     Source: D:\Downloads\Demos\64384\budapest-five-vs-navi-junior-m1-train.json
+2022-10-10 06:41:06 INFO     Destination: E:\PhD\MachineLearning\CSGOData\ParsedDemos\train\budapest-five-vs-navi-junior-m1-train_64384.json
+2022-10-10 06:41:06 INFO     Moved json to: E:\PhD\MachineLearning\CSGOData\ParsedDemos\train\budapest-five-vs-navi-junior-m1-train_64384.json
+2022-10-10 06:41:06 INFO     At file: budapest-five-vs-navi-junior-m2-dust2.dem
+2022-10-10 06:41:14 INFO     Source: D:\Downloads\Demos\64384\budapest-five-vs-navi-junior-m2-dust2.json
+2022-10-10 06:41:14 INFO     Destination: E:\PhD\MachineLearning\CSGOData\ParsedDemos\dust2\budapest-five-vs-navi-junior-m2-dust2_64384.json
+2022-10-10 06:41:14 INFO     Moved json to: E:\PhD\MachineLearning\CSGOData\ParsedDemos\dust2\budapest-five-vs-navi-junior-m2-dust2_64384.json
+2022-10-10 06:41:14 INFO     Analyzed a total of 2 demos!
+2022-10-10 06:41:14 INFO     D:\Downloads\Demos\64384.rar has been modified!
+2022-10-10 06:41:14 INFO     D:\Downloads\Demos\64384.rar has been deleted!
+2022-10-10 06:41:30 INFO     D:\Downloads\Demos\68133.rar has been created!
+2022-10-10 06:41:30 INFO     D:\Downloads\Demos\68133.rar has been modified!
+2022-10-10 06:41:32 INFO     Calling analyzer_sorter: analyzer = demo_analyzer_sorter.DemoAnalyzerSorter(indentation=True,dirs=[D:\Downloads\Demos\68133\],log=None,maps_dir='E:\PhD\MachineLearning\CSGOData\ParsedDemos',json_ending=_68133)
+2022-10-10 06:41:32 INFO     Scanning directory: D:\Downloads\Demos\68133\
+2022-10-10 06:41:32 INFO     At file: g2-vs-mibr-cobblestone.dem
+2022-10-10 06:41:43 INFO     Source: D:\Downloads\Demos\68133\g2-vs-mibr-cobblestone.json
+2022-10-10 06:41:43 INFO     Destination: E:\PhD\MachineLearning\CSGOData\ParsedDemos\cbble\g2-vs-mibr-cobblestone_68133.json
+2022-10-10 06:41:43 INFO     Moved json to: E:\PhD\MachineLearning\CSGOData\ParsedDemos\cbble\g2-vs-mibr-cobblestone_68133.json
+2022-10-10 06:41:43 INFO     Analyzed a total of 1 demos!
+2022-10-10 06:41:43 INFO     D:\Downloads\Demos\68133.rar has been modified!
+2022-10-10 06:41:43 INFO     D:\Downloads\Demos\68133.rar has been deleted!
+2022-10-10 06:41:53 INFO     D:\Downloads\Demos\72496.rar has been created!
+2022-10-10 06:41:53 INFO     D:\Downloads\Demos\72496.rar has been modified!
+2022-10-10 06:41:55 INFO     Calling analyzer_sorter: analyzer = demo_analyzer_sorter.DemoAnalyzerSorter(indentation=True,dirs=[D:\Downloads\Demos\72496\],log=None,maps_dir='E:\PhD\MachineLearning\CSGOData\ParsedDemos',json_ending=_72496)
+2022-10-10 06:41:55 INFO     Scanning directory: D:\Downloads\Demos\72496\
+2022-10-10 06:41:55 INFO     At file: portugal-vs-blast-dream-team-tuscan.dem
+2022-10-10 06:42:04 INFO     Source: D:\Downloads\Demos\72496\portugal-vs-blast-dream-team-tuscan.json
+2022-10-10 06:42:04 INFO     Destination: E:\PhD\MachineLearning\CSGOData\ParsedDemos\tuscan\portugal-vs-blast-dream-team-tuscan_72496.json
+2022-10-10 06:42:04 INFO     Moved json to: E:\PhD\MachineLearning\CSGOData\ParsedDemos\tuscan\portugal-vs-blast-dream-team-tuscan_72496.json
+2022-10-10 06:42:04 INFO     Analyzed a total of 1 demos!
+2022-10-10 06:42:04 INFO     D:\Downloads\Demos\72496.rar has been modified!
+2022-10-10 06:42:04 INFO     D:\Downloads\Demos\72496.rar has been deleted!

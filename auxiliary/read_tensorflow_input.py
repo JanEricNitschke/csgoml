@@ -7,8 +7,7 @@ import os
 import logging
 import argparse
 import sys
-import trajectory_handler
-import trajectory_clusterer
+from csgoml.trajectories import trajectory_handler, trajectory_clusterer
 
 # import trajectory_predictor
 

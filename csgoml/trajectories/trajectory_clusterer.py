@@ -45,13 +45,13 @@ from sklearn.cluster import DBSCAN
 from sklearn_extra.cluster import KMedoids
 from numba import typed, types
 from awpy.data import NAV, AREA_DIST_MATRIX, PLACE_DIST_MATRIX
-from trajectory_handler import TrajectoryHandler
-from nav_utils import (
+from csgoml.trajectories.trajectory_handler import TrajectoryHandler
+from csgoml.utils.nav_utils import (
     get_traj_matrix_area,
     get_traj_matrix_token,
     get_traj_matrix_position,
 )
-from plotting_utils import plot_rounds_different_players
+from csgoml.utils.plotting_utils import plot_rounds_different_players
 
 
 class TrajectoryClusterer:

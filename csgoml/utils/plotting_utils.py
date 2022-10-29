@@ -53,7 +53,7 @@ from awpy.analytics.nav import (
     generate_centroids,
 )
 from awpy.data import NAV, MAP_DATA, AREA_DIST_MATRIX
-from nav_utils import transform_to_traj_dimensions, trajectory_distance
+from csgoml.utils.nav_utils import transform_to_traj_dimensions, trajectory_distance
 
 
 def get_areas_hulls_centers(map_name: str) -> tuple[dict, dict, dict]:

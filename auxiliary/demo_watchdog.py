@@ -19,7 +19,7 @@ import argparse
 import patoolib
 from watchdog.observers import Observer
 from watchdog.events import PatternMatchingEventHandler
-import demo_analyzer_sorter
+from csgoml.preparation import demo_analyzer_sorter
 
 
 def wait_till_file_is_created(source_path: str) -> None:
@@ -79,7 +79,9 @@ def on_modified(event):
         try:
             patoolib.extract_archive(event.src_path, outdir=path, interactive=False)
         except Exception as e:
-            logging.info("Could not extract from archive due to exception %s. Skipping!", e)
+            logging.info(
+                "Could not extract from archive due to exception %s. Skipping!", e
+            )
             return
         os.remove(event.src_path)
         analyzer = demo_analyzer_sorter.DemoAnalyzerSorter(

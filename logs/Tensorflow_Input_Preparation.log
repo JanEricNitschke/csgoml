@@ -1,318 +1,417 @@
-INFO:root:Starting
-INFO:root:Looking at directory D:\CSGO\Demos\Maps\ancient
-INFO:root:Skipping this directory as it not one of those that should be analyzed.
-INFO:root:Looking at directory D:\CSGO\Demos\Maps\cache
-INFO:root:Skipping this directory as it not one of those that should be analyzed.
-INFO:root:Looking at directory D:\CSGO\Demos\Maps\cbble
-INFO:root:Skipping this directory as it not one of those that should be analyzed.
-INFO:root:Looking at directory D:\CSGO\Demos\Maps\cs_rush
-INFO:root:Skipping this directory as it not one of those that should be analyzed.
-INFO:root:Looking at directory D:\CSGO\Demos\Maps\dust2
-INFO:root:Skipping this directory as it not one of those that should be analyzed.
-INFO:root:Looking at directory D:\CSGO\Demos\Maps\facade
-INFO:root:Skipping this directory as it not one of those that should be analyzed.
-INFO:root:Looking at directory D:\CSGO\Demos\Maps\inferno
-INFO:root:Skipping this directory as it not one of those that should be analyzed.
-INFO:root:Looking at directory D:\CSGO\Demos\Maps\marquis
-INFO:root:Skipping this directory as it not one of those that should be analyzed.
-INFO:root:Looking at directory D:\CSGO\Demos\Maps\mirage
-INFO:root:Analyzing file 013.json
-INFO:root:Analyzing file 015.json
-INFO:root:Analyzing file 016.json
-INFO:root:Analyzing file 025.json
-INFO:root:Analyzing file 028.json
-INFO:root:Analyzing file 044.json
-INFO:root:Analyzing file 061.json
-INFO:root:Analyzing file 068.json
-INFO:root:Analyzing file 070.json
-INFO:root:Analyzing file 079.json
-INFO:root:Analyzing file 087.json
-INFO:root:Analyzing file 104.json
-INFO:root:Analyzing file 107.json
-INFO:root:Analyzing file 116.json
-INFO:root:Analyzing file 117.json
-INFO:root:Analyzing file 118.json
-INFO:root:Analyzing file 124.json
-INFO:root:Analyzing file 128.json
-INFO:root:Analyzing file 133.json
-INFO:root:Analyzing file 136.json
-INFO:root:Analyzing file 138.json
-INFO:root:Analyzing file 141.json
-INFO:root:Analyzing file 142.json
-INFO:root:Analyzing file 147.json
-INFO:root:Analyzing file 155.json
-INFO:root:Analyzing file 163.json
-INFO:root:Analyzing file 175esea.json
-INFO:root:Analyzing file 179esea.json
-INFO:root:Analyzing file 188esea.json
-INFO:root:Analyzing file 189esea.json
-INFO:root:Analyzing file 190esea.json
-INFO:root:Analyzing file 197esea.json
-INFO:root:Analyzing file 201esea.json
-INFO:root:Analyzing file 204esea.json
-INFO:root:Analyzing file 207esea.json
-INFO:root:Analyzing file 208esea.json
-INFO:root:Analyzing file 215esea.json
-INFO:root:Analyzing file 217esea.json
-INFO:root:Analyzing file 224esea.json
-INFO:root:Analyzing file 225esea.json
-INFO:root:Analyzing file 228esea.json
-INFO:root:Analyzing file 230esea.json
-INFO:root:Analyzing file 233esea.json
-INFO:root:Analyzing file 234esea.json
-INFO:root:Analyzing file 236esea.json
-INFO:root:Analyzing file 239esea.json
-INFO:root:Analyzing file 240esea.json
-INFO:root:Analyzing file 243.json
-INFO:root:Analyzing file 248esea.json
-INFO:root:Analyzing file 249esea.json
-INFO:root:Analyzing file 251esea.json
-INFO:root:Analyzing file 252esea.json
-INFO:root:Analyzing file 259esea.json
-INFO:root:Analyzing file 273esea.json
-INFO:root:Analyzing file 274esea.json
-INFO:root:Analyzing file 275esea.json
-INFO:root:Analyzing file 279esea.json
-INFO:root:Analyzing file 284esea.json
-INFO:root:Analyzing file 287.json
-INFO:root:Analyzing file 296.json
-INFO:root:Analyzing file 297.json
-INFO:root:Analyzing file 298.json
-INFO:root:Analyzing file 299.json
-INFO:root:Analyzing file 302.json
-INFO:root:Analyzing file 309esea.json
-INFO:root:Analyzing file 313esea.json
-INFO:root:Analyzing file 316esea.json
-INFO:root:Analyzing file 317esea.json
-INFO:root:Analyzing file 318esea.json
-INFO:root:Analyzing file 322esea.json
-INFO:root:Analyzing file 324esea.json
-INFO:root:Analyzing file 326esea.json
-INFO:root:Analyzing file 327.json
-INFO:root:Analyzing file 328esea.json
-INFO:root:Analyzing file 329esea.json
-INFO:root:Analyzing file 331.json
-INFO:root:Analyzing file 339.json
-INFO:root:Analyzing file 341.json
-INFO:root:Analyzing file 345.json
-INFO:root:Analyzing file 352.json
-INFO:root:Analyzing file 355.json
-INFO:root:Analyzing file 357.json
-INFO:root:Analyzing file 359.json
-INFO:root:Analyzing file 363.json
-INFO:root:Analyzing file 367.json
-INFO:root:Analyzing file 369.json
-INFO:root:Analyzing file 371.json
-INFO:root:Analyzing file 372.json
-INFO:root:Analyzing file 373.json
-INFO:root:Analyzing file 376.json
-INFO:root:Analyzing file 378.json
-INFO:root:Analyzing file 379.json
-INFO:root:Analyzing file 383.json
-INFO:root:Analyzing file 386.json
-INFO:root:Analyzing file 387.json
-INFO:root:Analyzing file 390.json
-INFO:root:Analyzing file 391.json
-INFO:root:Analyzing file 394.json
-INFO:root:Analyzing file 398.json
-INFO:root:Analyzing file 402.json
-INFO:root:Analyzing file 404.json
-INFO:root:Analyzing file 405.json
-INFO:root:Analyzing file 407.json
-INFO:root:Analyzing file 410.json
-INFO:root:Analyzing file 412.json
-INFO:root:Analyzing file 413.json
-INFO:root:Analyzing file 426.json
-INFO:root:Analyzing file 432.json
-INFO:root:Analyzing file 433.json
-INFO:root:Analyzing file 435.json
-INFO:root:Analyzing file 437.json
-INFO:root:Analyzing file 449.json
-INFO:root:Analyzing file 450.json
-INFO:root:Analyzing file 451.json
-INFO:root:Analyzing file 455.json
-INFO:root:Analyzing file 456.json
-INFO:root:Analyzing file 458.json
-INFO:root:Analyzing file 463.json
-INFO:root:Analyzing file 466.json
-INFO:root:Analyzing file 468.json
-INFO:root:Analyzing file 473.json
-INFO:root:Analyzing file 483.json
-INFO:root:Analyzing file 484.json
-INFO:root:Analyzing file 486.json
-INFO:root:Analyzing file 488.json
-INFO:root:Analyzing file 492.json
-INFO:root:Analyzing file 498.json
-INFO:root:Analyzing file 502.json
-INFO:root:Analyzing file 504.json
-INFO:root:Analyzing file 506.json
-INFO:root:Analyzing file 509.json
-INFO:root:Analyzing file 518.json
-INFO:root:Analyzing file 521.json
-INFO:root:Analyzing file 528.json
-INFO:root:Analyzing file 529.json
-INFO:root:Analyzing file 532.json
-INFO:root:Analyzing file 535.json
-INFO:root:Analyzing file 536.json
-INFO:root:Analyzing file 538.json
-INFO:root:Analyzing file 540.json
-INFO:root:Analyzing file 542.json
-INFO:root:Analyzing file 544.json
-INFO:root:Analyzing file 545.json
-INFO:root:Analyzing file 546.json
-INFO:root:Analyzing file 547.json
-INFO:root:Analyzing file 551.json
-INFO:root:Analyzing file 554.json
-INFO:root:Analyzing file 560.json
-INFO:root:Analyzing file 567.json
-INFO:root:Analyzing file 568.json
-INFO:root:Analyzing file 569.json
-INFO:root:Analyzing file 571.json
-INFO:root:Analyzing file 573.json
-INFO:root:Analyzing file 574.json
-INFO:root:Analyzing file 577.json
-INFO:root:Analyzing file 580.json
-INFO:root:Analyzing file 586.json
-INFO:root:Analyzing file 589.json
-INFO:root:Analyzing file 590.json
-INFO:root:Analyzing file 593.json
-INFO:root:Analyzing file 600.json
-INFO:root:Analyzing file 601.json
-INFO:root:Analyzing file 602.json
-INFO:root:Analyzing file 606.json
-INFO:root:Analyzing file 607.json
-INFO:root:Analyzing file 616.json
-INFO:root:Analyzing file 617.json
-INFO:root:Analyzing file 621.json
-INFO:root:Analyzing file 623.json
-INFO:root:Analyzing file 628.json
-INFO:root:Analyzing file 633.json
-INFO:root:Analyzing file 637.json
-INFO:root:Analyzing file 640.json
-INFO:root:Analyzing file 642.json
-INFO:root:Analyzing file 643.json
-INFO:root:Analyzing file 646.json
-INFO:root:Analyzing file 651.json
-INFO:root:Analyzing file 654.json
-INFO:root:Analyzing file 660.json
-INFO:root:Analyzing file 670.json
-INFO:root:Analyzing file 671.json
-INFO:root:Analyzing file 676.json
-INFO:root:Analyzing file 680.json
-INFO:root:Analyzing file 682.json
-INFO:root:Analyzing file 688.json
-INFO:root:Analyzing file 689.json
-INFO:root:Analyzing file 690.json
-INFO:root:Analyzing file 693.json
-INFO:root:Analyzing file 695.json
-INFO:root:Analyzing file 696.json
-INFO:root:Analyzing file 699.json
-INFO:root:Analyzing file match730_003022044398700462098_0218005933_134.json
-INFO:root:Analyzing file match730_003022779478058205221_1547854033_184.json
-INFO:root:Analyzing file match730_003023130306019328030_0031891956_136.json
-INFO:root:Analyzing file match730_003023924305885921320_2121415278_900.json
-INFO:root:Analyzing file match730_003026843000304042065_0761515104_184.json
-INFO:root:Analyzing file match730_003027608253954523170_1417366295_183.json
-INFO:root:Analyzing file match730_003028532286103486576_0352881272_191.json
-INFO:root:Analyzing file match730_003030911891258998824_1037418968_186.json
-INFO:root:Analyzing file match730_003038169488341073990_0463822785_192.json
-INFO:root:Analyzing file match730_003043197202827575362_0426606189_900.json
-INFO:root:Analyzing file match730_003047248913913348114_0911583553_184.json
-INFO:root:Analyzing file match730_003049308760901156973_0298872319_136.json
-INFO:root:Analyzing file match730_003050068746774249474_0963637399_136.json
-INFO:root:Analyzing file match730_003051521729915519044_1354190707_192.json
-INFO:root:Analyzing file match730_003052105188337778704_1617429481_135.json
-INFO:root:Analyzing file match730_003053592535512383682_2093173900_191.json
-INFO:root:Analyzing file match730_003053771770940096659_1808246850_183.json
-INFO:root:Analyzing file match730_003056732412156313851_1308879853_184.json
-INFO:root:Analyzing file match730_003057493969987436744_0988304103_131.json
-INFO:root:Analyzing file match730_003059149956905435349_1462672830_136.json
-INFO:root:Analyzing file match730_003059512297526394964_0950061010_186.json
-INFO:root:Analyzing file match730_003059524344909660252_0050195560_134.json
-INFO:root:Analyzing file match730_003062298045526835355_1961238910_135.json
-INFO:root:Analyzing file match730_003063588655281995784_0189513152_131.json
-INFO:root:Analyzing file match730_003064141282281521262_0217425041_134.json
-INFO:root:Analyzing file match730_003064686182634881111_2118247068_183.json
-INFO:root:Analyzing file match730_003064724167325646902_1930155015_135.json
-INFO:root:Analyzing file match730_003064729243976990774_1295141151_192.json
-INFO:root:Analyzing file match730_003064733399357849621_1990278375_135.json
-INFO:root:Analyzing file match730_003066769042057461780_1634642194_134.json
-INFO:root:Analyzing file match730_003068576095860162594_1316999247_136.json
-INFO:root:Analyzing file match730_003069541089112228024_1383680025_131.json
-INFO:root:Analyzing file match730_003070512181217853650_0768141112_186.json
-INFO:root:Analyzing file match730_003071938376648098009_0398113151_186.json
-INFO:root:Analyzing file match730_003073241302221979736_2129298158_191.json
-INFO:root:Analyzing file match730_003075096528377872397_1892902380_183.json
-INFO:root:Analyzing file match730_003076005762217017442_1595398237_186.json
-INFO:root:Analyzing file match730_003076048157839196378_1955475517_135.json
-INFO:root:Analyzing file match730_003076202443801886846_0165308453_183.json
-INFO:root:Analyzing file match730_003076209262062469384_1951407105_186.json
-INFO:root:Analyzing file match730_003076388168925184147_1059838612_134.json
-INFO:root:Analyzing file match730_003076401848396022028_1610929079_136.json
-INFO:root:Analyzing file match730_003076444390047089039_0663484183_135.json
-INFO:root:Analyzing file match730_003078265013798961401_1625867328_136.json
-INFO:root:Analyzing file match730_003080329357617529084_2116295314_135.json
-INFO:root:Analyzing file match730_003081003600911007830_0110929096_131.json
-INFO:root:Analyzing file match730_003081242933668610288_1164290367_184.json
-INFO:root:Analyzing file match730_003083870244620468318_1903392939_134.json
-INFO:root:Analyzing file match730_003086098117171347627_1791244276_136.json
-INFO:root:Analyzing file match730_003087773210251362366_0272903841_134.json
-INFO:root:Analyzing file match730_003096644228978049325_0383104513_192.json
-INFO:root:Analyzing file match730_003096648562600050989_1212228093_131.json
-INFO:root:Analyzing file match730_003097550623843811563_0412530097_186.json
-INFO:root:Analyzing file match730_003098322244783309053_1085426470_192.json
-INFO:root:Analyzing file match730_003099288030456840409_0195950220_134.json
-INFO:root:Analyzing file match730_003099474333253239056_0428540557_184.json
-INFO:root:Analyzing file match730_003100566150447104495_1702114276_134.json
-INFO:root:Analyzing file match730_003111866282417324190_1552991623_136.json
-INFO:root:Analyzing file match730_003112041772633555228_1039167551_135.json
-INFO:root:Analyzing file match730_003127083160421007582_0426305663_181.json
-INFO:root:Analyzing file match730_003133218594217787471_1004431829_138.json
-INFO:root:Analyzing file match730_003134359807830524121_1479244845_900.json
-INFO:root:Analyzing file match730_003134707382353920325_0774068905_900.json
-INFO:root:Analyzing file match730_003141342009462095943_2068528004_134.json
-INFO:root:Analyzing file match730_003147692223835930880_0786209501_191.json
-INFO:root:Analyzing file match730_003152330309626757128_1954438797_900.json
-INFO:root:Analyzing file match730_003152349759386157278_1629171713_900.json
-INFO:root:Analyzing file match730_003152467338410852497_0623013541_900.json
-INFO:root:Analyzing file match730_003152684951518838921_2013442601_900.json
-INFO:root:Analyzing file match730_003153652676370104344_1938342285_131.json
-INFO:root:Analyzing file match730_003153658539000463483_1466675246_132.json
-INFO:root:Analyzing file match730_003183526456688902302_1131694829_186.json
-INFO:root:Analyzing file match730_003190172091798257712_1646599303_900.json
-INFO:root:Analyzing file match730_003190343920554868912_1897072160_900.json
-INFO:root:Analyzing file match730_003190566704803480062_0927645569_133.json
-INFO:root:Analyzing file match730_003221668308898021587_2026039628_900.json
-INFO:root:Analyzing file match730_003221717033154511028_2022536583_900.json
-INFO:root:Analyzing file match730_003221836931461546076_1291811002_900.json
-INFO:root:Analyzing file match730_003222024267197579357_1063447127_900.json
-INFO:root:Analyzing file match730_003222035842134442164_1430938929_900.json
-INFO:root:Analyzing file match730_003222229588109164741_1019298551_900.json
-INFO:root:Analyzing file match730_003222258445994426442_0734156713_900.json
-INFO:root:Analyzing file match730_003257014448782573731_1042449019_900.json
-INFO:root:Analyzing file match730_003257031532014993518_0708980032_900.json
-INFO:root:Analyzing file match730_003257728527897723013_0548599065_900.json
-INFO:root:Analyzing file match730_003257746897472847969_0847485121_900.json
-INFO:root:Analyzing file match730_003257943362161868862_1464464886_900.json
-INFO:root:Analyzing file match730_003258100594472124446_0369364199_900.json
-INFO:root:Analyzing file match730_003265326112443465761_2112904667_133.json
-INFO:root:Analyzing file match730_003265875417285787902_1294797958_183.json
-INFO:root:Wrote output json to: D:\CSGO\Demos\Maps\mirage\Analysis\Prepared_Input_Tensorflow_mirage.json
-INFO:root:Looking at directory D:\CSGO\Demos\Maps\mist
-INFO:root:Skipping this directory as it not one of those that should be analyzed.
-INFO:root:Looking at directory D:\CSGO\Demos\Maps\nuke
-INFO:root:Skipping this directory as it not one of those that should be analyzed.
-INFO:root:Looking at directory D:\CSGO\Demos\Maps\overpass
-INFO:root:Skipping this directory as it not one of those that should be analyzed.
-INFO:root:Looking at directory D:\CSGO\Demos\Maps\resort
-INFO:root:Skipping this directory as it not one of those that should be analyzed.
-INFO:root:Looking at directory D:\CSGO\Demos\Maps\santorini
-INFO:root:Skipping this directory as it not one of those that should be analyzed.
-INFO:root:Looking at directory D:\CSGO\Demos\Maps\santorini_playtest
-INFO:root:Skipping this directory as it not one of those that should be analyzed.
-INFO:root:Looking at directory D:\CSGO\Demos\Maps\season
-INFO:root:Skipping this directory as it not one of those that should be analyzed.
-INFO:root:Looking at directory D:\CSGO\Demos\Maps\train
-INFO:root:Skipping this directory as it not one of those that should be analyzed.
-INFO:root:Looking at directory D:\CSGO\Demos\Maps\vertigo
-INFO:root:Skipping this directory as it not one of those that should be analyzed.
+2022-10-14 07:32:28 INFO     Starting
+2022-10-14 07:32:28 INFO     Looking at directory E:\PhD\MachineLearning\CSGOData\ParsedDemos\ancient
+2022-10-14 07:32:28 INFO     Skipping this directory as it has already been analyzed.
+2022-10-14 07:32:28 INFO     Looking at directory E:\PhD\MachineLearning\CSGOData\ParsedDemos\cache
+2022-10-14 07:32:28 INFO     Skipping this directory as it has already been analyzed.
+2022-10-14 07:32:28 INFO     Looking at directory E:\PhD\MachineLearning\CSGOData\ParsedDemos\cbble
+2022-10-14 07:32:28 INFO     Skipping this directory as it has already been analyzed.
+2022-10-14 07:32:28 INFO     Looking at directory E:\PhD\MachineLearning\CSGOData\ParsedDemos\dust2
+2022-10-14 07:32:28 INFO     Skipping this directory as it has already been analyzed.
+2022-10-14 07:32:28 INFO     Looking at directory E:\PhD\MachineLearning\CSGOData\ParsedDemos\inferno
+2022-10-14 07:32:28 INFO     Skipping this directory as it has already been analyzed.
+2022-10-14 07:32:28 INFO     Looking at directory E:\PhD\MachineLearning\CSGOData\ParsedDemos\mirage
+2022-10-14 07:32:28 INFO     Skipping this directory as it has already been analyzed.
+2022-10-14 07:32:28 INFO     Looking at directory E:\PhD\MachineLearning\CSGOData\ParsedDemos\nuke
+2022-10-14 07:32:28 INFO     Skipping this directory as it has already been analyzed.
+2022-10-14 07:32:28 INFO     Looking at directory E:\PhD\MachineLearning\CSGOData\ParsedDemos\overpass
+2022-10-14 07:32:38 INFO     The following 300 MatchIDs are already included in the existing json file and will be skipped: {'ecstatic-vs-unique-m2-overpass_68984', 'dream-vs-lemondogs-m3-overpass_69373', 'apeks-vs-onetap-m1-overpass_69687', 'black-dragons-vs-meta-br-m2-overpass_69858', 'big-chillin-vs-detonate-m2-overpass_69414', 'furia-vs-astralis-m1-overpass_70107', 'entropiq-vs-dbl-poney-m3-overpass_68996', 'esuba-vs-tricked-m1-overpass_69897', 'shape-vs-insanium-m2-overpass_68912', '777-vs-coalesce-m2-overpass_69020', 'b8-vs-run-or-die-m3-overpass_69627', 'entropiq-vs-ttc-m1-overpass_69424', '1shot-vs-spirit-m2-overpass_70103', 'fnatic-vs-big-m1-overpass_69670', 'entropiq-vs-nemiga-m2-overpass_69789', 'nip-vs-natus-vincere-m2-overpass_69882', 'furia-vs-virtus-pro-m2-overpass_70026', 'anonymo-vs-ungentium-m1-overpass_69507', 'k23-vs-gamerlegion-m1-overpass_69740', 'hxh-vs-unique-m2-overpass_69520', 'ecstatic-vs-entropiq-m1-overpass_69724', 'party-astronauts-vs-pain-m1-overpass_69458', 'party-astronauts-vs-rbg-m1-overpass_69126', 'faze-vs-fnatic-m1-overpass_70134', 'saw-vs-unique-m1-overpass_69800', 'baza-vs-libertatem-m2-overpass_69148', 'masonic-vs-esuba-m2-overpass_69074', 'red-vs-aravt-m3-overpass_70130', 'budapest-five-vs-finest-m1-overpass_69097', 'boozoomers-vs-bad-news-bears-m2-overpass_69532', 'copenhagen-flames-vs-blink-m1-overpass_68982', 'enterprise-vs-fnatic-rising-m2-overpass_69261', 'gorillaz-vs-lynn-vision-m1-overpass_69260', 'nemiga-vs-ecstatic-m2-overpass_69133', 'iupui-jaguars-vs-hjc-m2-overpass_68943', 'entropiq-vs-gambit-m3-overpass_69701', 'lookingfororg-vs-vertex-m3-overpass_69440', 'order-vs-lookingfororg-m1-overpass_69294', 'sinners-vs-finest-m1-overpass_69029', 'heroic-vs-og-m2-overpass_70104', 'skade-vs-dignitas-m2-overpass_70047', 'astralis-talent-vs-fnatic-m3-overpass_69602', 'enterprise-vs-ambush-m1-overpass_69137', 'lookingfororg-vs-paradox-m2-overpass_69293', 'spirit-vs-saw-m2-overpass_70071', 'leviatan-vs-stone-m3-overpass_69123', 'aab-vs-masonic-m1-overpass_69157', 'entropiq-vs-into-the-breach-m2-overpass_69772', 'saw-vs-skade-m2-overpass_69846', 'finest-vs-forze-m2-overpass_69843', 'gamerlegion-vs-copenhagen-flames-m3-overpass_69405', 'ave-vs-lynn-vision-m3-overpass_69129', 'extra-salt-vs-rbg-m1-overpass_69212', 'masonic-vs-big-city-blues-m2-overpass_69369', '1shot-vs-honoris-m1-overpass_69994', 'forze-vs-gamerlegion-m1-overpass_69270', 'mad-lions-vs-arcred-m2-overpass_70022', 'equipa-vs-4750mix-m3-overpass_69620', 'furia-academy-vs-black-dragons-m1-overpass_69870', 'nemiga-vs-astralis-talent-m2-overpass_69017', '1win-vs-into-the-breach-m3-overpass_69790', 'spirit-vs-young-ninjas-m2-overpass_70027', 'bad-news-bears-vs-detonate-m1-overpass_69170', 'kinship-vs-brazen-m2-overpass_69411', 'pact-vs-singularity-m1-overpass_69273', 'party-astronauts-vs-disconnected-m2-overpass_69791', 'apeks-vs-wisla-krakow-m3-overpass_69867', 'entropiq-vs-ecstatic-m1-overpass_69105', 'kappab-vs-dream-m3-overpass_69504', 'copenhagen-flames-vs-fnatic-overpass_70051', 'party-astronauts-vs-strife-m2-overpass_69625', 'mouz-vs-vitality-overpass-p1_69054', 'enterprise-vs-anonymo-m1-overpass_70035', 'entropiq-vs-sinners-m2-overpass_69231', 'aura-vs-tranquillum-m2-overpass_69048', 'copenhagen-flames-vs-blink-m1-overpass_69104', 'kappab-vs-lilmix-m1-overpass_69272', 'fnatic-vs-ence-m1-overpass_69100', 'gamerlegion-vs-wisla-krakow-m2-overpass_69198', 'heroic-vs-liquid-m1-overpass_68906', 'movistar-riders-vs-9z-m2-overpass_70001', 'savage-vs-gamerlegion-m1-overpass_69663', 'movistar-riders-vs-saw-m1-overpass_69233', 'marskalk-vs-lan-kraem-m2-overpass_69134', 'heet-vs-akimbo-m3-overpass-p1_69930', 'northern-forces-vs-valors-m1-overpass_69456', 'savage-vs-run-or-die-overpass_68988', 'carpe-diem-vs-bad-news-bears-m2-overpass_70033', '1win-vs-wisla-krakow-m2-overpass_69158', 'heet-vs-enterprise-m1-overpass_69852', 'k23-vs-entropiq-m3-overpass_69397', 'apeks-vs-eternal-fire-m3-overpass_70118', 'enterprise-vs-sinners-m2-overpass_68933', 'lookingfororg-vs-agf-m2-overpass_69965', 'honoris-vs-pact-m1-overpass_69346', 'eternal-fire-vs-tricked-m1-overpass_69804', 'northern-forces-vs-third-impact-m3-overpass_69438', 'sprout-vs-1win-m1-overpass_69778', 'finest-vs-agf-m2-overpass_69235', 'spirit-vs-endpoint-m1-overpass_69983', 'insanium-vs-babos-m1-overpass_68934', 'pact-vs-tricked-m1-overpass_69470', 'enterprise-vs-avangar-m1-overpass_69910', 'heroic-vs-k23-m3-overpass_69851', 'linx-legacy-vs-1shot-m3-overpass_69383', 'aura-vs-x-gamer-m3-overpass_69375', 'offset-vs-b8-m1-overpass_69652', 'order-vs-vertex-m1-overpass_69317', 'atk-vs-rbg-m1-overpass_69722', 'pain-vs-rbg-m3-overpass_69479', 'river-plate-vs-boca-juniors-m2-overpass_70109', 'dignitas-vs-lynn-vision-m2-overpass_68916', 'blink-vs-copenhagen-flames-m2-overpass_69926', 'avangar-vs-enterprise-m2-overpass_69836', 'lpsp-vs-young-ninjas-m2-overpass_69707', 'mad-lions-vs-copenhagen-flames-m1-overpass_69222', 'into-the-breach-vs-linx-legacy-m2-overpass_69408', 'bluejays-vs-1win-m2-overpass_70099', 'ec-kyiv-vs-wisla-krakow-m1-overpass_69096', 'enterprise-vs-finest-m2-overpass_69797', 'detonate-vs-valors-m1-overpass_69513', 'esuba-vs-enterprise-m1-overpass_68921', 'orgless-vs-strife-m1-overpass_69838', 'spirit-academy-vs-astralis-talent-m1-overpass_69998', 'detonate-vs-teamone-m2-overpass_69251', 'cowana-vs-leo-overpass_69039', 'ecstatic-vs-dignitas-m1-overpass_69399', 'linx-legacy-vs-hellraisers-m3-overpass_69303', 'lookingfororg-vs-dynasty-m2-overpass_69262', 'enterprise-vs-big-acedemy-m2-overpass_69891', 'lookingfororg-vs-wisla-krakow-m2-overpass_69650', 'singularity-vs-ec-kyiv-m2-overpass_69372', 'eternal-fire-vs-1win-m2-overpass_69794', 'ence-vs-entropiq-overpass_70055', 'los-grandes-vs-santos-overpass_68998', 'pain-vs-rbg-m1-overpass_69415', 'river-plate-vs-keyd-m2-overpass_69380', 'saw-vs-tricked-m1-overpass_69451', 'isurus-vs-mibr-academy-m2-overpass_69094', 'gamerlegion-vs-1win-m1-overpass_69427', 'copenhagen-flames-vs-gambit-m1-overpass_70121', 'mad-lions-vs-777-m1-overpass_70073', 'myinsanity-vs-insanium-m2-overpass_68942', 'fate-vs-gamerlegion-overpass_69036', 'gamerlegion-vs-entropiq-m1-overpass_69490', 'onetap-vs-esuba-m2-overpass_69665', 'nip-vs-big-overpass_69808', 'pain-vs-teamone-m1-overpass_69432', 'og-vs-nip-m1-overpass_69887', 'enterprise-vs-777-m3-overpass_70095', 'flintbreeze-vs-marskalk-m2-overpass_69142', 'eternal-fire-vs-agf-overpass_69040', 'paradox-vs-order-m3-overpass_70149', '1win-vs-tricked-m1-overpass_70066', 'anonymo-vs-fullshock-m1-overpass_69907', 'astralis-vs-k23-m3-overpass_69657', 'astralis-vs-ence-m2-overpass_70132', 'bad-nears-bears-vs-chococheck-m2-overpass_69536', 'extra-salt-vs-pain-m2-overpass_69360', 'orgless-vs-third-impact-overpass_69821', 'run-or-die-vs-entropiq-prague-m3-overpass_69310', 'havu-vs-finest-m1-overpass_69959', 'finest-vs-enterprise-m3-overpass_69685', 'bad-news-bears-vs-triumph-m3-overpass_69095', '777-vs-enterprise-m1-overpass_69844', '777-vs-wisla-krakow-m3-overpass_69720', 'extra-salt-vs-pain-m2-overpass_69388', 'ave-vs-tranquillum-m1-overpass_69150', 'faze-vs-big-m2-overpass_69888', 'finest-vs-young-ninjas-m1-overpass_70000', 'hellraisers-vs-pact-m1-overpass_69327', 'k23-vs-blink-m1-overpass_68949', 'liquid-vs-gambit-m3-overpass_69448', 'order-vs-lookingfororg-m1-overpass_69514', 'savage-vs-gorillaz-m3-overpass_69065', 'mad-kings-vs-stone-m2-overpass_69140', 'order-vs-vertex-m1-overpass_70124', 'finest-vs-unique-m1-overpass_69669', 'astralis-vs-entropiq-m3-overpass_69710', 'party-astronauts-vs-triumph-m2-overpass_69181', 'budapest-five-vs-los-reyes-m1-overpass_69906', 'little-bocks-vs-please-send-help-m2-overpass_70032', 'apeks-vs-ec-kyiv-m2-overpass_69674', 'fnatic-vs-big-m3-overpass_70085', 'leviatan-vs-isurus-m2-overpass_69306', 'boca-juniors-vs-9z-academy-m3-overpass_70122', 'nip-vs-godsent-m2-overpass_69166', 'onetap-vs-tricked-m2-overpass_69629', 'k23-vs-endpoint-m1-overpass_70063', 'gamerlegion-vs-apeks-m2-overpass_69641', 'mibr-vs-x13-m1-overpass_69410', 'dng-vs-inde-irae-m3-overpass_69527', 'pact-vs-linx-legacy-m1-overpass_69395', 'aura-vs-young-ninjas-m1-overpass_69343', 'incontrol-vs-alex-rider-m3-overpass_69732', 'natus-vincere-vs-ence-m3-overpass_70115', 'los-grandes-vs-leviatan-m3-overpass_69312', 'fnatic-rising-vs-young-ninjas-m2-overpass_69928', 'nemiga-vs-dignitas-m2-overpass_69078', 'hreds-vs-x-gamer-m1-overpass_68958', 'hazard-vs-overt-m3-overpass_69444', 'skade-vs-ec-kyiv-m1-overpass_70013', 'entropiq-vs-finest-m1-overpass_69429', 'navi-junior-vs-astralis-talent-m1-overpass_69608', 'k23-vs-big-m3-overpass_69705', 'dignitas-vs-unique-m2-overpass_69768', 'mouz-vs-vitality-overpass-p2_69054', 'bluejays-vs-mad-lions-m3-overpass_70039', '9z-vs-keyd-m1-overpass_69018', 'equipa-vs-nsc-m2-overpass_70024', 'diffendo-vs-skade-overpass_68966', 'dbl-poney-vs-one-more-time-overpass_69034', 'mad-lions-vs-enterprise-m2-overpass_69922', '9z-vs-redragon-m1-overpass-p2_68993', 'aotc-vs-boyfriend-peek2-m1-overpass_68948', 'finest-vs-777-m1-overpass_69076', 'natus-vincere-vs-liquid-m1-overpass_69400', 'paradox-vs-overt-m1-overpass_70123', 'gucci-squad-vs-hreds-m1-overpass_69243', 'masonic-vs-dream-m3-overpass_69132', 'entropiq-vs-esca-m3-overpass_69279', 'eternal-fire-vs-gamerlegion-m2-overpass_69760', 'movistar-riders-vs-copenhagen-flames-m2-overpass_69114', 'savage-vs-spirit-m3-overpass_69904', 'enterprise-vs-kova-m2-overpass_69297', 'finest-vs-case-m3-overpass_69947', 'enterprise-vs-777-m2-overpass_69639', 'copenhagen-flames-vs-nemiga-m2-overpass_69465', '9z-vs-redragon-m1-overpass-p1_68993', 'nemiga-vs-skade-m1-overpass_69956', 'faze-vs-gambit-m2-overpass_69136', '1shot-vs-into-the-breach-m2-overpass_69163', '1shot-vs-tricked-m1-overpass_69305', 'movistar-riders-vs-sprout-m1-overpass_69195', 'ecstatic-vs-savage-m1-overpass_69876', 'finest-vs-esuba-m2-overpass_69649', 'gamerlegion-vs-00nation-m1-overpass_70044', 'alternate-attax-vs-777-m1-overpass_69917', 'chococheck-vs-teamone-m2-overpass_69416', 'natus-vincere-vs-nip-m2-overpass_69893', 'avangar-vs-mad-lions-m3-overpass_69962', 'copenhagen-flames-vs-bluejays-m1-overpass_69484', 'eternal-fire-vs-unique-m2-overpass_69749', 'forze-vs-entropiq-m3-overpass_69263', '00nation-vs-unique-m1-overpass_69963', 'into-the-breach-vs-astralis-talent-m1-overpass_69974', 'dignitas-vs-777-m1-overpass_69654', 'dbl-poney-vs-unique-m2-overpass_68956', 'clg-red-vs-little-bocks-m1-overpass_69621', 'lookingfororg-vs-hazard-m2-overpass_69417', 'skade-vs-apeks-m3-overpass_69765', 'isurus-vs-river-plate-m1-overpass_69348', 'gamerlegion-vs-sprout-m1-overpass_69860', 'pact-vs-unique-m2-overpass_69945', 'davenport-university-vs-coldest-riders-m2-overpass_69315', 'dignitas-vs-copenhagen-flames-m1-mirage_69257', 'movistar-riders-vs-godsent-m1-overpass_68902', 'astralis-vs-big-m3-overpass_70069', 'ecstatic-vs-nemiga-m1-overpass_69186', 'lookingfororg-vs-havu-m1-overpass_69690', 'mibr-vs-astralis-overpass_69818', 'copenhagen-flames-vs-forze-m1-overpass_69770', 'k23-vs-apeks-m3-overpass_69868', 'movistar-riders-vs-blink-m1-overpass_69274', 'skade-vs-gamerlegion-m1-overpass_69793', 'ex-coalesce-vs-apeks-m3-overpass_69671', 'gamerlegion-vs-ec-kyiv-m1-overpass_69704', 'big-academy-vs-spirit-academy-m2-overpass_69981', 'rbg-vs-bad-news-bears-m2-overpass_69462', 'big-vs-evil-geniuses-m1-overpass_69877', 'dignitas-vs-lynn-vision-m1-overpass_69022', 'enterprise-vs-nlg-m3-overpass_69829', 'eternal-fire-vs-gamerlegion-m1-overpass_70068', 'spirit-academy-vs-vp-prodigy-m1-overpass_69619', 'order-vs-vertex-m1-overpass_70127', 'party-astronauts-vs-atk-m2-overpass_69735', 'clg-red-vs-little-bocks-m1-overpass_69833', 'dignitas-vs-1win-m1-overpass_70043', 'eternal-fire-vs-sprout-m1-overpass_69875', 'fnatic-rising-vs-young-ninjas-overpass_69548', 'atk-vs-strife-m3-overpass_69213', 'eternal-fire-vs-gamerlegion-m2-overpass_69165', 'boyfriend-peek2-vs-iupui-jaguars-m2-overpass_68945', 'atk-vs-extra-salt-m2-overpass_69244', 'detonate-vs-x13-m1-overpass_69439', 'furia-academy-vs-detona-m1-overpass_69276', 'enterprise-vs-savage-m1-overpass_69940', 'esuba-vs-offset-m3-overpass_69659', 'havan-liberty-vs-los-grandes-overpass_69001', 'pact-vs-ec-kyiv-m1-overpass_69987', 'paradox-vs-lookingfororg-m2-overpass_69483', 'ec-kyiv-vs-fnatic-rising-m1-overpass_68955', 'ex-fury-vs-apocalypse-m1-overpass_69217', 'k23-vs-bluejays-m1-overpass_69503', 'savage-vs-777-m2-overpass_69964', 'nip-vs-movistar-riders-m2-overpass_70086', 'aab-vs-opaa-m1-overpass_69161', 'finest-vs-ec-kyiv-m1-overpass_69631', 'fnatic-vs-gambit-m3-overpass_69155', 'gambit-vs-nip-m3-overpass_70105'}
+2022-10-14 07:32:38 INFO     Analyzing file sprout-vs-agf-m3-overpass_69948.json
+2022-10-14 07:35:45 INFO     Analyzing file sprout-vs-dbl-poney-m2-overpass_69344.json
+2022-10-14 07:40:49 INFO     Analyzing file sprout-vs-eternal-fire-m2-overpass_69374.json
+2022-10-14 07:43:44 INFO     Analyzing file sprout-vs-faze-overpass_70052.json
+2022-10-14 07:47:30 INFO     Analyzing file sprout-vs-finest-m1-overpass_69637.json
+2022-10-14 07:50:46 INFO     Analyzing file sprout-vs-savage-m3-overpass_69762.json
+2022-10-14 07:54:09 INFO     Analyzing file stars-horizon-vs-redragon-m1-overpass_69869.json
+2022-10-14 07:58:12 INFO     Analyzing file stone-vs-9z-academy-m2-overpass_70110.json
+2022-10-14 08:00:28 INFO     Analyzing file strife-vs-atk-m2-overpass_70146.json
+2022-10-14 08:03:33 INFO     Analyzing file strife-vs-bad-news-bears-m2-overpass_69534.json
+2022-10-14 08:06:58 INFO     Analyzing file strife-vs-party-astronauts-m1-overpass_69287.json
+2022-10-14 08:10:17 INFO     Analyzing file strife-vs-party-astronauts-overpass_69820.json
+2022-10-14 08:12:47 INFO     Analyzing file strife-vs-rbg-m2-overpass_69182.json
+2022-10-14 08:15:57 INFO     Analyzing file strife-vs-valors-m3-overpass_69437.json
+2022-10-14 08:18:56 INFO     Analyzing file teamone-vs-rbg-m1-overpass_69289.json
+2022-10-14 08:22:42 INFO     Analyzing file third-impact-vs-rbg-m2-overpass_69775.json
+2022-10-14 08:26:36 INFO     Analyzing file third-impact-vs-strife-m2-overpass_69457.json
+2022-10-14 08:30:12 INFO     Analyzing file third-impact-vs-x13-m1-overpass_69398.json
+2022-10-14 08:33:50 INFO     Analyzing file touch-point-vs-brazen-m2-overpass_69314.json
+2022-10-14 08:38:15 INFO     Analyzing file tricked-vs-agf-m2-ovepass_69138.json
+2022-10-14 08:40:59 INFO     Analyzing file tricked-vs-eclot-m2-overpass_69013.json
+2022-10-14 08:44:11 INFO     Analyzing file tricked-vs-finest-m3-overpass_69699.json
+2022-10-14 08:47:47 INFO     Analyzing file tricked-vs-pact-m1-overpass_69382.json
+2022-10-14 08:54:01 INFO     Analyzing file tricked-vs-spirit-m3-overpass_69927.json
+2022-10-14 08:57:48 INFO     Analyzing file tricked-vs-wisla-krakow-m3-overpass_69676.json
+2022-10-14 09:01:15 INFO     Analyzing file triumph-vs-atk-m1-overpass_69176.json
+2022-10-14 09:05:34 INFO     Analyzing file triumph-vs-bad-news-bears-m1-overpass_69434.json
+2022-10-14 09:08:43 INFO     Analyzing file unique-vs-lookingfororg-m3-overpass_69642.json
+2022-10-14 09:11:55 INFO     Analyzing file unique-vs-los-reyes-m1-overpass_69634.json
+2022-10-14 09:15:12 INFO     Analyzing file unique-vs-nemiga-m2-overpass_70020.json
+2022-10-14 09:18:12 INFO     Analyzing file unique-vs-sprout-m1-overpass_69993.json
+2022-10-14 09:21:15 INFO     Analyzing file valors-vs-kinship-m2-overpass_69362.json
+2022-10-14 09:24:27 INFO     Analyzing file vertex-vs-caught-off-guard-m2-overpass_69215.json
+2022-10-14 09:26:33 INFO     Analyzing file vertex-vs-order-m1-overpass_69464.json
+2022-10-14 09:32:30 INFO     Analyzing file vertex-vs-overt-m2-overpass_69047.json
+2022-10-14 09:35:36 INFO     Analyzing file vertex-vs-paradox-m2-overpass_69295.json
+2022-10-14 09:38:56 INFO     Analyzing file vici-vs-checkmate-m2-overpass_68928.json
+2022-10-14 09:42:51 INFO     Analyzing file virtus-pro-vs-complexity-m1-overpass_70019.json
+2022-10-14 09:45:47 INFO     Analyzing file virtus-pro-vs-nip-m1-overpass_70120.json
+2022-10-14 09:49:26 INFO     Analyzing file vitality-vs-faze-overpass_69835.json
+2022-10-14 09:52:54 INFO     Analyzing file volante-vs-x13-m1-overpass_69461.json
+2022-10-14 09:56:44 INFO     Analyzing file vp-prodigy-vs-furia-academy-overpass_69546.json
+2022-10-14 09:59:43 INFO     Analyzing file wisla-krakow-vs-ftw-m2-overpass_69697.json
+2022-10-14 10:02:23 INFO     Analyzing file wisla-krakow-vs-hreds-m1-overpass_68950.json
+2022-10-14 10:05:18 INFO     Analyzing file wisla-krakow-vs-nemiga-m1-overpass_69403.json
+2022-10-14 10:09:07 INFO     Analyzing file wisla-krakow-vs-skade-m3-overpass_69742.json
+2022-10-14 10:11:23 INFO     Analyzing file x13-vs-brazen-m1-overpass_69363.json
+2022-10-14 10:15:00 INFO     Analyzing file x13-vs-rbg-overpass_69719.json
+2022-10-14 10:18:19 INFO     Analyzing file x13-vs-valors-m2-overpass_69389.json
+2022-10-14 10:21:07 INFO     Analyzing file x13-vs-valors-m3-overpass_69494.json
+2022-10-14 10:24:25 INFO     Wrote output json to: E:\PhD\MachineLearning\CSGOData\ParsedDemos\overpass\Analysis\Prepared_Input_Tensorflow_overpass.json
+2022-10-14 10:24:32 INFO     Analyzing file yenicherry-vs-brazen-m1-overpass_69359.json
+2022-10-14 10:27:14 INFO     Analyzing file young-ninjas-vs-9ine-m1-overpass_69237.json
+2022-10-14 10:30:36 INFO     Analyzing file young-ninjas-vs-apeks-rebels-m2-overpass_69192.json
+2022-10-14 10:35:17 INFO     Analyzing file young-ninjas-vs-astralis-talent-m2-overpass_69616.json
+2022-10-14 10:38:57 INFO     Analyzing file young-ninjas-vs-cowana-m1-overpass_68959.json
+2022-10-14 10:41:01 INFO     Analyzing file young-ninjas-vs-sangal-m2-overpass_69695.json
+2022-10-14 10:45:51 INFO     Wrote output json to: E:\PhD\MachineLearning\CSGOData\ParsedDemos\overpass\Analysis\Prepared_Input_Tensorflow_overpass.json
+2022-10-14 10:45:51 INFO     Looking at directory E:\PhD\MachineLearning\CSGOData\ParsedDemos\season
+2022-10-14 10:45:51 INFO     The following 0 MatchIDs are already included in the existing json file and will be skipped: set()
+2022-10-14 10:45:51 INFO     Analyzing file 43427_virtus-pro-team-dignitas_de_season_16834.json
+2022-10-14 10:45:53 INFO     Wrote output json to: E:\PhD\MachineLearning\CSGOData\ParsedDemos\season\Analysis\Prepared_Input_Tensorflow_season.json
+2022-10-14 10:45:53 INFO     Looking at directory E:\PhD\MachineLearning\CSGOData\ParsedDemos\train
+2022-10-14 10:45:53 INFO     The following 0 MatchIDs are already included in the existing json file and will be skipped: set()
+2022-10-14 10:45:53 INFO     Analyzing file budapest-five-vs-navi-junior-m1-train_64384.json
+2022-10-14 10:47:07 INFO     Wrote output json to: E:\PhD\MachineLearning\CSGOData\ParsedDemos\train\Analysis\Prepared_Input_Tensorflow_train.json
+2022-10-14 10:47:07 INFO     Looking at directory E:\PhD\MachineLearning\CSGOData\ParsedDemos\tuscan
+2022-10-14 10:47:07 INFO     The following 0 MatchIDs are already included in the existing json file and will be skipped: set()
+2022-10-14 10:47:07 INFO     Analyzing file portugal-vs-blast-dream-team-tuscan_72496.json
+2022-10-14 10:47:08 INFO     Wrote output json to: E:\PhD\MachineLearning\CSGOData\ParsedDemos\tuscan\Analysis\Prepared_Input_Tensorflow_tuscan.json
+2022-10-14 10:47:08 INFO     Looking at directory E:\PhD\MachineLearning\CSGOData\ParsedDemos\vertigo
+2022-10-14 10:47:08 INFO     The following 0 MatchIDs are already included in the existing json file and will be skipped: set()
+2022-10-14 10:47:08 INFO     Analyzing file 0to100-vs-4glory-m1-vertigo_70030.json
+2022-10-14 10:48:36 INFO     Analyzing file 1shot-vs-anonymo-m1-vertigo_70058.json
+2022-10-14 10:49:37 INFO     Analyzing file 1shot-vs-astralis-talent-m1-vertigo_69678.json
+2022-10-14 10:50:39 INFO     Analyzing file 1shot-vs-ec-kyiv-m1-vertigo_70081.json
+2022-10-14 10:52:18 INFO     Analyzing file 1shot-vs-monke-m1-vertigo_69618.json
+2022-10-14 10:53:55 INFO     Analyzing file 1win-vs-endpoint-m3-vertigo_69755.json
+2022-10-14 10:55:12 INFO     Analyzing file 1win-vs-gamerlegion-m2-vertigo_70090.json
+2022-10-14 10:56:38 INFO     Analyzing file 1win-vs-nemiga-m1-vertigo_69773.json
+2022-10-14 10:58:11 INFO     Analyzing file 1win-vs-nemiga-m1-vertigo_69857.json
+2022-10-14 11:00:21 INFO     Analyzing file 1win-vs-saw-m1-vertigo_69266.json
+2022-10-14 11:01:49 INFO     Analyzing file 1win-vs-sprout-m3-vertigo_69023.json
+2022-10-14 11:02:52 INFO     Analyzing file 4glory-vs-tricked-m1-vertigo_69203.json
+2022-10-14 11:04:05 INFO     Analyzing file 777-vs-coalesce-m1-vertigo_69020.json
+2022-10-14 11:05:21 INFO     Analyzing file 777-vs-enterprise-m2-vertigo_69844.json
+2022-10-14 11:06:28 INFO     Analyzing file 9z-academy-vs-ex-ceara-m1-vertigo_69326.json
+2022-10-14 11:07:47 INFO     Analyzing file ago-vs-anonymo-m2-vertigo_69278.json
+2022-10-14 11:10:14 INFO     Analyzing file ago-vs-anonymo-m2-vertigo_69497.json
+2022-10-14 11:11:24 INFO     Analyzing file ago-vs-entropiq-m1-vertigo_69227.json
+2022-10-14 11:13:03 INFO     Analyzing file ago-vs-fnatic-rising-m2-vertigo_69767.json
+2022-10-14 11:14:33 INFO     Analyzing file ago-vs-lookingfororg-m2-vertigo_69866.json
+2022-10-14 11:16:04 INFO     Analyzing file ago-vs-pact-m3-vertigo_69149.json
+2022-10-14 11:17:22 INFO     Analyzing file ago-vs-savage-m2-vertigo_69696.json
+2022-10-14 11:18:59 INFO     Analyzing file all-aim-no-name-vs-incontrol-m1-vertigo_69738.json
+2022-10-14 11:20:01 INFO     Analyzing file allstars-vs-vamostars-m1-vertigo_69997.json
+2022-10-14 11:20:57 INFO     Analyzing file ambush-vs-gameagents-m3-vertigo_69581.json
+2022-10-14 11:22:09 INFO     Analyzing file ambush-vs-velox-m3-vertigo_69349.json
+2022-10-14 11:23:29 INFO     Analyzing file anonymo-vs-ambush-m2-vertigo_69933.json
+2022-10-14 11:25:16 INFO     Analyzing file anonymo-vs-entropiq-m2-vertigo_69196.json
+2022-10-14 11:26:54 INFO     Analyzing file anonymo-vs-opaa-vertigo_69112.json
+2022-10-14 11:28:26 INFO     Analyzing file anonymo-vs-sinners-m1-vertigo_69264.json
+2022-10-14 11:30:12 INFO     Analyzing file apeks-vs-avangar-m3-vertigo_70094.json
+2022-10-14 11:31:44 INFO     Analyzing file apeks-vs-ec-kyiv-m3-vertigo_69674.json
+2022-10-14 11:33:02 INFO     Analyzing file apeks-vs-endpoint-m1-vertigo_69787.json
+2022-10-14 11:33:57 INFO     Analyzing file apeks-vs-endpoint-m1-vertigo_69842.json
+2022-10-14 11:34:54 INFO     Analyzing file apeks-vs-eternal-fire-m1-vertigo_70118.json
+2022-10-14 11:36:30 INFO     Analyzing file apeks-vs-masonic-m1-vertigo_69646.json
+2022-10-14 11:37:52 INFO     Analyzing file apeks-vs-tricked-m3-vertigo_70036.json
+2022-10-14 11:39:09 INFO     Analyzing file aravt-vs-vici-m2-vertigo_68929.json
+2022-10-14 11:40:34 INFO     Analyzing file astralis-talent-vs-big-academy-vertigo_69559.json
+2022-10-14 11:42:11 INFO     Analyzing file astralis-talent-vs-fnatic-rising-vertigo_69580.json
+2022-10-14 11:43:27 INFO     Analyzing file astralis-talent-vs-navi-junior-vertigo_69551.json
+2022-10-14 11:44:59 INFO     Analyzing file astralis-talent-vs-young-ninjas-vertigo_69541.json
+2022-10-14 11:46:35 INFO     Analyzing file avangar-vs-enterprise-m3-vertigo_69836.json
+2022-10-14 11:47:43 INFO     Analyzing file avez-vs-ungentium-m2-vertigo_69139.json
+2022-10-14 11:49:04 INFO     Analyzing file b8-vs-run-or-die-m4-vertigo_69627.json
+2022-10-14 11:49:49 INFO     Analyzing file baza-vs-libertatem-m1-vertigo-p1_69148.json
+2022-10-14 11:50:54 INFO     Analyzing file baza-vs-libertatem-m1-vertigo-p2_69148.json
+2022-10-14 11:51:25 INFO     Analyzing file big-academy-vs-astralis-talent-vertigo_69561.json
+2022-10-14 11:52:45 INFO     Analyzing file big-academy-vs-dignitas-m1-vertigo_69763.json
+2022-10-14 11:54:17 INFO     Analyzing file big-academy-vs-esuba-m3-vertigo_69633.json
+2022-10-14 11:55:32 INFO     Wrote output json to: E:\PhD\MachineLearning\CSGOData\ParsedDemos\vertigo\Analysis\Prepared_Input_Tensorflow_vertigo.json
+2022-10-14 11:55:33 INFO     Analyzing file big-academy-vs-esuba-m3-vertigo_69668.json
+2022-10-14 11:56:46 INFO     Analyzing file big-academy-vs-fnatic-rising-vertigo_69591.json
+2022-10-14 11:58:23 INFO     Analyzing file big-academy-vs-gamerlegion-m3-vertigo_70096.json
+2022-10-14 11:59:53 INFO     Analyzing file big-academy-vs-spirit-academy-m3-vertigo_69981.json
+2022-10-14 12:01:20 INFO     Analyzing file big-chillin-vs-eros-m3-vertigo_69250.json
+2022-10-14 12:02:56 INFO     Analyzing file big-vs-evil-geniuses-m3-vertigo_69877.json
+2022-10-14 12:04:33 INFO     Analyzing file black-dragons-vs-sws-m2-vertigo_69599.json
+2022-10-14 12:06:02 INFO     Analyzing file blink-vs-ecstatic-m2-vertigo_69214.json
+2022-10-14 12:07:26 INFO     Analyzing file blink-vs-heet-m1-vertigo_69864.json
+2022-10-14 12:08:38 INFO     Analyzing file blink-vs-sprout-m1-vertigo_69428.json
+2022-10-14 12:09:56 INFO     Analyzing file bluejays-vs-cowana-m1-vertigo_69268.json
+2022-10-14 12:12:06 INFO     Analyzing file bluejays-vs-enterprise-m2-vertigo_70062.json
+2022-10-14 12:13:37 INFO     Analyzing file bluejays-vs-unique-m2-vertigo_69880.json
+2022-10-14 12:14:48 INFO     Analyzing file carpe-diem-vs-incontrol-m2-vertigo_70029.json
+2022-10-14 12:15:55 INFO     Analyzing file carpe-diem-vs-orgless-m1-vertigo_69953.json
+2022-10-14 12:17:00 INFO     Analyzing file chococheck-vs-eros-m1-vertigo_69011.json
+2022-10-14 12:17:54 INFO     Analyzing file chococheck-vs-rbg-m1-vertigo_69837.json
+2022-10-14 12:19:19 INFO     Analyzing file clg-red-vs-little-bocks-m2-vertigo_69621.json
+2022-10-14 12:20:21 INFO     Analyzing file copenhagen-flames-vs-akimbo-m2-vertigo_69865.json
+2022-10-14 12:21:40 INFO     Analyzing file copenhagen-flames-vs-bluejays-m3-vertigo_69484.json
+2022-10-14 12:23:45 INFO     Analyzing file copenhagen-flames-vs-eternal-fire-m1-vertigo_69850.json
+2022-10-14 12:24:57 INFO     Analyzing file copenhagen-flames-vs-gambit-m3-vertigo_70121.json
+2022-10-14 12:26:06 INFO     Analyzing file copenhagen-flames-vs-heet-m2-vertigo_69950.json
+2022-10-14 12:27:27 INFO     Analyzing file copenhagen-flames-vs-sinners-m1-vertigo_69430.json
+2022-10-14 12:28:59 INFO     Analyzing file cowana-vs-honoris-m2-vertigo_69202.json
+2022-10-14 12:30:34 INFO     Analyzing file dbl-poney-vs-1shot-m2-vertigo_69622.json
+2022-10-14 12:31:56 INFO     Analyzing file dbl-poney-vs-fpsbug-m3-vertigo_69617.json
+2022-10-14 12:33:19 INFO     Analyzing file dbl-poney-vs-gamerlegion-m1-vertigo_69236.json
+2022-10-14 12:34:33 INFO     Analyzing file dbl-poney-vs-savage-m2-vertigo_69394.json
+2022-10-14 12:35:38 INFO     Analyzing file dbl-poney-vs-unique-m1-vertigo_68956.json
+2022-10-14 12:37:21 INFO     Analyzing file dignitas-vs-avangar-m3-vertigo_70075.json
+2022-10-14 12:39:10 INFO     Analyzing file dignitas-vs-blink-m2-vertigo_69841.json
+2022-10-14 12:40:43 INFO     Analyzing file dignitas-vs-bluejays-m1-vertigo_69496.json
+2022-10-14 12:42:29 INFO     Analyzing file dignitas-vs-eternal-fire-m1-vertigo_69188.json
+2022-10-14 12:44:38 INFO     Analyzing file dignitas-vs-inde-irae-m1-vertigo_69219.json
+2022-10-14 12:46:16 INFO     Analyzing file dignitas-vs-unique-m1-vertigo_69768.json
+2022-10-14 12:47:23 INFO     Analyzing file dng-vs-inde-irae-m1-vertigo_69527.json
+2022-10-14 12:48:53 INFO     Analyzing file ec-brugge-vs-exploit-vertigo_69556.json
+2022-10-14 12:50:28 INFO     Analyzing file ec-kyiv-vs-b8-m2-vertigo_69576.json
+2022-10-14 12:51:44 INFO     Analyzing file ec-kyiv-vs-offset-m1-vertigo_69937.json
+2022-10-14 12:53:23 INFO     Analyzing file ec-kyiv-vs-saw-m2-vertigo_69656.json
+2022-10-14 12:54:57 INFO     Analyzing file ecstatic-vs-agf-m2-vertigo_69802.json
+2022-10-14 12:56:25 INFO     Analyzing file ecstatic-vs-blink-m1-vertigo_69019.json
+2022-10-14 12:57:32 INFO     Analyzing file ecstatic-vs-dignitas-m2-vertigo_69399.json
+2022-10-14 12:59:36 INFO     Analyzing file ecstatic-vs-entropiq-m2-vertigo_69724.json
+2022-10-14 13:00:50 INFO     Analyzing file ecstatic-vs-fnatic-rising-m1-vertigo_69960.json
+2022-10-14 13:02:03 INFO     Analyzing file ecstatic-vs-gmt-m1-vertigo-p1_70042.json
+2022-10-14 13:02:21 INFO     Analyzing file ecstatic-vs-gmt-m1-vertigo-p2_70042.json
+2022-10-14 13:03:22 INFO     Analyzing file ecstatic-vs-mouz-nxt-m1-vertigo_69259.json
+2022-10-14 13:04:09 INFO     Analyzing file ecstatic-vs-nemiga-m3-vertigo_69186.json
+2022-10-14 13:05:25 INFO     Wrote output json to: E:\PhD\MachineLearning\CSGOData\ParsedDemos\vertigo\Analysis\Prepared_Input_Tensorflow_vertigo.json
+2022-10-14 13:05:28 INFO     Analyzing file ecstatic-vs-savage-m2-vertigo_69337.json
+2022-10-14 13:06:56 INFO     Analyzing file ecstatic-vs-saw-vertigo_68922.json
+2022-10-14 13:08:06 INFO     Analyzing file ecstatic-vs-unique-m1-vertigo_68984.json
+2022-10-14 13:09:07 INFO     Analyzing file elevate-vs-stars-horizon-m2-vertigo_69605.json
+2022-10-14 13:10:20 INFO     Analyzing file endpoint-vs-1win-m3-vertigo_69946.json
+2022-10-14 13:11:59 INFO     Analyzing file endpoint-vs-gmt-m2-vertigo_69679.json
+2022-10-14 13:13:24 INFO     Analyzing file endpoint-vs-sprout-m1-vertigo_69801.json
+2022-10-14 13:14:54 INFO     Analyzing file endpoint-vs-unique-m1-vertigo_69660.json
+2022-10-14 13:15:48 INFO     Analyzing file enterprise-vs-777-m1-vertigo_69639.json
+2022-10-14 13:17:09 INFO     Analyzing file enterprise-vs-avangar-m3-vertigo_69910.json
+2022-10-14 13:18:33 INFO     Analyzing file enterprise-vs-gmt-m2-vertigo_69635.json
+2022-10-14 13:19:53 INFO     Analyzing file enterprise-vs-kova-m1-vertigo_69297.json
+2022-10-14 13:21:18 INFO     Analyzing file enterprise-vs-savage-m3-vertigo_69940.json
+2022-10-14 13:22:42 INFO     Analyzing file entropiq-prague-vs-cowana-m1-vertigo_69902.json
+2022-10-14 13:23:49 INFO     Analyzing file entropiq-prague-vs-ex-feenix-m2-vertigo_69662.json
+2022-10-14 13:25:18 INFO     Analyzing file entropiq-vs-agf-m1-vertigo_69640.json
+2022-10-14 13:26:44 INFO     Analyzing file entropiq-vs-dbl-poney-m1-vertigo_68996.json
+2022-10-14 13:27:49 INFO     Analyzing file entropiq-vs-ecstatic-m2-vertigo_69105.json
+2022-10-14 13:29:09 INFO     Analyzing file entropiq-vs-ecstatic-m2-vertigo_69651.json
+2022-10-14 13:31:20 INFO     Analyzing file entropiq-vs-lookingfororg-m1-vertigo_69924.json
+2022-10-14 13:32:06 INFO     Analyzing file entropiq-vs-nemiga-m1-vertigo_69789.json
+2022-10-14 13:33:41 INFO     Analyzing file entropiq-vs-sinners-m1-vertigo_69231.json
+2022-10-14 13:34:46 INFO     Analyzing file equipa-vs-4750mix-m2-vertigo_69620.json
+2022-10-14 13:35:59 INFO     Analyzing file esuba-vs-eclot-m2-vertigo_68930.json
+2022-10-14 13:36:53 INFO     Analyzing file eternal-fire-academy-vs-vp-prodigy-m3-vertigo_69609.json
+2022-10-14 13:38:02 INFO     Analyzing file eternal-fire-vs-1win-m1-vertigo_69794.json
+2022-10-14 13:40:55 INFO     Analyzing file eternal-fire-vs-blink-m2-vertigo_69777.json
+2022-10-14 13:42:25 INFO     Analyzing file eternal-fire-vs-coalesce-m2-vertigo_69130.json
+2022-10-14 13:43:27 INFO     Analyzing file eternal-fire-vs-endpoint-m2-vertigo_70101.json
+2022-10-14 13:45:19 INFO     Analyzing file eternal-fire-vs-gamerlegion-m1-vertigo_69165.json
+2022-10-14 13:46:12 INFO     Analyzing file eternal-fire-vs-gamerlegion-m1-vertigo_69760.json
+2022-10-14 13:47:56 INFO     Analyzing file eternal-fire-vs-lookingfororg-m2-vertigo_69786.json
+2022-10-14 13:48:57 INFO     Analyzing file eternal-fire-vs-marten-m2-vertigo_68962.json
+2022-10-14 13:49:44 INFO     Analyzing file eternal-fire-vs-unique-m1-vertigo_69749.json
+2022-10-14 13:51:24 INFO     Analyzing file exploit-vs-ftw-m1-vertigo_69578.json
+2022-10-14 13:52:36 INFO     Analyzing file extra-salt-vs-ecstatic-m2-vertigo_69025.json
+2022-10-14 13:54:04 INFO     Analyzing file extra-salt-vs-mouz-m2-vertigo_68989.json
+2022-10-14 13:55:01 INFO     Analyzing file extra-salt-vs-pain-m3-vertigo_69388.json
+2022-10-14 13:56:57 INFO     Analyzing file finest-vs-anonymo-m1-vertigo_69200.json
+2022-10-14 13:58:18 INFO     Analyzing file finest-vs-enterprise-m2-vertigo_69685.json
+2022-10-14 13:59:43 INFO     Analyzing file finest-vs-sinners-m1-vertigo_70074.json
+2022-10-14 14:01:11 INFO     Analyzing file fnatic-rising-vs-navi-junior-vertigo_69563.json
+2022-10-14 14:03:52 INFO     Analyzing file fnatic-vs-big-m2-vertigo_70085.json
+2022-10-14 14:05:31 INFO     Analyzing file fnatic-vs-gambit-m2-vertigo_69155.json
+2022-10-14 14:07:46 INFO     Analyzing file fourth-quarter-vs-kinship-black-m1-vertigo_69728.json
+2022-10-14 14:08:52 INFO     Analyzing file furia-academy-vs-vp-prodigy-m2-vertigo_69603.json
+2022-10-14 14:10:05 INFO     Analyzing file furious-vs-leviatan-m1-vertigo_69321.json
+2022-10-14 14:10:48 INFO     Analyzing file g2-vs-liquid-m1-vertigo_69082.json
+2022-10-14 14:12:13 INFO     Analyzing file gambit-vs-complexity-m2-vertigo_69677.json
+2022-10-14 14:14:01 INFO     Analyzing file gambit-vs-heroic-m2-vertigo_69407.json
+2022-10-14 14:15:22 INFO     Wrote output json to: E:\PhD\MachineLearning\CSGOData\ParsedDemos\vertigo\Analysis\Prepared_Input_Tensorflow_vertigo.json
+2022-10-14 14:15:26 INFO     Analyzing file gambit-vs-nip-m2-vertigo_70105.json
+2022-10-14 14:16:58 INFO     Analyzing file gambit-vs-virtus-pro-m2-vertigo_69113.json
+2022-10-14 14:18:48 INFO     Analyzing file gambit-vs-vitality-m1-vertigo_69485.json
+2022-10-14 14:20:28 INFO     Analyzing file gamerlegion-vs-1win-m2-vertigo_69427.json
+2022-10-14 14:21:37 INFO     Analyzing file gamerlegion-vs-copenhagen-flames-m1-vertigo_69405.json
+2022-10-14 14:23:05 INFO     Analyzing file gamerlegion-vs-opaa-vertigo_69103.json
+2022-10-14 14:24:34 INFO     Analyzing file gamerlegion-vs-sprout-m2-vertigo_69860.json
+2022-10-14 14:27:18 INFO     Analyzing file gamerlegion-vs-tricked-m3-vertigo_69152.json
+2022-10-14 14:28:42 INFO     Analyzing file godsent-vs-sprout-m1-vertigo_70072.json
+2022-10-14 14:30:17 INFO     Analyzing file gucci-squad-vs-hreds-m3-vertigo_69243.json
+2022-10-14 14:31:26 INFO     Analyzing file hazard-vs-overt-m1-vertigo_69444.json
+2022-10-14 14:32:59 INFO     Analyzing file heet-vs-1win-m1-vertigo_69761.json
+2022-10-14 14:34:05 INFO     Analyzing file heet-vs-complexity-m1-vertigo_70006.json
+2022-10-14 14:35:48 INFO     Analyzing file heet-vs-enterprise-m2-vertigo_69852.json
+2022-10-14 14:36:46 INFO     Analyzing file heet-vs-sinners-m2-vertigo_69921.json
+2022-10-14 14:40:00 INFO     Analyzing file hellraisers-vs-d13-m2-vertigo_69971.json
+2022-10-14 14:40:54 INFO     Analyzing file hellraisers-vs-pact-m3-vertigo_69327.json
+2022-10-14 14:42:33 INFO     Analyzing file honoris-vs-b8-m1-vertigo_69229.json
+2022-10-14 14:43:49 INFO     Analyzing file honoris-vs-bluejays-m1-vertigo_69320.json
+2022-10-14 14:45:39 INFO     Analyzing file imperial-vs-boca-juniors-m3-vertigo_69154.json
+2022-10-14 14:46:52 INFO     Analyzing file imperial-vs-stars-horizon-m1-vertigo_69204.json
+2022-10-14 14:48:11 INFO     Analyzing file incontrol-vs-alex-rider-m2-vertigo_69732.json
+2022-10-14 14:49:08 INFO     Analyzing file iupui-jaguars-vs-hjc-m1-vertigo_68943.json
+2022-10-14 14:50:20 INFO     Analyzing file kinship-vs-third-impact-m1-vertigo_69358.json
+2022-10-14 14:52:01 INFO     Analyzing file kinship-vs-touch-point-m3-vertigo_69291.json
+2022-10-14 14:53:48 INFO     Analyzing file ldlc-vs-blink-m3-vertigo_68997.json
+2022-10-14 14:54:58 INFO     Analyzing file ldlc-vs-pact-m1-vertigo_69447.json
+2022-10-14 14:56:03 INFO     Analyzing file leviatan-vs-stone-m2-vertigo_69123.json
+2022-10-14 14:57:13 INFO     Analyzing file liberty-fe-vs-cruzeiro-fe-m1-vertigo_69832.json
+2022-10-14 14:58:36 INFO     Analyzing file liberty-vs-mibr-m2-vertigo_69492.json
+2022-10-14 14:59:59 INFO     Analyzing file liberty-vs-sws-m1-vertigo_69474.json
+2022-10-14 15:01:35 INFO     Analyzing file linx-legacy-vs-hellraisers-m1-vertigo_69303.json
+2022-10-14 15:02:54 INFO     Analyzing file liquid-vs-g2-m1-vertigo_70131.json
+2022-10-14 15:04:13 INFO     Analyzing file liquid-vs-gambit-m2-vertigo_69448.json
+2022-10-14 15:06:05 INFO     Analyzing file lookingfororg-vs-hazard-m1-vertigo_69417.json
+2022-10-14 15:07:15 INFO     Analyzing file lookingfororg-vs-paradox-m1-vertigo_69293.json
+2022-10-14 15:08:45 INFO     Analyzing file los-grandes-vs-lsc-m1-vertigo_69010.json
+2022-10-14 15:10:22 INFO     Analyzing file lynn-vision-vs-anonymo-m1-vertigo_69120.json
+2022-10-14 15:11:30 ERROR    Found empty frames in round 29!
+2022-10-14 15:11:30 ERROR    Found empty frames in round 30!
+2022-10-14 15:11:30 INFO     Analyzing file lynn-vision-vs-d13-m2-vertigo_69918.json
+2022-10-14 15:12:55 INFO     Analyzing file lynn-vision-vs-fnatic-rising-m1-vertigo_69847.json
+2022-10-14 15:13:59 INFO     Analyzing file masonic-vs-astralis-talent-m2-vertigo_69941.json
+2022-10-14 15:15:51 INFO     Analyzing file masonic-vs-dream-m1-vertigo_69132.json
+2022-10-14 15:17:34 INFO     Analyzing file masonic-vs-esuba-m1-vertigo_69074.json
+2022-10-14 15:17:34 ERROR    Found empty frames in round 0!
+2022-10-14 15:18:52 ERROR    Found empty frames in round 29!
+2022-10-14 15:18:52 ERROR    Winner has to be either CT or T, but was  instead!
+2022-10-14 15:18:52 INFO     Analyzing file meta-br-vs-furia-academy-m1-vertigo_69281.json
+2022-10-14 15:19:49 INFO     Analyzing file mibr-fe-vs-liberty-fe-m2-vertigo_69623.json
+2022-10-14 15:21:43 INFO     Analyzing file mibr-vs-davenport-university-m2-vertigo_69288.json
+2022-10-14 15:22:59 INFO     Analyzing file mongolz-vs-chococheck-m2-vertigo_69531.json
+2022-10-14 15:23:42 INFO     Analyzing file moon-vs-born-in-the-east-m2-vertigo_69499.json
+2022-10-14 15:24:47 INFO     Analyzing file mouz-nxt-vs-astralis-talent-m3-vertigo_69988.json
+2022-10-14 15:26:07 INFO     Analyzing file mouz-nxt-vs-big-academy-m1-vertigo_70023.json
+2022-10-14 15:27:56 INFO     Wrote output json to: E:\PhD\MachineLearning\CSGOData\ParsedDemos\vertigo\Analysis\Prepared_Input_Tensorflow_vertigo.json
+2022-10-14 15:28:00 INFO     Analyzing file mouz-nxt-vs-saw-m2-vertigo_69807.json
+2022-10-14 15:29:03 INFO     Analyzing file mouz-nxt-vs-tricked-m3-vertigo_69771.json
+2022-10-14 15:30:22 INFO     Analyzing file mouz-nxt-vs-vp-prodigy-vertigo_69597.json
+2022-10-14 15:31:50 INFO     Analyzing file mouz-vs-entropiq-m1-vertigo_70087.json
+2022-10-14 15:33:30 INFO     Analyzing file mouz-vs-nip-m1-vertigo_70136.json
+2022-10-14 15:34:57 INFO     Analyzing file movistar-riders-vs-blink-m3-vertigo_69274.json
+2022-10-14 15:36:57 INFO     Analyzing file movistar-riders-vs-copenhagen-flames-m1-vertigo_69114.json
+2022-10-14 15:38:21 INFO     Analyzing file movistar-riders-vs-ldlc-m2-vertigo_69026.json
+2022-10-14 15:39:51 INFO     Analyzing file movistar-riders-vs-sprout-m2-vertigo_69195.json
+2022-10-14 15:42:02 INFO     Analyzing file nasr-vs-triple-6-m2-vertigo_68909.json
+2022-10-14 15:42:40 INFO     Analyzing file navi-junior-vs-astralis-talent-m3-vertigo_69608.json
+2022-10-14 15:44:01 INFO     Analyzing file navi-junior-vs-astralis-talent-vertigo_69550.json
+2022-10-14 15:45:36 INFO     Analyzing file navi-junior-vs-fnatic-rising-vertigo_69565.json
+2022-10-14 15:47:06 INFO     Analyzing file nemiga-vs-dignitas-m3-vertigo_69078.json
+2022-10-14 15:48:40 INFO     Analyzing file nemiga-vs-ec-kyiv-m1-vertigo_70048.json
+2022-10-14 15:50:00 INFO     Analyzing file nemiga-vs-savage-m2-vertigo_69849.json
+2022-10-14 15:51:26 INFO     Analyzing file nemiga-vs-saw-m3-vertigo_69031.json
+2022-10-14 15:53:07 INFO     Analyzing file nexus-vs-ecstatic-m2-vertigo_69731.json
+2022-10-14 15:54:19 INFO     Analyzing file nexus-vs-honoris-m2-vertigo_69957.json
+2022-10-14 15:55:32 INFO     Analyzing file nip-vs-movistar-riders-m1-vertigo_70086.json
+2022-10-14 15:57:06 INFO     Analyzing file nkt-vs-aravt-m1-vertigo_70097.json
+2022-10-14 15:58:18 INFO     Analyzing file northern-forces-vs-chococheck-m3-vertigo_69209.json
+2022-10-14 15:59:17 INFO     Analyzing file old-but-gold-vs-gamesense-m2-vertigo_69890.json
+2022-10-14 16:00:20 INFO     Analyzing file omega-vs-fragging-for-jason-m1-vertigo_69729.json
+2022-10-14 16:01:50 INFO     Analyzing file omega-vs-x13-m1-vertigo_69290.json
+2022-10-14 16:03:30 INFO     Analyzing file onet4p-vs-rbg-vertigo_69822.json
+2022-10-14 16:04:50 INFO     Analyzing file onet4p-vs-volante-m2-vertigo_69413.json
+2022-10-14 16:06:15 INFO     Analyzing file opaa-vs-tricked-m2-vertigo_69159.json
+2022-10-14 16:07:26 INFO     Analyzing file order-vs-complexity-m2-vertigo_69996.json
+2022-10-14 16:08:41 INFO     Analyzing file order-vs-lookingfororg-m4-vertigo_69514.json
+2022-10-14 16:10:14 INFO     Analyzing file orgless-vs-strife-m2-vertigo_69838.json
+2022-10-14 16:12:38 INFO     Analyzing file overt-vs-vertex-m2-vertigo_69420.json
+2022-10-14 16:14:07 INFO     Analyzing file pact-vs-1win-m1-vertigo_69929.json
+2022-10-14 16:16:00 INFO     Analyzing file pact-vs-conquer-m2-vertigo_69909.json
+2022-10-14 16:17:28 INFO     Analyzing file pact-vs-cowana-m2-vertigo_69658.json
+2022-10-14 16:18:33 INFO     Analyzing file pact-vs-tricked-m2-vertigo_69470.json
+2022-10-14 16:20:13 INFO     Analyzing file pact-vs-unique-m1-vertigo_69945.json
+2022-10-14 16:21:44 INFO     Analyzing file pain-vs-rbg-m3-vertigo_69415.json
+2022-10-14 16:23:27 INFO     Analyzing file paradox-vs-order-m1-vertigo_69443.json
+2022-10-14 16:24:41 INFO     Analyzing file paradox-vs-overt-m2-vertigo_69463.json
+2022-10-14 16:26:12 INFO     Analyzing file paying-myself-vs-villanous-m2-vertigo_69734.json
+2022-10-14 16:27:31 INFO     Analyzing file peekers-vs-fourth-quarter-m2-vertigo_69379.json
+2022-10-14 16:28:31 INFO     Analyzing file rbg-vs-onet4p-m2-vertigo_69624.json
+2022-10-14 16:29:24 INFO     Analyzing file redragon-vs-sws-m3-vertigo-p1_69856.json
+2022-10-14 16:30:24 INFO     Analyzing file redragon-vs-sws-m3-vertigo_69626.json
+2022-10-14 16:32:23 INFO     Analyzing file river-plate-vs-stone-m1-vertigo-p1_69083.json
+2022-10-14 16:32:31 INFO     Analyzing file river-plate-vs-stone-m1-vertigo-p2_69083.json
+2022-10-14 16:33:40 INFO     Analyzing file run-or-die-vs-doge-soldiers-m2-vertigo_69577.json
+2022-10-14 16:34:53 INFO     Analyzing file run-or-die-vs-fnatic-rising-m3-vertigo_69205.json
+2022-10-14 16:37:06 INFO     Analyzing file sampi-vs-eclot-m2-vertigo_69905.json
+2022-10-14 16:38:51 INFO     Wrote output json to: E:\PhD\MachineLearning\CSGOData\ParsedDemos\vertigo\Analysis\Prepared_Input_Tensorflow_vertigo.json
+2022-10-14 16:38:56 INFO     Analyzing file sampi-vs-fullshock-m2-vertigo_69911.json
+2022-10-14 16:40:29 INFO     Analyzing file savage-vs-dbl-poney-m2-vertigo_69371.json
+2022-10-14 16:41:58 INFO     Analyzing file savage-vs-eternal-fire-m3-vertigo_69391.json
+2022-10-14 16:43:24 INFO     Analyzing file savage-vs-saw-m2-vertigo_69681.json
+2022-10-14 16:44:14 INFO     Analyzing file saw-vs-blink-m1-vertigo_69938.json
+2022-10-14 16:45:40 INFO     Analyzing file saw-vs-savage-m2-vertigo_70059.json
+2022-10-14 16:47:12 INFO     Analyzing file saw-vs-sprout-m2-vertigo_69118.json
+2022-10-14 16:48:23 INFO     Analyzing file sharks-vs-eternal-fire-vertigo_69102.json
+2022-10-14 16:49:35 INFO     Analyzing file sharks-vs-furia-academy-m2-vertigo_69226.json
+2022-10-14 16:50:53 INFO     Analyzing file sharks-vs-meta-br-m3-vertigo_69252.json
+2022-10-14 16:52:23 INFO     Analyzing file sinners-vs-astralis-talent-m1-vertigo_70011.json
+2022-10-14 16:53:11 INFO     Analyzing file sinners-vs-big-academy-m2-vertigo_69862.json
+2022-10-14 16:55:00 INFO     Analyzing file sinners-vs-dbl-poney-m1-vertigo_69052.json
+2022-10-14 16:56:28 INFO     Analyzing file sinners-vs-dbl-poney-m2-vertigo_68972.json
+2022-10-14 16:57:53 INFO     Analyzing file sinners-vs-ecstatic-m2-vertigo_69340.json
+2022-10-14 16:59:05 INFO     Analyzing file sinners-vs-spirit-m2-vertigo_70083.json
+2022-10-14 17:00:34 INFO     Analyzing file skade-vs-dignitas-m2-vertigo_68954.json
+2022-10-14 17:02:00 INFO     Analyzing file spirit-academy-vs-furia-academy-vertigo_69587.json
+2022-10-14 17:03:23 INFO     Analyzing file spirit-vs-endpoint-m2-vertigo_69983.json
+2022-10-14 17:05:05 INFO     Analyzing file sprout-vs-1win-m2-vertigo_69778.json
+2022-10-14 17:06:30 INFO     Analyzing file sprout-vs-agf-m1-vertigo_69948.json
+2022-10-14 17:08:25 INFO     Analyzing file sprout-vs-entropiq-m2-vertigo_69508.json
+2022-10-14 17:10:11 INFO     Analyzing file sprout-vs-finest-m2-vertigo_69637.json
+2022-10-14 17:11:22 INFO     Analyzing file sprout-vs-tricked-m3-vertigo-p1_69745.json
+2022-10-14 17:11:31 INFO     Analyzing file sprout-vs-tricked-m3-vertigo-p2_69745.json
+2022-10-14 17:13:16 INFO     Analyzing file stars-horizon-vs-black-dragons-m2-vertigo_69601.json
+2022-10-14 17:14:44 INFO     Analyzing file stars-horizon-vs-furia-academy-m1-vertigo_69884.json
+2022-10-14 17:16:24 INFO     Analyzing file stars-horizon-vs-meta-br-m2-vertigo_69889.json
+2022-10-14 17:18:12 INFO     Analyzing file stars-horizon-vs-redragon-m1-vertigo_69594.json
+2022-10-14 17:19:44 INFO     Analyzing file stars-horizon-vs-redragon-m2-vertigo_69869.json
+2022-10-14 17:21:29 INFO     Analyzing file stone-vs-9z-academy-m3-vertigo_70110.json
+2022-10-14 17:22:50 INFO     Analyzing file stone-vs-detona-vertigo_68999.json
+2022-10-14 17:25:07 INFO     Analyzing file supremacy-vs-stars-horizon-m2-vertigo_69171.json
+2022-10-14 17:25:47 INFO     Analyzing file sws-vs-ex-ceara-m3-vertigo_69331.json
+2022-10-14 17:27:08 INFO     Analyzing file sws-vs-lsc-m1-vertigo_69319.json
+2022-10-14 17:28:47 INFO     Analyzing file sws-vs-redragon-m3-vertigo_69604.json
+2022-10-14 17:29:54 INFO     Analyzing file sws-vs-sharks-m2-vertigo_69493.json
+2022-10-14 17:31:21 INFO     Analyzing file third-impact-vs-x13-m2-vertigo_69398.json
+2022-10-14 17:33:37 INFO     Analyzing file third-impact-vs-x13-m2-vertigo_69475.json
+2022-10-14 17:34:44 INFO     Analyzing file tricked-vs-avangar-m2-vertigo_69827.json
+2022-10-14 17:36:09 INFO     Analyzing file tricked-vs-finest-m2-vertigo_69699.json
+2022-10-14 17:37:30 INFO     Analyzing file tricked-vs-pact-m2-vertigo_69382.json
+2022-10-14 17:39:08 INFO     Analyzing file tyloo-vs-vici-m1-vertigo_69481.json
+2022-10-14 17:41:10 INFO     Analyzing file unique-vs-big-academy-m2-vertigo_70128.json
+2022-10-14 17:42:48 INFO     Analyzing file velox-vs-ec-brugge-m1-vertigo_69370.json
+2022-10-14 17:43:51 INFO     Analyzing file velox-vs-infinite-m1-vertigo_69333.json
+2022-10-14 17:44:45 INFO     Analyzing file vertex-vs-lookingfororg-m1-nuke_69498.json
+2022-10-14 17:47:12 INFO     Analyzing file virtus-pro-vs-copenhagen-flames-m1-vertigo_70100.json
+2022-10-14 17:48:34 INFO     Analyzing file virtus-pro-vs-nip-m2-vertigo_70120.json
+2022-10-14 17:50:16 INFO     Analyzing file vitality-vs-g2-m1-vertigo_69146.json
+2022-10-14 17:52:10 INFO     Wrote output json to: E:\PhD\MachineLearning\CSGOData\ParsedDemos\vertigo\Analysis\Prepared_Input_Tensorflow_vertigo.json
+2022-10-14 17:52:16 INFO     Analyzing file vitality-vs-gambit-m2-vertigo_69177.json
+2022-10-14 17:53:50 INFO     Analyzing file vitality-vs-mouz-m1-vertigo_70106.json
+2022-10-14 17:56:00 INFO     Analyzing file vitality-vs-virtus-pro-m2-vertigo_69336.json
+2022-10-14 17:57:38 INFO     Analyzing file volante-vs-extra-salt-m2-vertigo_69183.json
+2022-10-14 17:58:55 INFO     Analyzing file volante-vs-x13-m3-vertigo_69461.json
+2022-10-14 18:00:25 INFO     Analyzing file volted-vs-fourth-quarter-m1-vertigo_69384.json
+2022-10-14 18:01:46 INFO     Analyzing file vp-prodigy-vs-eternal-fire-vertigo_69588.json
+2022-10-14 18:03:00 INFO     Analyzing file x13-vs-valors-m2-vertigo_69494.json
+2022-10-14 18:04:51 INFO     Analyzing file yellow-vs-caught-off-guard-m2-vertigo_69187.json
+2022-10-14 18:06:37 INFO     Analyzing file yenicherry-vs-levitate-m1-vertigo_69316.json
+2022-10-14 18:08:02 INFO     Analyzing file yenicherry-vs-third-impact-m2-vertigo_69286.json
+2022-10-14 18:09:30 INFO     Analyzing file young-ninjas-vs-astralis-talent-vertigo_69540.json
+2022-10-14 18:10:43 INFO     Analyzing file young-ninjas-vs-cowana-m2-vertigo_68959.json
+2022-10-14 18:12:20 INFO     Analyzing file young-ninjas-vs-fnatic-rising-m2-vertigo_68963.json
+2022-10-14 18:13:43 INFO     Analyzing file young-ninjas-vs-fnatic-rising-vertigo_69549.json
+2022-10-14 18:14:50 INFO     Analyzing file zero-tenacity-vs-4glory-m2-vertigo_69985.json
+2022-10-14 18:16:51 INFO     Wrote output json to: E:\PhD\MachineLearning\CSGOData\ParsedDemos\vertigo\Analysis\Prepared_Input_Tensorflow_vertigo.json
