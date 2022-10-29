@@ -1,7 +1,7 @@
 """Tests for demo_analyzer_sorter.py"""
 
 import pytest
-from demo_analyzer_sorter import DemoAnalyzerSorter
+from csgoml.preparation.demo_analyzer_sorter import DemoAnalyzerSorter
 
 
 class TestDataImports:
