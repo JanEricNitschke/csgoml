@@ -13,7 +13,7 @@ Running the script adds every kill as well as information about the map, players
 
 It also supports the ability to query specific situations (by map, player weapons and positions and game time) for their CT win percentage.
 
-The latter functionality has also been given a front-end either [here](https://github.com/JanEricNitschke/CSGOML/tree/main/AWS_Steps/FightAnalyzer) or updated [here](https://github.com/JanEricNitschke/AngularFightAnalyzer)
+The latter functionality has also been given a front-end either [here](https://github.com/JanEricNitschke/AngularFightAnalyzer) or outdated [here](https://github.com/JanEricNitschke/csgoml/tree/main/auxiliary/AWS_Steps/FightAnalyzer)
 
 # tensorflow_input_preparation.py
 A script that produces, for each map separately, a json file containing different configurations of player trajectory data for each round played on that map.
