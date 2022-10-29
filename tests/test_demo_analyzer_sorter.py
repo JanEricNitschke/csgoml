@@ -15,7 +15,7 @@ class TestDemoAnalyzerSorter:
         with open("tests/test_data.json", encoding="utf-8") as f:
             self.demo_data = json.load(f)
         for file in self.demo_data:
-            self._get_demofile(demo_link=self.demo_data[file]["url"], demo_name=file)
+            self._get_demofile(demo_link=self.demo_data[file]["url"])
         self.sorter = DemoAnalyzerSorter(
             dirs=[os.getcwd()],
             ids=[100, 700, 500],
@@ -23,8 +23,7 @@ class TestDemoAnalyzerSorter:
         )
 
     def teardown_class(self):
-        """Set parser to none, deletes all demofiles and JSON"""
-        self.parser = None
+        """Set sorter to none, deletes all demofiles, JSON and directories"""
         files_in_directory = os.listdir()
         filtered_files = [
             file
@@ -34,13 +33,14 @@ class TestDemoAnalyzerSorter:
         if len(filtered_files) > 0:
             for f in filtered_files:
                 os.remove(f)
-        shutil.rmtree(os.path.join(os.getcwd(), "Maps"))
+        shutil.rmtree(self.sorter.maps_dir)
+        self.sorter = None
 
     @staticmethod
-    def _get_demofile(demo_link, demo_name):
+    def _get_demofile(demo_link):
         print("Requesting " + demo_link)
         r = requests.get(demo_link)
-        open(demo_name + ".dem", "wb").write(r.content)
+        open(demo_link.split(r"/")[-1], "wb").write(r.content)
 
     def test_get_ids(self):
         """Tests get_ids"""

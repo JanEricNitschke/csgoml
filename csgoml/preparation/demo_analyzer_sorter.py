@@ -159,10 +159,7 @@ class DemoAnalyzerSorter:
                     if os.path.isfile(file_path):
                         logging.info("At file: %s", filename)
                         name, number_id = self.get_ids(filename)
-                        if int(number_id) >= self.start_id:
-                            if int(number_id) > self.end_id:
-                                logging.info("Parsed last relevant demo.")
-                                break
+                        if self.start_id <= int(number_id) <= self.end_id:
                             demo_parser = DemoParser(
                                 demofile=file_path,
                                 demo_id=name,
