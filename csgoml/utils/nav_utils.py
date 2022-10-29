@@ -14,36 +14,38 @@
     geodesic = area_distance(
         "de_dust2",  centroids["ExtendedA"], centroids["CTSpawn"], dist_type="geodesic"
     )
-    plot_path("de_dust2", graph, geodesic)
+    plot_path("test_path","de_dust2", graph, geodesic)
     graph = area_distance(
         "de_dust2", centroids["CTSpawn"], centroids["ExtendedA"], dist_type="graph"
     )
     geodesic = area_distance(
         "de_dust2", centroids["CTSpawn"],  centroids["ExtendedA"], dist_type="geodesic"
     )
-    plot_path("de_dust2", graph, geodesic)
+    plot_path("test_path","de_dust2", graph, geodesic)
     graph = area_distance(
         "de_dust2", reps["ExtendedA"], reps["CTSpawn"], dist_type="graph"
     )
     geodesic = area_distance(
         "de_dust2",  reps["ExtendedA"], reps["CTSpawn"], dist_type="geodesic"
     )
-    plot_path("de_dust2", graph, geodesic)
+    plot_path("test_path","de_dust2", graph, geodesic)
     graph = area_distance(
         "de_dust2", reps["CTSpawn"], reps["ExtendedA"], dist_type="graph"
     )
     geodesic = area_distance(
         "de_dust2", reps["CTSpawn"],  reps["ExtendedA"], dist_type="geodesic"
     )
-    plot_path("de_dust2", graph, geodesic)
+    plot_path("test_path","de_dust2", graph, geodesic)
 
 
 """
 #!/usr/bin/env python
 # pylint: disable=invalid-name, consider-using-enumerate
 
+import os
 import sys
 import logging
+from typing import Optional
 import argparse
 from cmath import inf
 import numpy as np
@@ -59,17 +61,26 @@ from awpy.analytics.nav import (
 )
 
 
-def mark_areas(map_name: str, areas: list[float]) -> None:
+def mark_areas(
+    output_path: str = "D:\\CSGO\\ML\\CSGOML\\Plots\\distance_matrix_fails\\",
+    map_name: str = "de_ancient",
+    areas: Optional[set[int]] = None,
+    dpi: int = 1000,
+) -> None:
     """Plots the given map and marks the tiles of the two given areas.
 
     Args:
+        output_path (string): Path to the output folder
         map_name (string): Map to plot
-        area (list[int]): List of ids of the areas to highlight on the map
+        area (set[int]): List of ids of the areas to highlight on the map
+        dpi (int): DPI of the resulting image
 
     Returns:
         None (Directly saves the plot to file)
     """
-    fig, axis = plot_map(map_name=map_name, map_type="simplerader", dark=True)
+    if areas is None:
+        areas = set()
+    fig, axis = plot_map(map_name=map_name, map_type="simpleradar", dark=False)
     fig.set_size_inches(19.2, 10.8)
     for a in NAV[map_name]:
         area = NAV[map_name][a]
@@ -82,7 +93,7 @@ def mark_areas(map_name: str, areas: list[float]) -> None:
         # Get its lower left points, height and width
         width = south_east_x - north_west_x
         height = north_west_y - south_east_y
-        southwest_x = north_west_y
+        southwest_x = north_west_x
         southwest_y = south_east_y
         rect = patches.Rectangle(
             (southwest_x, southwest_y),
@@ -94,27 +105,41 @@ def mark_areas(map_name: str, areas: list[float]) -> None:
         )
         axis.add_patch(rect)
     plt.savefig(
-        f"D:\\CSGO\\ML\\CSGOML\\Plots\\distance_matrix_fails\\{map_name}_{'_'.join(str(area) for area in areas)}.png",
+        os.path.join(
+            output_path, f"{map_name}_{'_'.join(str(area) for area in areas)}.png"
+        ),
         bbox_inches="tight",
-        dpi=1000,
+        dpi=dpi,
     )
     fig.clear()
     plt.close(fig)
 
 
-def plot_path(map_name: str, graph: dict, geodesic: dict) -> None:
+def plot_path(
+    output_path: str = "D:\\CSGO\\ML\\CSGOML\\Plots\\distance_matrix_examples\\",
+    map_name: str = "de_ancient",
+    graph: Optional[dict] = None,
+    geodesic: Optional[dict] = None,
+    dpi: int = 1000,
+) -> None:
     """Plots the given map and two paths between two areas.
 
     Args:
+        output_path (string): Path to the output folder
         map_name (string): Map to plot
         graph (dict): Distance dictionary. The graph["distance"] is the distance between two areas.
                       graph["areas"] is a list of int area ids in the shortest path between the first and last entry.
         geodesic (dict): Distance dictionary. The geodesic["distance"] is the distance between two areas.
                       geodesic["areas"] is a list of int area ids in the shortest path between the first and last entry.
+        dpi (int): DPI of the resulting image
 
     Returns:
         None (Directly saves the plot to file)
     """
+    if graph is None:
+        graph = {}
+    if geodesic is None:
+        geodesic = {}
     fig, axis = plot_map(map_name=map_name, map_type="simplerader", dark=True)
     fig.set_size_inches(19.2, 10.8)
     for a in NAV[map_name]:
@@ -154,9 +179,12 @@ def plot_path(map_name: str, graph: dict, geodesic: dict) -> None:
         )
         axis.add_patch(rect)
     plt.savefig(
-        f"D:\\CSGO\\ML\\CSGOML\\Plots\\distance_matrix_examples\\{map_name}_{graph['areas'][0]}_{graph['areas'][-1]}_{graph['distance']}_{geodesic['distance']}.png",
+        os.path.join(
+            output_path,
+            f"{map_name}_{graph['areas'][0]}_{graph['areas'][-1]}_{graph['distance']}_{geodesic['distance']}.png",
+        ),
         bbox_inches="tight",
-        dpi=1000,
+        dpi=dpi,
     )
     fig.clear()
     plt.close(fig)
@@ -201,11 +229,11 @@ def trajectory_distance(
 
         for i in range(len(trajectory_array_1)):
             for j in range(len(trajectory_array_2)):
-                dist = position_state_distance(
-                    map_name=map_name,
-                    position_array_1=trajectory_array_1[i],
-                    position_array_2=trajectory_array_2[j],
-                    distance_type=distance_type,
+                dist = dist_func(
+                    map_name,
+                    trajectory_array_1[i],
+                    trajectory_array_2[j],
+                    distance_type,
                 )
                 DTW[(i, j)] = dist + min(
                     DTW[(i - 1, j)], DTW[(i, j - 1)], DTW[(i - 1, j - 1)]
@@ -217,14 +245,14 @@ def trajectory_distance(
     for time in range(length):
         distance += (
             dist_func(
-                map_name=map_name,
-                position_array_1=trajectory_array_1[time]
+                map_name,
+                trajectory_array_1[time]
                 if time in range(len(trajectory_array_1))
                 else trajectory_array_1[-1],
-                position_array_2=trajectory_array_2[time]
+                trajectory_array_2[time]
                 if time in range(len(trajectory_array_2))
                 else trajectory_array_2[-1],
-                distance_type=distance_type,
+                distance_type,
             )
             / length
         )
@@ -610,8 +638,8 @@ def fast_token_state_distance(
     """Calculates a distance between two game states based on tokens
 
     Args:
-        trajectory_array_1: Numpy array with shape (n_Time,len(token))
-        trajectory_array_2: Numpy array with shape (n_Time,len(token))
+        token_array_1: Numpy array with shape (len(token))
+        token_array_2: Numpy array with shape (len(token))
         dist_matrix: Nested dict that contains the precomputed distance between any pair of areas
         map_area_names: List of strings of area names
         dtw: Boolean indicating whether matching should be performed via dynamic time warping (true) or euclidean (false)
@@ -667,17 +695,18 @@ def trajectory_distance_wrapper(args: tuple) -> float:
     """Calculates a distance distance between two trajectories
 
     Args:
-        args (tuple): Contains the arguments to pass to trajectory_distance. Order in the tuple is (map_name,array1,array2,distance_type)
+        args (tuple): Contains the arguments to pass to trajectory_distance. Order in the tuple is (map_name,array1,array2,distance_type,dtw)
 
     Returns:
         A float representing the distance between these two trajectories
     """
-    map_name, trajectory_array_1, trajectory_array_2, distance_type = args
+    map_name, trajectory_array_1, trajectory_array_2, distance_type, dtw = args
     return trajectory_distance(
         map_name=map_name,
         trajectory_array_1=trajectory_array_1,
         trajectory_array_2=trajectory_array_2,
         distance_type=distance_type,
+        dtw=dtw,
     )
 
 

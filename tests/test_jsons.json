@@ -1,0 +1,11 @@
+{
+    "infero_round_json1": {
+        "url": "https://cernbox.cern.ch/remote.php/dav/public-files/HSaErsmPxfFBjcK/356_reduced_inferno.json"
+    },
+    "mirage_round_json1": {
+        "url": "https://cernbox.cern.ch/remote.php/dav/public-files/xasPamPdflwPGSr/733_reduced_mirage.json"
+    },
+    "rush_round_json1": {
+        "url": "https://cernbox.cern.ch/remote.php/dav/public-files/DrJtPfGwwdaciFV/match730_003026696915581403227_0535066829_183_rush.json"
+    }
+}

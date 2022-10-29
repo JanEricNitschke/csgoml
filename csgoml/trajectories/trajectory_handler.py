@@ -79,9 +79,9 @@ class TrajectoryHandler:
         dataframe["position_array"] = dataframe["position_df"].apply(
             self.__get_position_array
         )
-        # Shape of the numpy array is #Rounds,self.time,side(2),player(6),feature(5[x,y,z,area,alive])
-        self.datasets["token"] = np.stack(dataframe["token_array"].to_numpy())
         # Shape of the numpy array is #Round,self.time,len(token(self.map_name)) First half of the token length is CT second is T
+        self.datasets["token"] = np.stack(dataframe["token_array"].to_numpy())
+        # Shape of the numpy array is #Rounds,self.time,side(2),player(5),feature(5[x,y,z,area,alive])
         self.datasets["position"] = np.stack(dataframe["position_array"].to_numpy())
         logging.info("Finished init")
 
@@ -319,7 +319,7 @@ class TrajectoryHandler:
             time (integer): An integer indicating the first how many seconds should be considered
 
         Returns:
-            Numpy arrays to use for plotting and clustering. Shape of the plotting array is (#Rounds,time,side(1/2),player(5),features(3 for x,y,z))
+            Numpy arrays to use for plotting and clustering. Shape of the plotting array is (#Rounds,time,side(1/2),player(5),features(4/3 for x,y,z,{area}))
             Shape of the clustering array depend son desired configuration. Order is array_for_plotting, array_for_clustering"""
         side_conversion = {"CT": (0,), "T": (1,), "BOTH": (0, 1)}
         array_for_plotting = self.datasets["position"][

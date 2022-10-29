@@ -45,29 +45,7 @@ class FightAnalyzer:
         connection: pymysql.connections.Connection,
         cursor: pymysql.cursors.Cursor,
         directories: Optional[list[str]] = None,
-        debug: bool = False,
-        log: str = r"D:\CSGO\ML\CSGOML\logs\FightAnalyzer.log",
     ):
-        if debug:
-            logging.basicConfig(
-                filename=log,
-                encoding="utf-8",
-                level=logging.DEBUG,
-                filemode="w",
-                format="%(asctime)s %(levelname)-8s %(message)s",
-                datefmt="%Y-%m-%d %H:%M:%S",
-            )
-        else:
-            logging.basicConfig(
-                filename=log,
-                encoding="utf-8",
-                level=logging.INFO,
-                filemode="w",
-                format="%(asctime)s %(levelname)-8s %(message)s",
-                datefmt="%Y-%m-%d %H:%M:%S",
-            )
-        FightAnalyzer.logger = logging.getLogger("FightAnalyzer")
-
         if directories is None:
             self.directories = [
                 r"E:\PhD\MachineLearning\CSGOData\ParsedDemos",
@@ -157,7 +135,7 @@ class FightAnalyzer:
             event (dict): A dictionary containg all the information about the kill/damage event in question.
 
         Returns:
-            A tuple of a string and list of tuples containing the attacker weapon and victim weapons
+            A tuple of a string (killing weapon) and two lists containing the attacker weapons and victim weapons
         """
         logging.debug("Checking weapons!")
         victim_weapons = set()
@@ -218,8 +196,8 @@ class FightAnalyzer:
         event: dict,
         game_time: int,
         kill_weapon: str,
-        CT_weapons: list[str],
-        T_weapons: list[str],
+        CT_weapons: set[str],
+        T_weapons: set[str],
         CT_position: str,
         T_position: str,
         current_round: dict,
@@ -233,8 +211,8 @@ class FightAnalyzer:
             event (dict): A dictionary containg all the information about the kill/damage event in question.
             game_time (int): An integer indicating how many seconds have passed since the start of the round
             kill_weapon (str): A string of the weapon used by the attacker of the event
-            CT_weapons (list[str]): A list of strings of the weapons the CT of the event had in their inventory
-            T_weapons (list[str]): A list of strings of the weapons the T of the event had in their inventory
+            CT_weapons (set[str]): A list of strings of the weapons the CT of the event had in their inventory
+            T_weapons (set[str]): A list of strings of the weapons the T of the event had in their inventory
             CT_position (str): A string of the position of the CT in the event
             T_position (str): A string of the position of the T in the event
             current_round (dict): A dictionary containing all the information about the round the event occured in.
@@ -323,21 +301,6 @@ class FightAnalyzer:
                     map_name,
                     is_pro_game,
                 )
-
-    def check_exists(self, match_id: str) -> bool:
-        """Checks if the MYSQL DB already contains events from this match
-        Args:
-            match_id (str): String of the demo file name
-
-        Returns:
-            A boolean indicating whether there are already events from this match in the DB
-        """
-        sql = "SELECT COUNT(e.MatchID) FROM Events e WHERE e.MatchID = %s"
-        logging.debug(sql)
-        self.cursor.execute(sql, (match_id,))
-        result = list(self.cursor.fetchone())
-        logging.debug(result)
-        return int(result[0]) > 0
 
     def analyze_demos(self) -> None:
         """Loops over the specified directory and analyzes each demo file.
@@ -719,8 +682,6 @@ def main(args):
         connection,
         cursor,
         directories=options.dirs,
-        debug=options.debug,
-        log=options.log,
     )
 
     if options.analyze:

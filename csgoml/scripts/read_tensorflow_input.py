@@ -18,7 +18,7 @@ def main(args):
     parser.add_argument(
         "-d", "--debug", action="store_true", default=False, help="Enable debug output."
     )
-    parser.add_argument("-m", "--map", default="inferno", help="Map to analyze")
+    parser.add_argument("-m", "--map", default="ancient", help="Map to analyze")
     parser.add_argument(
         "-l",
         "--log",
@@ -90,7 +90,7 @@ def main(args):
         random_state=random_state,
         map_name=map_name,
     )
-    traj_config = ("token", 500, 20, "T", True)
+    traj_config = ("token", 10, 10, "T", False)
     # clust_config = {
     #     "do_histogram": False,
     #     "n_bins": 50,
@@ -104,16 +104,16 @@ def main(args):
     #     "kmed_n_clusters": 6,
     # }
     clust_config = {
-        "do_histogram": True,
+        "do_histogram": False,
         "n_bins": 50,
         "do_knn": True,
         "knn_ks": [2, 3, 4, 5, 10, 20, 50, 100, 200, 400, 500, 600],
-        "plot_all_trajectories": True,
+        "plot_all_trajectories": False,
         "do_dbscan": True,
         "dbscan_eps": 500,
-        "dbscan_minpt": 10,
+        "dbscan_minpt": 2,
         "do_kmed": True,
-        "kmed_n_clusters": 6,
+        "kmed_n_clusters": 3,
     }
     logging.info(
         clusterer.do_clustering(

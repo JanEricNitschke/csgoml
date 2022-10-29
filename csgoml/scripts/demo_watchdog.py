@@ -87,7 +87,6 @@ def on_modified(event):
         analyzer = demo_analyzer_sorter.DemoAnalyzerSorter(
             indentation=True,
             dirs=[path],
-            log=None,
             maps_dir=r"E:\PhD\MachineLearning\CSGOData\ParsedDemos",
             json_ending=ending,
         )

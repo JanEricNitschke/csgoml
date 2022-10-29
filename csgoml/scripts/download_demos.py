@@ -16,7 +16,7 @@ import requests
 from requests_ip_rotator import ApiGateway, EXTRA_REGIONS
 
 
-def find_missing(lst: list[int]) -> list[int]:
+def find_missing(my_set: set[int]) -> list[int]:
     """Finds missing elements in a sorted list
 
     Args:
@@ -25,8 +25,15 @@ def find_missing(lst: list[int]) -> list[int]:
     Returns:
         A list of all integers that are missing in the original list (between the start and end of it)
     """
-    my_set = set(lst)
-    return [x for x in range(lst[0], lst[-1] + 1) if x not in my_set]
+    if len(my_set) < 0.5:
+        return []
+    lst = sorted(my_set)
+    logging.info("Demo indices that have already been downloaded:")
+    logging.info("Minimum: %s", lst[0])
+    logging.info("Maximum: %s", lst[-1])
+    missing = [x for x in range(lst[0], lst[-1] + 1) if x not in my_set]
+    logging.info("Missing: %s", missing)
+    return missing
 
 
 def main(args):
@@ -81,7 +88,7 @@ def main(args):
             datefmt="%Y-%m-%d %H:%M:%S",
         )
 
-    done_indices = []
+    done_indices = set()
     # check already processed demos:
     pro_path = r"E:\PhD\MachineLearning\CSGOData\ParsedDemos"
     for directoryname in os.listdir(pro_path):
@@ -91,12 +98,9 @@ def main(args):
                 if filename.endswith(".json"):
                     match_id = re.search(r".+_(\d{5}).json", filename).group(1)
                     if match_id not in done_indices:
-                        done_indices.append(int(match_id))
-    done_indices.sort()
-    logging.info("Demo indices that have already been downloaded:")
-    logging.info("Minimum: %s", done_indices[0])
-    logging.info("Maximum: %s", done_indices[-1])
-    logging.info("Missing: %s", find_missing(done_indices))
+                        done_indices.add(int(match_id))
+
+    _ = find_missing(done_indices)
 
     gateway = ApiGateway("https://www.hltv.org/", regions=EXTRA_REGIONS)
     gateway.start()

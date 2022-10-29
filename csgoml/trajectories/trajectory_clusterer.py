@@ -94,8 +94,8 @@ class TrajectoryClusterer:
             trajectory_config (tuple): Tuple of (coordinate_type, n_rounds, time, side, dtw) where:
                 coordinate_type_for_distance (string): A string indicating whether player coordinates should be used directly ("position"), the areas ("area") or the summarizing tokens ("token") instead.
                 n_rounds (int): How many rounds should be in the final output. Can be necessary to not use all of them due to time constraints.
-                side (string): A string indicating whether to include positions for players on the CT side ('CT'), T  side ('T') or both sides ('BOTH')
                 time (integer): An integer indicating the first how many seconds should be considered
+                side (string): A string indicating whether to include positions for players on the CT side ('CT'), T  side ('T') or both sides ('BOTH')
                 dtw (boolean): Indicates whether trajectory distance should use dynamic time warping (True) or euclidean matching (False)
             clustering_config (dict): Dictionary containing settings for clustering. Contents:
                 'do_histogram' (bool): Whether to plot a histogram of all distances
@@ -364,6 +364,69 @@ class TrajectoryClusterer:
         )
         plt.close()
 
+    def get_compressed_area_dist_matrix(
+        self,
+    ) -> typed.Dict.empty(types.int64, types.DictType(types.int64, types.float64)):
+        """Generates a compressed area distance matrix
+
+        Args:
+            None
+        Returns:
+             typed dict of compressed matrix"""
+        old_dist_matrix = AREA_DIST_MATRIX[self.map_name]
+        d1_type = types.DictType(types.int64, types.float64)
+        dist_matrix = typed.Dict.empty(types.int64, d1_type)
+        for area1 in old_dist_matrix:
+            for area2 in old_dist_matrix[area1]:
+                if (int(area1)) not in dist_matrix:
+                    dist_matrix[int(area1)] = typed.Dict.empty(
+                        key_type=types.int64,
+                        value_type=types.float64,
+                    )
+                dist_matrix[int(area1)][int(area2)] = old_dist_matrix[area1][area2][
+                    "geodesic"
+                ]
+        return dist_matrix
+
+    def get_compressed_place_dist_matrix(
+        self,
+    ) -> typed.Dict.empty(types.string, types.DictType(types.string, types.float64)):
+        """Generates a compressed place distance matrix
+
+        Args:
+            None
+        Returns:
+             typed dict of compressed matrix"""
+        old_dist_matrix = PLACE_DIST_MATRIX[self.map_name]
+        d1_type = types.DictType(types.string, types.float64)
+        dist_matrix = typed.Dict.empty(types.string, d1_type)
+        for place1 in old_dist_matrix:
+            for place2 in old_dist_matrix[place1]:
+                if place1 not in dist_matrix:
+                    dist_matrix[place1] = typed.Dict.empty(
+                        key_type=types.string,
+                        value_type=types.float64,
+                    )
+                dist_matrix[place1][place2] = old_dist_matrix[place1][place2][
+                    "geodesic"
+                ]["centroid"]
+        return dist_matrix
+
+    def get_map_area_names(self) -> typed.List:
+        """Generates list of all named place on a map in sorted order
+
+        Args:
+            None
+
+        Returns:
+            sorted list of named places"""
+        map_area_names = set()
+        for area_id in NAV[self.map_name]:
+            map_area_names.add(NAV[self.map_name][area_id]["areaName"])
+        map_area_names = sorted(list(map_area_names))
+        map_area_names = typed.List(map_area_names)
+        return map_area_names
+
     def get_trajectory_distance_matrix(
         self,
         precomputed_matrix_path: str,
@@ -392,43 +455,15 @@ class TrajectoryClusterer:
             )
             if coordinate_type in ["area", "token"]:
                 if coordinate_type == "area":
-                    old_dist_matrix = AREA_DIST_MATRIX[self.map_name]
-                    d1_type = types.DictType(types.int64, types.float64)
-                    dist_matrix = typed.Dict.empty(types.int64, d1_type)
-                    for area1 in old_dist_matrix:
-                        for area2 in old_dist_matrix[area1]:
-                            if (int(area1)) not in dist_matrix:
-                                dist_matrix[int(area1)] = typed.Dict.empty(
-                                    key_type=types.int64,
-                                    value_type=types.float64,
-                                )
-                            dist_matrix[int(area1)][int(area2)] = old_dist_matrix[
-                                area1
-                            ][area2]["geodesic"]
+                    dist_matrix = self.get_compressed_area_dist_matrix()
                     precomputed = get_traj_matrix_area(
                         precompute_array=clustering_array,
                         dist_matrix=dist_matrix,
                         dtw=dtw,
                     )
                 else:  # coordinate_type == "token"
-                    map_area_names = set()
-                    for area_id in NAV[self.map_name]:
-                        map_area_names.add(NAV[self.map_name][area_id]["areaName"])
-                    map_area_names = sorted(list(map_area_names))
-                    map_area_names = typed.List(map_area_names)
-                    old_dist_matrix = PLACE_DIST_MATRIX[self.map_name]
-                    d1_type = types.DictType(types.string, types.float64)
-                    dist_matrix = typed.Dict.empty(types.string, d1_type)
-                    for place1 in old_dist_matrix:
-                        for place2 in old_dist_matrix[place1]:
-                            if place1 not in dist_matrix:
-                                dist_matrix[place1] = typed.Dict.empty(
-                                    key_type=types.string,
-                                    value_type=types.float64,
-                                )
-                            dist_matrix[place1][place2] = old_dist_matrix[place1][
-                                place2
-                            ]["geodesic"]["centroid"]
+                    map_area_names = self.get_map_area_names()
+                    dist_matrix = self.get_compressed_place_dist_matrix()
                     precomputed = get_traj_matrix_token(
                         precompute_array=clustering_array,
                         dist_matrix=dist_matrix,

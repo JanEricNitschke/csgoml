@@ -1,4 +1,5 @@
 """Tests for demo_analyzer_sorter.py"""
+# pylint: disable=attribute-defined-outside-init
 
 import os
 import shutil
@@ -39,7 +40,7 @@ class TestDemoAnalyzerSorter:
     @staticmethod
     def _get_demofile(demo_link):
         print("Requesting " + demo_link)
-        r = requests.get(demo_link)
+        r = requests.get(demo_link, timeout=20)
         open(demo_link.split(r"/")[-1], "wb").write(r.content)
 
     def test_get_ids(self):
