@@ -710,7 +710,7 @@ def main(args):
         user=user,
         password=token,
         database=database,
-        ssl_ca=r"D:\\CSGO\\ML\\CSGOML\AWS_Steps\\Certs\\global-bundle.pem",
+        ssl_ca=r"D:\\CSGO\\ML\\csgoml\\auxiliary\\AWS_Steps\\Certs\\global-bundle.pem",
     )
 
     cursor = connection.cursor()

@@ -50,12 +50,8 @@ connection = pymysql.connect(
     user=user,
     password=token,
     database=database,
-    ssl_ca=r"D:\\CSGO\\ML\\CSGOML\AWS_Steps\\Certs\\global-bundle.pem",
+    ssl_ca=r"D:\\CSGO\\ML\\csgoml\\auxiliary\\AWS_Steps\\Certs\\global-bundle.pem",
 )
-
-# connection = pymysql.connect(
-#     host=host, user="admin", password="InfernoFightTeam9182!", database=database
-# )
 
 # engine = create_engine(
 #     "mysql://{0}:{1}@{2}:{3}/{4}?charset=utf8".format(
