@@ -157,3 +157,5 @@ dmypy.json
 
 # csgo demofiles
 .dem
+
+.vscode/
