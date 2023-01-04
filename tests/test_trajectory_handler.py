@@ -53,9 +53,8 @@ class TestTrajectoryHandler:
                 random_state=self.random_state,
                 map_name=self.map_name,
             )
-        assert "Aux" in self.handler.datasets
         length_set = set()
-        for value in self.handler.datasets["Aux"].values():
+        for value in self.handler.aux.values():
             assert isinstance(value, np.ndarray)
             length_set.add(len(value))
         assert len(length_set) == 1

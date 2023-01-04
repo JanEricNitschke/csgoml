@@ -152,10 +152,10 @@ def main(args):
         patterns, ignore_patterns, ignore_directories, case_sensitive
     )
 
-    my_event_handler.on_created = on_created
-    my_event_handler.on_deleted = on_deleted
-    my_event_handler.on_modified = on_modified
-    my_event_handler.on_moved = on_moved
+    my_event_handler.on_created = on_created # type: ignore[assignment]
+    my_event_handler.on_deleted = on_deleted # type: ignore[assignment]
+    my_event_handler.on_modified = on_modified # type: ignore[assignment]
+    my_event_handler.on_moved = on_moved # type: ignore[assignment]
 
     path = options.dir
     go_recursively = False

@@ -4,7 +4,7 @@ It gets its inputs properly formatted from a TrajectoryHandler and then builds/t
 """
 
 import os
-from typing import Optional
+from typing import Optional, Literal
 import random
 import logging
 import matplotlib.pyplot as plt
@@ -31,19 +31,19 @@ class TrajectoryPredictor:
         random_state: Optional[int] = None,
         map_name: str = "de_ancient",
     ):
-        self.analysis_path = os.path.join(analysis_path, "predicting")
+        self.analysis_path: str = os.path.join(analysis_path, "predicting")
         if not os.path.exists(self.analysis_path):
             os.makedirs(self.analysis_path)
-        self.map_name = map_name
+        self.map_name: str = map_name
         if random_state is None:
-            self.random_state = random.randint(1, 10**8)
+            self.random_state: int = random.randint(1, 10**8)
         else:
             self.random_state = random_state
-        self.trajectory_handler = trajectory_handler
+        self.trajectory_handler: TrajectoryHandler = trajectory_handler
 
     def do_predicting(
         self, trajectory_config: tuple[str, int, str, bool], dnn_config: dict
-    ) -> True:
+    ) -> Literal[True]:
         """Does everything needed to cluster a configuration and plot the results
 
         Args:
@@ -120,7 +120,10 @@ class TrajectoryPredictor:
             dnn_config["nodes_per_layer"] = 32
 
     def get_compile_train_evaluate_model(
-        self, coordinate_type: str, datasets: tuple[tf.data.Dataset], dnn_config: dict
+        self,
+        coordinate_type: str,
+        datasets: tuple[tf.data.Dataset, tf.data.Dataset, tf.data.Dataset],
+        dnn_config: dict,
     ) -> tuple[keras.Sequential, tf.keras.callbacks.History, float, float, float]:
         """Wrapper function to get, compile, train and evaluate a model
         Args:
@@ -177,8 +180,10 @@ class TrajectoryPredictor:
         return model, history, loss, accuracy, entropy
 
     def get_datasets_from_tensors(
-        self, tensors: tuple[ndarray], batch_size: int
-    ) -> tuple[tf.data.Dataset]:
+        self,
+        tensors: tuple[ndarray, ndarray, ndarray, ndarray, ndarray, ndarray],
+        batch_size: int,
+    ) -> tuple[tf.data.Dataset, tf.data.Dataset, tf.data.Dataset]:
         """Generates batched datasets from tensors
 
         Args:

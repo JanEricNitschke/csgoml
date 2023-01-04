@@ -21,7 +21,7 @@ import sys
 import math
 import json
 import logging
-from typing import Optional, Union
+from typing import Optional
 import numpy as np
 import boto3
 from awpy.analytics.nav import find_closest_area
@@ -47,23 +47,25 @@ class FightAnalyzer:
         directories: Optional[list[str]] = None,
     ):
         if directories is None:
-            self.directories = [
+            self.directories: list[str] = [
                 r"E:\PhD\MachineLearning\CSGOData\ParsedDemos",
                 r"D:\CSGO\Demos\Maps",
             ]
         else:
             self.directories = directories
-        self.current_frame_index = 0
-        self.n_analyzed = 0
-        self.cursor = cursor
-        self.connection = connection
+        self.current_frame_index: int = 0
+        self.n_analyzed: int = 0
+        self.cursor: pymysql.cursors.Cursor = cursor
+        self.connection: pymysql.connections.Connection = connection
 
-    def get_area_from_pos(self, map_name: str, pos: list[float]) -> Optional[str]:
+    def get_area_from_pos(
+        self, map_name: str, pos: list[Optional[float]]
+    ) -> Optional[str]:
         """Determine the area name for a given position.
 
         Args:
             map (str): A string of the name of the map being considered
-            pos (list[float]): A list of x, y and z coordinates
+            pos (list[Optional[float]]): A list of x, y and z coordinates
 
         Return:
             A string of the name of the area that contains pos on map "map"
@@ -84,7 +86,7 @@ class FightAnalyzer:
 
     def check_position(
         self, event: dict, map_name: str
-    ) -> Union[tuple[str, str], tuple[None, None]]:
+    ) -> tuple[Optional[str], Optional[str]]:
         """Grabs the CT and T areas of the event
 
         Args:
@@ -127,7 +129,7 @@ class FightAnalyzer:
 
     def check_weapons(
         self, current_round: dict, event: dict
-    ) -> tuple[str, list[str], list[str]]:
+    ) -> tuple[str, set[str], set[str]]:
         """Grabs the attacker weapon and the weapons of the victim in the last frame before the event
 
         Args:
@@ -135,34 +137,40 @@ class FightAnalyzer:
             event (dict): A dictionary containg all the information about the kill/damage event in question.
 
         Returns:
-            A tuple of a string (killing weapon) and two lists containing the attacker weapons and victim weapons
+            A tuple of a string (killing weapon) and two sets containing the attacker weapons and victim weapons
         """
         logging.debug("Checking weapons!")
         victim_weapons = set()
         attacker_weapons = set()
+        # Loop as long as the current frames is before out event of interest and before the last frame
         while (
             self.current_frame_index < len(current_round["frames"])
             and current_round["frames"][self.current_frame_index]["tick"]
             <= event["tick"]
         ):
+            # Check if players exist for this frame and side
             if (
                 current_round["frames"][self.current_frame_index][
                     event["victimSide"].lower()
                 ]["players"]
                 is not None
             ):
+                # Loop over the players
                 for player in current_round["frames"][self.current_frame_index][
                     event["victimSide"].lower()
                 ]["players"]:
+                    # If the player matches our victim
                     if (
                         event["victimSteamID"]
                         and player["steamID"] == event["victimSteamID"]
                     ):
                         if player["inventory"] is None:
                             continue
+                        # Grab the weapons as our victims weapons
                         victim_weapons = {
                             weapon["weaponName"] for weapon in player["inventory"]
                         }
+            # Same for attacker side
             if (
                 current_round["frames"][self.current_frame_index][
                     event["attackerSide"].lower()
@@ -181,8 +189,11 @@ class FightAnalyzer:
                         attacker_weapons = {
                             weapon["weaponName"] for weapon in player["inventory"]
                         }
+            # Iterate through the frames
             self.current_frame_index += 1
+        # Step back one frame because we can have multiple events associated with one frame
         self.current_frame_index -= 1
+        # Assign CT and T weapons based on victim and attacker weapons
         if event["attackerSide"] == "T":
             CT_weapons, T_weapons = victim_weapons, attacker_weapons
         elif event["attackerSide"] == "CT":
@@ -211,8 +222,8 @@ class FightAnalyzer:
             event (dict): A dictionary containg all the information about the kill/damage event in question.
             game_time (int): An integer indicating how many seconds have passed since the start of the round
             kill_weapon (str): A string of the weapon used by the attacker of the event
-            CT_weapons (set[str]): A list of strings of the weapons the CT of the event had in their inventory
-            T_weapons (set[str]): A list of strings of the weapons the T of the event had in their inventory
+            CT_weapons (set[str]): A set of strings of the weapons the CT of the event had in their inventory
+            T_weapons (set[str]): A set of strings of the weapons the T of the event had in their inventory
             CT_position (str): A string of the position of the CT in the event
             T_position (str): A string of the position of the T in the event
             current_round (dict): A dictionary containing all the information about the round the event occured in.
@@ -223,8 +234,8 @@ class FightAnalyzer:
         Returns:
             None (DB is appended to in place)
         """
-        sql = "INSERT INTO Events (MatchID, Round, Pro, MapName, Time, CTWon, CTArea, TArea, KillWeapon) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)"
-        val = (
+        sql_event = "INSERT INTO Events (MatchID, Round, Pro, MapName, Time, CTWon, CTArea, TArea, KillWeapon) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)"
+        val_event = (
             match_id,
             current_round["endTScore"] + current_round["endCTScore"],
             int(is_pro_game),
@@ -235,19 +246,19 @@ class FightAnalyzer:
             T_position,
             kill_weapon,
         )
-        logging.debug("sql: %s, val:%s", sql, *val)
-        self.cursor.execute(sql, val)
+        logging.debug("sql: %s, val:%s", sql_event, *val_event)
+        self.cursor.execute(sql_event, val_event)
         event_id = self.cursor.lastrowid
         for weapon in CT_weapons:
-            sql = "INSERT INTO CTWeapons (EventID, CTWeapon) VALUES (%s, %s)"
-            val = (event_id, weapon)
-            logging.debug("sql: %s, val:%s", sql, *val)
-            self.cursor.execute(sql, val)
+            sql_weapon = "INSERT INTO CTWeapons (EventID, CTWeapon) VALUES (%s, %s)"
+            val_weapon = (event_id, weapon)
+            logging.debug("sql: %s, val:%s", sql_weapon, *val_weapon)
+            self.cursor.execute(sql_weapon, val_weapon)
         for weapon in T_weapons:
-            sql = "INSERT INTO TWeapons (EventID, TWeapon) VALUES (%s, %s)"
-            val = (event_id, weapon)
-            logging.debug("sql: %s, val:%s", sql, *val)
-            self.cursor.execute(sql, val)
+            sql_weapon = "INSERT INTO TWeapons (EventID, TWeapon) VALUES (%s, %s)"
+            val_weapon = (event_id, weapon)
+            logging.debug("sql: %s, val:%s", sql_weapon, *val_weapon)
+            self.cursor.execute(sql_weapon, val_weapon)
 
     def analyze_map(
         self, data: dict, map_name: str, match_id: str, is_pro_game: bool
@@ -354,7 +365,7 @@ class FightAnalyzer:
 
     def calculate_CT_win_percentage(
         self,
-        times: list[float],
+        times: tuple[int, int],
         positions: dict,
         weapons: dict,
         classes: dict,
@@ -366,7 +377,7 @@ class FightAnalyzer:
         Queries information from a database to determine CT win percentage of events fitting the criteria
 
         Args:
-            times (list[float]): A list of two floats indicating between which times the event should have occured
+            times (tuple[int]): A tuple of two ints indicating between which times the event should have occured
             positions (dict): A dicitionary of positions that are allowed/forbidden for each side of an event
             weapons (dict): A dictionary of weapons that are allowed/forbidden for each side of an event
             classes (dict): A dictionary of weapon classes that are allowed/forbidden for each side of an event
@@ -454,7 +465,12 @@ class FightAnalyzer:
 
         logging.info(sql)
         self.cursor.execute(sql)
-        result = list(self.cursor.fetchone())
+        fetched = self.cursor.fetchone()
+        if fetched is None:
+            raise AssertionError(
+                "Query returned no result even though it should always do so!"
+            )
+        result = list(fetched)
 
         if result[1] > 0:
             return result[1], round(100 * result[0])
@@ -462,7 +478,7 @@ class FightAnalyzer:
 
     def print_ct_win_percentage_for_time_cutoffs(
         self,
-        edge_times: list[float],
+        edge_times: tuple[int, int],
         positions: dict,
         weapons: dict,
         classes: dict,
@@ -472,7 +488,7 @@ class FightAnalyzer:
         """Prints the total number of kills and CT win percentage for time slices starting from the lowest and always going to the lates
 
          Args:
-            edge_times (list[float]): A list of two floats determining the times that should be considered for the event
+            edge_times (tuple[int, int]): A list of two ints determining the times that should be considered for the event
             positions (dict): A dicitionary of positions that are allowed/forbidden for each side of an event
             weapons (dict): A dictionary of weapons that are allowed/forbidden for each side of an event
             classes (dict): A dictionary of weapon classes that are allowed/forbidden for each side of an event
@@ -483,7 +499,7 @@ class FightAnalyzer:
             None (just prints)
         """
         if edge_times[0] == 0 and edge_times[1] == 175:
-            game_times = [edge_times]
+            game_times = zip([edge_times[0]], [edge_times[1]])
         elif edge_times[0] == 0:
             game_times = zip(
                 [0] * (edge_times[1] - edge_times[0]),
@@ -582,7 +598,7 @@ def main(args):
             datefmt="%Y-%m-%d %H:%M:%S",
         )
 
-    times = [options.starttime, options.endtime]
+    times = (options.starttime, options.endtime)
     positions = {
         "CT": {"Allowed": {"TopofMid", "Middle"}, "Forbidden": {}},
         "T": {"Allowed": {"Middle", "TRamp"}, "Forbidden": {}},

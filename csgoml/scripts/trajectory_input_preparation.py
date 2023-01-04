@@ -16,7 +16,7 @@ The dataframe is finally exported to a json file.
 import os
 import sys
 import logging
-from typing import Union
+from typing import Union, Optional
 import argparse
 import json
 import copy
@@ -25,7 +25,7 @@ from awpy.analytics.nav import generate_position_token, find_closest_area
 from awpy.data import NAV
 
 
-def initialize_round_positions() -> dict:
+def initialize_round_positions() -> dict[str, list]:
     """Initializes dictionary of lists for one rounds positions.
 
     The positions dictinary contains the following keys:
@@ -38,7 +38,7 @@ def initialize_round_positions() -> dict:
     Returns:
         Empty round_positions dictionary
     """
-    round_positions = {}
+    round_positions: dict[str, list] = {}
     round_positions["Tick"] = []
     round_positions["token"] = []
     round_positions["interpolated"] = []
@@ -140,7 +140,7 @@ def get_postion_token(frame: dict, map_name: str, token_length: int) -> dict:
     return tokens
 
 
-def initialize_position_dataset_dict() -> dict:
+def initialize_position_dataset_dict() -> dict[str, list]:
     """Initializes the dictionary of lists containing one entry per round.
 
     The dictinary contains the following keys:
@@ -152,7 +152,7 @@ def initialize_position_dataset_dict() -> dict:
     Returns:
         Empty position_dataset_dict dictionary
     """
-    position_dataset_dict = {}
+    position_dataset_dict: dict[str, list] = {}
     position_dataset_dict["MatchID"] = []
     position_dataset_dict["MapName"] = []
     position_dataset_dict["Round"] = []
@@ -161,13 +161,13 @@ def initialize_position_dataset_dict() -> dict:
     return position_dataset_dict
 
 
-def check_size(dictionary: dict) -> int:
+def check_size(dictionary: dict[str, list]) -> int:
     """Checks that the size of each list behind every dictionary key is the same.
 
     The input dictionary is expected to have a list corresponding to each key and that each list has the same size.
 
     Args:
-        dictionary (dict): dictionary of lists with the expectation that each list has the same size
+        dictionary (dict[str, list]): dictionary of lists with the expectation that each list has the same size
 
     Returns:
         length (int): An integer corresponding to the length of every list in the dictionary.
@@ -201,7 +201,7 @@ def frame_is_empty(current_round: dict) -> bool:
     """Checks whether a round dicionary contains None or an empty list frames.
 
     None or empty frames will raise exceptions when trying to extract player information out of them.
-    This method checks if a frame is empty or None and logs and error message if either is the case.
+    This method checks if a frame is empty or None and logs an error message if either is the case.
 
     Args:
         current_round (dict): A dictionary containing all the information about a single CS:GO round.
@@ -319,7 +319,7 @@ def append_to_round_positions(
         round_positions (dict): Dictionary containing information about all players for each timestep
         side (str): A string describing the side the given player is currently playing on. Should be either "ct" or "t"
         id_number_dict (dict): A dictionary correlating a players steamID with their ranking number.
-        player_id (int/str): An integer or string containing a players steamID or bots name
+        player_id (Union[int, str]): An integer or string containing a players steamID or bots name
         player (dict): A dictionary containing the players position and status for the most recent timestep
         second_difference (int): An integer corresponding the the time difference between this and the previous frame in seconds. If it is larger than 1 then interpolation has to be done.
         map_name (str): A string of the maps name
@@ -406,7 +406,7 @@ def append_to_round_positions(
         ].append(area_val)
 
 
-def convert_winner_to_int(winner_string: str) -> int:
+def convert_winner_to_int(winner_string: str) -> Optional[int]:
     """Converts the string of the winning side into 0 or 1.
 
     CT -> 1
@@ -450,7 +450,16 @@ def get_token_length(map_name: str) -> int:
     return len(area_names)
 
 
-def initialize_round(current_round: dict) -> tuple:
+def initialize_round(
+    current_round: dict,
+) -> tuple[
+    bool,
+    int,
+    dict[str, dict[str, str]],
+    dict[str, bool],
+    dict[str, list],
+    list[int],
+]:
     """Initializes the variables for the current round
 
     Args:
@@ -468,9 +477,9 @@ def initialize_round(current_round: dict) -> tuple:
     skip_round = False
     last_good_frame = 1
     # Dict for mapping players steamID to player number for each round
-    id_number_dict = {"t": {}, "ct": {}}
+    id_number_dict: dict[str, dict[str, str]] = {"t": {}, "ct": {}}
     # Dict to check if mapping has already been initialized this round
-    dict_initialized = {"t": False, "ct": False}
+    dict_initialized: dict[str, bool] = {"t": False, "ct": False}
     # Initialize the dict that tracks player position, status and name for each round
     round_positions = initialize_round_positions()
     logging.debug("Round number %s", current_round["roundNum"])
@@ -491,7 +500,7 @@ def initialize_round(current_round: dict) -> tuple:
 def analyze_players(
     frame: dict,
     dict_initialized: dict,
-    id_number_dict: dict,
+    id_number_dict: dict[str, dict[str, str]],
     side: str,
     round_positions: dict,
     second_difference: int,
@@ -501,8 +510,8 @@ def analyze_players(
 
     Args:
         frame (dict): Dicitionary containg all information about the current round
-        dict_initialized (dict): Dict containing information about whether or not a given side has been initialized already
-        id_number_dict (dict): Dict mapping player to a number
+        dict_initialized (dict[str, bool]): Dict containing information about whether or not a given side has been initialized already
+        id_number_dict (dict[str, dict[str, str]]): Dict mapping player to a number
         side (str): String of the current side
         round_positions (dict): Dictionary containg all player trajectories of the current round
         second_difference (int): Time difference from last frame to the current one
@@ -547,7 +556,7 @@ def add_general_information(
     index: int,
     map_name: str,
     last_good_frame: int,
-) -> int:
+) -> None:
     """Adds general information to round_positions
     Args:
         frame (dict): Dicitionary containg all information about the current round
@@ -561,7 +570,7 @@ def add_general_information(
         last_good_frame (int): Indicates how many frames ago the last good round was
 
     Returns:
-        Int last_good_frame (1)"""
+        None (round_positions)"""
     token_frames = (
         [frame]
         if second_difference == 1
@@ -571,7 +580,6 @@ def add_general_information(
             second_difference,
         )
     )
-    last_good_frame = 1
     for i in range(second_difference, 0, -1):
         tokens = get_postion_token(
             token_frames[second_difference - i],
@@ -590,8 +598,6 @@ def add_general_information(
         round_positions["CTtoken"].append(tokens["ctToken"])
         round_positions["Ttoken"].append(tokens["tToken"])
         round_positions["interpolated"].append(0 if i == 1 else 1)
-    ticks[1] = ticks[0]
-    return last_good_frame
 
 
 def analyze_frames(
@@ -655,7 +661,7 @@ def analyze_frames(
         # Will also removed for the eventual analysis.
         # But you do not want to set it for frames where you have no player data which should only ever happen in the first frame of a round at worst.
         if True in dict_initialized.values():
-            last_good_frame = add_general_information(
+            add_general_information(
                 frame,
                 current_round,
                 second_difference,
@@ -666,10 +672,14 @@ def analyze_frames(
                 map_name,
                 last_good_frame,
             )
+            last_good_frame = 1
+            ticks[1] = ticks[0]
     return skip_round, round_positions  # False
 
 
-def analyze_rounds(data: dict, position_dataset_dict: dict, match_id: str) -> None:
+def analyze_rounds(
+    data: dict, position_dataset_dict: dict[str, list], match_id: str
+) -> None:
     """Analyzes all rounds in a game and adds their relevant data to position_dataset_dict.
 
     Loops over every round in "data, every frame in each rounds, every side in each frame and every player in each side
@@ -678,7 +688,7 @@ def analyze_rounds(data: dict, position_dataset_dict: dict, match_id: str) -> No
 
     Args:
         data (dict): Dictionary containing all information about a CS:GO game
-        position_dataset_dict (dict): Dictionary containing trajectory information about rounds on a given map
+        position_dataset_dict (dict[str, list]): Dictionary containing trajectory information about rounds on a given map
         match_id (str): String representing the name of an input demo file
 
     Returns:
@@ -783,9 +793,9 @@ def main(args):
     logging.info("Starting")
     # done={"ancient","cache","cbble","cs_rush","dust2","facade","inferno","marquis","mirage","mist","nuke","overpass","resort","santorini","santorini_playtest","season","train","vertigo"}
     # List of maps already done -> Do not do them again
-    done = {"ancient", "cache", "cbble", "dust2", "inferno", "mirage", "nuke"}
+    done: set[str] = {"ancient", "cache", "cbble", "dust2", "inferno", "mirage", "nuke"}
     # List of maps to specifically do -> only do those
-    to_do = set()
+    to_do: set[str] = set()
     # to_do = []
     for directoryname in os.listdir(options.dir):
         directory = os.path.join(options.dir, directoryname)

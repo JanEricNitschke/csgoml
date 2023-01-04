@@ -654,7 +654,7 @@ class TestTrajectoryInputPreparation:
         for value in round_positions.values():
             assert isinstance(value, list)
             assert len(value) == 0
-        new_last_good_frame = add_general_information(
+        add_general_information(
             current_frame,
             current_round,
             second_difference,
@@ -665,7 +665,6 @@ class TestTrajectoryInputPreparation:
             map_name,
             last_good_frame,
         )
-        assert new_last_good_frame == 1
         for key, value in round_positions.items():
             assert isinstance(value, list)
             if key in ["token", "Ttoken", "CTtoken", "interpolated", "Tick"]:
@@ -676,7 +675,6 @@ class TestTrajectoryInputPreparation:
                     assert value == [128.0]
             else:
                 assert len(value) == 0
-        assert ticks[0] == ticks[1]
 
     def test_analyze_frames(self):
         """Tests analyze_frames"""

@@ -48,9 +48,9 @@ class DemoAnalyzerSorter:
         maps_dir: str = r"D:\CSGO\Demos\Maps",
         json_ending: str = "",
     ):
-        self.indentation = indentation
+        self.indentation: bool = indentation
         if dirs is None:
-            self.dirs = [
+            self.dirs: list[str] = [
                 r"D:\CSGO\Demos",
                 r"C:\Program Files (x86)\Steam\steamapps\common\Counter-Strike Global Offensive\csgo\replays",
             ]
@@ -60,9 +60,9 @@ class DemoAnalyzerSorter:
             self.start_id, self.end_id, self.mm_id = [1, 99999, 10000]
         else:
             self.start_id, self.end_id, self.mm_id = ids
-        self.maps_dir = maps_dir
-        self.json_ending = json_ending
-        self.n_analyzed = 0
+        self.maps_dir: str = maps_dir
+        self.json_ending: str = json_ending
+        self.n_analyzed: int = 0
 
     def get_ids(self, filename: str) -> tuple[str, int]:
         """Fetches map ID from filename.

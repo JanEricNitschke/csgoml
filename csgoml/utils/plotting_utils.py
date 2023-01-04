@@ -31,7 +31,7 @@ import collections
 import itertools
 import os
 import sys
-from typing import Optional
+from typing import Optional, Literal, TypedDict, Union
 import logging
 import shutil
 import argparse
@@ -103,7 +103,7 @@ def plot_round_tokens(
     dark: bool = False,
     fps: int = 2,
     dpi: int = 300,
-) -> True:
+) -> Literal[True]:
     """Plots the position tokens of a round and saves as a .gif. CTs are blue, Ts are orange. Only use untransformed coordinates.
 
     Args:
@@ -200,7 +200,6 @@ def plot_map_areas(
         None, saves .png
     """
     logging.info("Plotting areas for %s", map_name)
-    area_points = collections.defaultdict(list)
     fig, axis = plot_map(map_name=map_name, map_type=map_type, dark=dark)
     fig.set_size_inches(19.2, 10.8)
     # Grab points, hull and centroid for each named area
@@ -363,79 +362,74 @@ def plot_map_tiles(
     plt.close()
 
 
+class LeadersLastLevel(TypedDict):
+    """Typed dict for the last level of the nested leader dict"""
+
+    pos: list[float]
+    index: int
+
+
 def get_shortest_distances_mapping(
     map_name: str,
-    leaders: dict,
-    current_positions: list[tuple[float, float, float]],
+    leaders: dict[str, LeadersLastLevel],
+    current_positions: list[list[float]],
     dist_type: str = "geodesic",
-    trajectory: bool = False,
-    dtw: bool = False,
-) -> list[int]:
+) -> list[str]:
     """Gets the mapping between players in the current round and lead players that has the shortest total distance between mapped players.
 
     Args:
         map_name (str): Name of the current map
-        leaders (dictionary): Dictionary of leaders position, alive status and color index in the current frame
-        current_positions (list): List of tuples of players x, y, z coordinates in the current round and frame
+        leaders (dictionary): Dictionary of leaders position, and color index in the current frame
+        current_positions (list): List of lists of players x, y, z, area_id coordinates in the current round and frame
         dist_type (string): String indicating the type of distance to use. Can be graph, geodesic, euclidean, manhattan, canberra or cosine.
-        trajectory (boolean): Boolean indicating whether the input contains full trajectories
-        precomputed_areas (boolean): Indicates whether the position arrays already contain the precomputed areas in the x coordinate of the position
-        dtw: Boolean indicating whether matching should be performed via dynamic time warping (true) or euclidean (false)
 
     Returns:
         A list mapping the player at index i in the current round to the leader at position list[i] in the leaders dictionary.
         (Requires python 3.6 because it relies on the order of elements in the dict)"""
     smallest_distance = float("inf")
-    best_mapping = [0, 1, 2, 3, 4]
+    best_mapping: tuple[int, ...] = tuple(range(len(current_positions)))
     # Get all distance pairs
-    distance_pairs = collections.defaultdict(lambda: collections.defaultdict(float))
+    distance_pairs: dict[int, dict[int, float]] = collections.defaultdict(
+        lambda: collections.defaultdict(float)
+    )
     for leader_i in range(len(leaders)):
         for current_i in range(len(current_positions)):
             if current_positions[current_i] is None:
                 continue
-            if trajectory:
-                this_dist = trajectory_distance(
-                    map_name,
-                    current_positions[current_i],
-                    leaders[leader_i],
-                    distance_type=dist_type,
-                    dtw=dtw,
-                )
-            else:
-                if dist_type in ["geodesic", "graph"]:
-                    if AREA_DIST_MATRIX is None or map_name not in AREA_DIST_MATRIX:
-                        this_dist = min(
-                            area_distance(
-                                map_name,
-                                str(int(leaders[list(leaders)[leader_i]]["pos"][3])),
-                                str(int(current_positions[current_i][3])),
-                                dist_type=dist_type,
-                            )["distance"],
-                            area_distance(
-                                map_name,
-                                current_positions[current_i][3],
-                                leaders[list(leaders)[leader_i]]["pos"][3],
-                                dist_type=dist_type,
-                            )["distance"],
-                        )
-                    else:
-                        this_dist = min(
-                            AREA_DIST_MATRIX[map_name][
-                                str(int(leaders[list(leaders)[leader_i]]["pos"][3]))
-                            ][str(int(current_positions[current_i][3]))][dist_type],
-                            AREA_DIST_MATRIX[map_name][
-                                str(int(current_positions[current_i][3]))
-                            ][str(int(leaders[list(leaders)[leader_i]]["pos"][3]))][
-                                dist_type
-                            ],
-                        )
+            if dist_type in ["geodesic", "graph"]:
+                if AREA_DIST_MATRIX is None or map_name not in AREA_DIST_MATRIX:
+                    this_dist = min(
+                        area_distance(
+                            map_name,
+                            str(int(leaders[list(leaders)[leader_i]]["pos"][3])),
+                            str(int(current_positions[current_i][3])),
+                            dist_type=dist_type,
+                        )["distance"],
+                        area_distance(
+                            map_name,
+                            current_positions[current_i][3],
+                            leaders[list(leaders)[leader_i]]["pos"][3],
+                            dist_type=dist_type,
+                        )["distance"],
+                    )
                 else:
-                    this_dist = point_distance(
-                        map_name,
-                        current_positions[current_i][0:3],
-                        leaders[list(leaders)[leader_i]]["pos"][0:3],
-                        dist_type,
-                    )["distance"]
+                    this_dist = min(
+                        AREA_DIST_MATRIX[map_name][
+                            str(int(leaders[list(leaders)[leader_i]]["pos"][3]))
+                        ][str(int(current_positions[current_i][3]))][dist_type],
+                        AREA_DIST_MATRIX[map_name][
+                            str(int(current_positions[current_i][3]))
+                        ][str(int(leaders[list(leaders)[leader_i]]["pos"][3]))][
+                            dist_type
+                        ],
+                    )
+            else:
+                this_dist = point_distance(
+                    map_name,
+                    current_positions[current_i][0:3],
+                    leaders[list(leaders)[leader_i]]["pos"][0:3],
+                    dist_type,
+                )["distance"]
             distance_pairs[leader_i][current_i] = this_dist
     for mapping in itertools.permutations(range(len(leaders)), len(current_positions)):
         dist = 0
@@ -448,11 +442,60 @@ def get_shortest_distances_mapping(
         if dist < smallest_distance:
             smallest_distance = dist
             best_mapping = mapping
-    if trajectory:
-        return best_mapping
-    best_mapping = list(best_mapping)
+    return_mapping: list[str] = [""] * len(best_mapping)
     for i, leader_pos in enumerate(best_mapping):
-        best_mapping[i] = list(leaders)[leader_pos]
+        return_mapping[i] = list(leaders)[leader_pos]
+    return return_mapping
+
+
+def get_shortest_distances_mapping_trajectory(
+    map_name: str,
+    leaders: np.ndarray,
+    current_positions: np.ndarray,
+    dist_type: str = "geodesic",
+    dtw: bool = False,
+) -> tuple[int, ...]:
+    """Gets the mapping between players in the current round and lead players that has the shortest total distance between mapped players.
+
+    Args:
+        map_name (str): Name of the current map
+        leaders (np.ndarray): np.ndarray of leaders position, and color index in the current frame
+        current_positions (np.ndarray): Numpy array of shape (5,Time,1,1,X) of players x, y, z or area_id coordinates at each time step in the current round and frame
+        dist_type (string): String indicating the type of distance to use. Can be graph, geodesic, euclidean, manhattan, canberra or cosine.
+        dtw: Boolean indicating whether matching should be performed via dynamic time warping (true) or euclidean (false)
+
+    Returns:
+        A list mapping the player at index i in the current round to the leader at position list[i] in the leaders dictionary.
+        (Requires python 3.6 because it relies on the order of elements in the dict)"""
+    smallest_distance = float("inf")
+    best_mapping: tuple[int, ...] = tuple(range(len(current_positions)))
+    # Get all distance pairs
+    distance_pairs: dict[int, dict[int, float]] = collections.defaultdict(
+        lambda: collections.defaultdict(float)
+    )
+    for leader_i in range(len(leaders)):
+        for current_i in range(len(current_positions)):
+            if current_positions[current_i] is None:
+                continue
+            this_dist = trajectory_distance(
+                map_name,
+                current_positions[current_i],
+                leaders[leader_i],
+                distance_type=dist_type,
+                dtw=dtw,
+            )
+            distance_pairs[leader_i][current_i] = this_dist
+    for mapping in itertools.permutations(range(len(leaders)), len(current_positions)):
+        dist: float = 0
+        for current_pos, leader_pos in enumerate(mapping):
+            # Remove dead players from consideration
+            if current_positions[current_pos] is None:
+                continue
+            this_dist = distance_pairs[leader_pos][current_pos]
+            dist += this_dist
+        if dist < smallest_distance:
+            smallest_distance = dist
+            best_mapping = mapping
     return best_mapping
 
 
@@ -464,20 +507,20 @@ colors_list = {
 
 def plot_rounds_different_players_trajectory_image(
     filename: str,
-    frames_list: list[np.ndarray],
+    frames_list: Union[np.ndarray, list[np.ndarray]],
     map_name: str = "de_ancient",
     map_type: str = "original",
     dark: bool = False,
     dist_type: str = "geodesic",
     dtw: bool = False,
     dpi: int = 1000,
-) -> True:
-    """Plots a list of rounds and saves as a .gif. Each player in the first round is assigned a separate color. Players in the other rounds are matched by proximity.
+) -> Literal[True]:
+    """Plots a collection of rounds and saves as a .gif. Each player in the first round is assigned a separate color. Players in the other rounds are matched by proximity.
     Only use untransformed coordinates.
 
     Args:
         filename (string): Filename to save the gif
-        frames_list (list): List of np arrays each frame should have shape (Time_steps,2|1(sides),5,3)
+        frames_list (Union[np.ndarray, list[np.ndarray]]): (List or higher dimensional array) of np arrays. One array for each round. Each round entry should have shape (Time_steps,2|1(sides),5,3)
         map_name (string): Map to search
         map_type (string): "original" or "simpleradar"
         dark (boolean): Only for use with map_type="simpleradar". Indicates if you want to use the SimpleRadar dark map type
@@ -489,7 +532,7 @@ def plot_rounds_different_players_trajectory_image(
         True, saves .gif
     """
     f, a = plot_map(map_name=map_name, map_type=map_type, dark=dark)
-    reference_traj = {}
+    reference_traj: dict[int, np.ndarray] = {}
     for side in range(frames_list[0].shape[1]):
         reference_traj[side] = transform_to_traj_dimensions(
             frames_list[0][:, side, :, :]
@@ -497,12 +540,12 @@ def plot_rounds_different_players_trajectory_image(
     for frames in tqdm(frames_list):
         # Initialize lists used to store values for this round for this frame
         for side in range(frames.shape[1]):
-            mapping = get_shortest_distances_mapping(
+            mapping = get_shortest_distances_mapping_trajectory(
                 map_name,
                 reference_traj[side],
+                # Already pass the precomputed area_id all the way through to the distance calculations
                 transform_to_traj_dimensions(frames[:, side, :, :])[:, :, :, :, (3,)],
                 dist_type=dist_type,
-                trajectory=True,
                 dtw=dtw,
             )
             for player in range(frames.shape[2]):
@@ -529,22 +572,22 @@ def plot_rounds_different_players_trajectory_image(
 
 def plot_rounds_different_players_trajectory_gif(
     filename: str,
-    frames_list: list[np.ndarray],
+    frames_list: Union[np.ndarray, list[np.ndarray]],
     map_name: str = "de_ancient",
     map_type: str = "original",
     dark: bool = False,
-    fps: str = 2,
+    fps: int = 2,
     n_frames: int = 9000,
     dist_type: str = "geodesic",
     dtw: bool = False,
     dpi: int = 300,
-) -> True:
-    """Plots a list of rounds and saves as a .gif. Each player in the first round is assigned a separate color. Players in the other rounds are matched by proximity.
+) -> Literal[True]:
+    """Plots a collection of rounds and saves as a .gif. Each player in the first round is assigned a separate color. Players in the other rounds are matched by proximity.
     Only use untransformed coordinates.
 
     Args:
         filename (string): Filename to save the gif
-        frames_list (list): List of np arrays each frame should have shape (Time_steps,2|1(sides),5,3)
+        frames_list (Union[np.ndarray, list[np.ndarray]]): (List or higher dimensional array) of np arrays. One array for each round. Each round entry should have shape (Time_steps,2|1(sides),5,3)
         map_name (string): Map to search
         map_type (string): "original" or "simpleradar"
         dark (boolean): Only for use with map_type="simpleradar". Indicates if you want to use the SimpleRadar dark map type
@@ -562,7 +605,7 @@ def plot_rounds_different_players_trajectory_gif(
     os.mkdir("csgo_tmp")
     image_files = []
     mappings = collections.defaultdict(list)
-    reference_traj = {}
+    reference_traj: dict[int, np.ndarray] = {}
     for side in range(frames_list[0].shape[1]):
         reference_traj[side] = transform_to_traj_dimensions(
             frames_list[0][:, side, :, :]
@@ -570,26 +613,25 @@ def plot_rounds_different_players_trajectory_gif(
     for frame_index, frames in enumerate(tqdm(frames_list)):
         # Initialize lists used to store values for this round for this frame
         for side in range(frames.shape[1]):
-            mapping = get_shortest_distances_mapping(
+            mapping = get_shortest_distances_mapping_trajectory(
                 map_name,
                 reference_traj[side],
+                # Already pass the precomputed area_id all the way through to the distance calculations
                 transform_to_traj_dimensions(frames[:, side, :, :])[:, :, :, :, (3,)],
                 dist_type=dist_type,
-                trajectory=True,
                 dtw=dtw,
             )
             mappings[side].append(mapping)
     # Determine how many frames are there in total
     max_frames = max(frames.shape[0] for frames in frames_list)
-    # Build tree data structure for leaders
     # For each side the keys are a players steamd id + "_" + frame_number in case the same steamid occurs in multiple rounds
     for i in tqdm(range(min(max_frames, int(n_frames)))):
         # Initialize lists used to store things from all rounds to plot for each frame
-        positions = []
-        colors = []
-        markers = []
-        alphas = []
-        sizes = []
+        positions: list[list[float]] = []
+        colors: list[str] = []
+        markers: list[str] = []
+        alphas: list[float] = []
+        sizes: list[float] = []
         # Now do another loop to add all players in all frames with their appropriate colors.
         for frame_index, frames in enumerate(frames_list):
             # Initialize lists used to store values for this round for this frame
@@ -635,35 +677,35 @@ def plot_rounds_different_players_trajectory_gif(
 
 def plot_rounds_different_players_position_image(
     filename: str,
-    frames_list: list[np.ndarray],
+    frames_list: Union[np.ndarray, list[np.ndarray]],
     map_name: str = "de_ancient",
     map_type: str = "original",
     dark: bool = False,
     n_frames: int = 9000,
     dist_type: str = "geodesic",
-    dtw: bool = False,
     dpi: int = 1000,
-) -> True:
-    """Plots a list of rounds and saves as a .gif. Each player in the first round is assigned a separate color. Players in the other rounds are matched by proximity.
+) -> Literal[True]:
+    """Plots a collection of rounds and saves as a .gif. Each player in the first round is assigned a separate color. Players in the other rounds are matched by proximity.
     Only use untransformed coordinates.
 
     Args:
         filename (string): Filename to save the gif
-        frames_list (list): List of np arrays each frame should have shape (Time_steps,2|1(sides),5,3)
+        frames_list (Union[np.ndarray, list[np.ndarray]]): (List or higher dimensional array) of np arrays. One array for each round. Each round entry should have shape (Time_steps,2|1(sides),5,3)
         map_name (string): Map to search
         map_type (string): "original" or "simpleradar"
         dark (boolean): Only for use with map_type="simpleradar". Indicates if you want to use the SimpleRadar dark map type
         dist_type (string): String indicating the type of distance to use. Can be graph, geodesic, euclidean, manhattan, canberra or cosine
-        dtw: Boolean indicating whether matching should be performed via dynamic time warping (true) or euclidean (false)
         dpi (int): DPI of the resulting image
 
     Returns:
         True, saves .gif
     """
-    frame_positions = collections.defaultdict(
+    frame_positions: dict[
+        int, dict[int, dict[int, list[list[float]]]]
+    ] = collections.defaultdict(
         lambda: collections.defaultdict(lambda: collections.defaultdict(list))
     )
-    frame_colors = collections.defaultdict(
+    frame_colors: dict[int, dict[int, dict[int, list[str]]]] = collections.defaultdict(
         lambda: collections.defaultdict(lambda: collections.defaultdict(list))
     )
     # Needed to check if leaders have been fully initialized
@@ -673,11 +715,10 @@ def plot_rounds_different_players_position_image(
     max_frames = max(frames.shape[0] for frames in frames_list)
     # Build tree data structure for leaders
     # For each side the keys are a players steamd id + "_" + frame_number in case the same steamid occurs in multiple rounds
-    leaders = collections.defaultdict(
-        lambda: collections.defaultdict(lambda: collections.defaultdict(list))
+    leaders: dict[int, dict[str, LeadersLastLevel]] = collections.defaultdict(
+        lambda: collections.defaultdict(lambda: LeadersLastLevel(pos=[], index=0))
     )
     for i in tqdm(range(min(max_frames, int(n_frames)))):
-        # Initialize lists used to store things from all rounds to plot for each frame
         # Is used to determine if a specific leader has already been seen. Needed when a leader drops out because their round has already ended
         checked_in = set()
         # Loop over all the rounds and update the position and status of all leaders
@@ -712,7 +753,6 @@ def plot_rounds_different_players_position_image(
                             leaders[side],
                             current_positions,
                             dist_type=dist_type,
-                            dtw=dtw,
                         )
                     # Now do the actual plotting
                     for player_index, p in enumerate(frames[i][side]):
@@ -736,8 +776,8 @@ def plot_rounds_different_players_position_image(
                         else:
                             # Grab the id of the leader assigned to this player
                             assigned_leader = mapping[player_index]
-                            # If the assigned leader is now dead or has not been assigned (happens when his round is already over)
-                            # Then we take over that position if we are not also dead
+                            # If the assigned leader  has not been assigned (happens when his round is already over)
+                            # Then we take over that position
                             if assigned_leader not in checked_in:
                                 # Remove the previous leaders entry from the dict
                                 old_index = leaders[side][assigned_leader]["index"]
@@ -786,22 +826,21 @@ def plot_rounds_different_players_position_image(
 
 def plot_rounds_different_players_position_gif(
     filename: str,
-    frames_list: list[np.ndarray],
+    frames_list: Union[np.ndarray, list[np.ndarray]],
     map_name: str = "de_ancient",
     map_type: str = "original",
     dark: bool = False,
-    fps: str = 2,
+    fps: int = 2,
     n_frames: int = 9000,
     dist_type: str = "geodesic",
-    dtw: bool = False,
     dpi: int = 300,
-) -> True:
-    """Plots a list of rounds and saves as a .gif. Each player in the first round is assigned a separate color. Players in the other rounds are matched by proximity.
+) -> Literal[True]:
+    """Plots a collection of rounds and saves as a .gif. Each player in the first round is assigned a separate color. Players in the other rounds are matched by proximity.
     Only use untransformed coordinates.
 
     Args:
         filename (string): Filename to save the gif
-        frames_list (list): List of np arrays each frame should have shape (Time_steps,2|1(sides),5,3)
+        frames_list (Union[np.ndarray, list[np.ndarray]]): (List or higher dimensional array) of np arrays. One array for each round. Each round entry should have shape (Time_steps,2|1(sides),5,3)
         map_name (string): Map to search
         map_type (string): "original" or "simpleradar"
         dark (boolean): Only for use with map_type="simpleradar". Indicates if you want to use the SimpleRadar dark map type
@@ -825,16 +864,16 @@ def plot_rounds_different_players_position_gif(
     max_frames = max(frames.shape[0] for frames in frames_list)
     # Build tree data structure for leaders
     # For each side the keys are a players steamd id + "_" + frame_number in case the same steamid occurs in multiple rounds
-    leaders = collections.defaultdict(
-        lambda: collections.defaultdict(lambda: collections.defaultdict(list))
+    leaders: dict[int, dict[str, LeadersLastLevel]] = collections.defaultdict(
+        lambda: collections.defaultdict(lambda: LeadersLastLevel(pos=[], index=0))
     )
     for i in tqdm(range(min(max_frames, int(n_frames)))):
         # Initialize lists used to store things from all rounds to plot for each frame
-        positions = []
-        colors = []
-        markers = []
-        alphas = []
-        sizes = []
+        positions: list[list[float]] = []
+        colors: list[str] = []
+        markers: list[str] = []
+        alphas: list[float] = []
+        sizes: list[float] = []
         # Is used to determine if a specific leader has already been seen. Needed when a leader drops out because their round has already ended
         checked_in = set()
         # Loop over all the rounds and update the position and status of all leaders
@@ -869,7 +908,6 @@ def plot_rounds_different_players_position_gif(
                             leaders[side],
                             current_positions,
                             dist_type=dist_type,
-                            dtw=dtw,
                         )
                     # Now do the actual plotting
                     for player_index, p in enumerate(frames[i][side]):
@@ -947,24 +985,24 @@ def plot_rounds_different_players_position_gif(
 
 def plot_rounds_different_players(
     filename: str,
-    frames_list: list[np.ndarray],
+    frames_list: Union[np.ndarray, list[np.ndarray]],
     map_name: str = "de_ancient",
     map_type: str = "original",
     dark: bool = False,
-    fps: str = 10,
+    fps: int = 10,
     n_frames: int = 9000,
     dist_type: str = "geodesic",
     image: bool = False,
     trajectory: bool = False,
     dtw: bool = False,
     dpi: Optional[int] = None,
-) -> True:
+) -> Literal[True]:
     """Plots a list of rounds and saves as a .gif. Each player in the first round is assigned a separate color. Players in the other rounds are matched by proximity.
     Only use untransformed coordinates.
 
     Args:
         filename (string): Filename to save the gif
-        frames_list (list): List of np arrays each frame should have shape (Time_steps,2|1(sides),5,3)
+        frames_list (Union[np.ndarray, list[np.ndarray]]): (List or higher dimensional array) of np arrays. One array for each round. Each round entry should have shape (Time_steps,2|1(sides),5,3)
         map_name (string): Map to search
         map_type (string): "original" or "simpleradar"
         dark (boolean): Only for use with map_type="simpleradar". Indicates if you want to use the SimpleRadar dark map type
@@ -1013,7 +1051,6 @@ def plot_rounds_different_players(
                 map_type=map_type,
                 dark=dark,
                 dist_type=dist_type,
-                dtw=dtw,
                 dpi=dpi if dpi else 1000,
             )
         else:  # gif
@@ -1026,7 +1063,6 @@ def plot_rounds_different_players(
                 fps=fps,
                 n_frames=n_frames,
                 dist_type=dist_type,
-                dtw=dtw,
                 dpi=dpi if dpi else 300,
             )
 

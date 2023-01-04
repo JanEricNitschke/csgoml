@@ -10,6 +10,7 @@ import pytest
 from csgoml.trajectories.trajectory_handler import TrajectoryHandler
 from csgoml.utils.plotting_utils import (
     get_shortest_distances_mapping,
+    get_shortest_distances_mapping_trajectory,
     plot_round_tokens,
     plot_map_areas,
     plot_mid,
@@ -73,6 +74,48 @@ class TestPlottingUtils:
     def test_get_shortest_distances_mapping(self):
         """Tests get_shortest_distances_mapping"""
         map_name = "de_inferno"
+        dist_type = "euclidean"
+        current_positions = [[1, 0, 0], [2, 0, 0], [3, 0, 0]]
+        leaders = {
+            "0_0_CT": {"pos": [1, 0, 0]},
+            "1_0_CT": {"pos": [2, 0, 0]},
+            "2_0_CT": {"pos": [3, 0, 0]},
+        }
+        mapping = get_shortest_distances_mapping(
+            map_name, leaders, current_positions, dist_type
+        )
+        assert mapping == ["0_0_CT", "1_0_CT", "2_0_CT"]
+        current_positions = [[3, 0, 0], [1, 0, 0], [2, 0, 0]]
+        mapping = get_shortest_distances_mapping(
+            map_name, leaders, current_positions, dist_type
+        )
+        assert mapping == ["2_0_CT", "0_0_CT", "1_0_CT"]
+        leaders = {
+            "1_0_CT": {"pos": [2, 0, 0]},
+            "0_0_CT": {"pos": [1, 0, 0]},
+            "2_0_CT": {"pos": [3, 0, 0]},
+        }
+        mapping = get_shortest_distances_mapping(
+            map_name, leaders, current_positions, dist_type
+        )
+        assert mapping == ["2_0_CT", "0_0_CT", "1_0_CT"]
+
+        dist_type = "geodesic"
+        current_positions = [[1, 1, 1, 74], [2, 2, 2, 1403]]
+        leaders = {"0_0_CT": {"pos": [1, 1, 1, 74]}, "1_0_CT": {"pos": [2, 2, 2, 1403]}}
+        mapping = get_shortest_distances_mapping(
+            map_name, leaders, current_positions, dist_type
+        )
+        assert mapping == ["0_0_CT", "1_0_CT"]
+        current_positions = [[2, 2, 2, 1403], [1, 1, 1, 74]]
+        mapping = get_shortest_distances_mapping(
+            map_name, leaders, current_positions, dist_type
+        )
+        assert mapping == ["1_0_CT", "0_0_CT"]
+
+    def test_get_shortest_distances_mapping_trajectory(self):
+        """Tests get_shortest_distances_mapping_trajectory"""
+        map_name = "de_inferno"
         leaders = [
             np.array([[[[101, 0, 0]]], [[[201, 0, 0]]], [[[301, 0, 0]]]]),
             np.array([[[[1, 0, 0]]], [[[101, 0, 0]]], [[[201, 0, 0]]]]),
@@ -82,51 +125,19 @@ class TestPlottingUtils:
             np.array([[[[101, 0, 0]]], [[[201, 0, 0]]], [[[301, 0, 0]]]]),
         ]
         dist_type = "euclidean"
-        trajectory = True
         dtw = False
-        mapping = get_shortest_distances_mapping(
-            map_name, leaders, current_positions, dist_type, trajectory, dtw
+        mapping = get_shortest_distances_mapping_trajectory(
+            map_name, leaders, current_positions, dist_type, dtw
         )
         assert mapping == (1, 0)
         leaders = [
             np.array([[[[1, 0, 0]]], [[[101, 0, 0]]], [[[201, 0, 0]]]]),
             np.array([[[[101, 0, 0]]], [[[201, 0, 0]]], [[[301, 0, 0]]]]),
         ]
-        mapping = get_shortest_distances_mapping(
-            map_name, leaders, current_positions, dist_type, trajectory, dtw
+        mapping = get_shortest_distances_mapping_trajectory(
+            map_name, leaders, current_positions, dist_type, dtw
         )
         assert mapping == (0, 1)
-
-        trajectory = False
-        current_positions = [[1, 0, 0], [2, 0, 0], [3, 0, 0]]
-        leaders = {0: {"pos": [1, 0, 0]}, 1: {"pos": [2, 0, 0]}, 2: {"pos": [3, 0, 0]}}
-        mapping = get_shortest_distances_mapping(
-            map_name, leaders, current_positions, dist_type, trajectory, dtw
-        )
-        assert mapping == [0, 1, 2]
-        current_positions = [[3, 0, 0], [1, 0, 0], [2, 0, 0]]
-        mapping = get_shortest_distances_mapping(
-            map_name, leaders, current_positions, dist_type, trajectory, dtw
-        )
-        assert mapping == [2, 0, 1]
-        leaders = {1: {"pos": [2, 0, 0]}, 0: {"pos": [1, 0, 0]}, 2: {"pos": [3, 0, 0]}}
-        mapping = get_shortest_distances_mapping(
-            map_name, leaders, current_positions, dist_type, trajectory, dtw
-        )
-        assert mapping == [2, 0, 1]
-
-        dist_type = "geodesic"
-        current_positions = [[1, 1, 1, 74], [2, 2, 2, 1403]]
-        leaders = {0: {"pos": [1, 1, 1, 74]}, 1: {"pos": [2, 2, 2, 1403]}}
-        mapping = get_shortest_distances_mapping(
-            map_name, leaders, current_positions, dist_type, trajectory, dtw
-        )
-        assert mapping == [0, 1]
-        current_positions = [[2, 2, 2, 1403], [1, 1, 1, 74]]
-        mapping = get_shortest_distances_mapping(
-            map_name, leaders, current_positions, dist_type, trajectory, dtw
-        )
-        assert mapping == [1, 0]
 
     def test_plot_round_tokens(self):
         """Tests plot_round_tokens"""

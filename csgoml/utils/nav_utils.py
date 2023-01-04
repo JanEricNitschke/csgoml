@@ -51,7 +51,7 @@ from cmath import inf
 import numpy as np
 from matplotlib import patches
 import matplotlib.pyplot as plt
-from numba import njit, typed, types
+from numba import njit, typed, types  # type: ignore[attr-defined]
 from sympy.utilities.iterables import multiset_permutations
 from awpy.visualization.plot import plot_map, position_transform
 from awpy.data import NAV
@@ -205,7 +205,9 @@ def trajectory_distance(
     Args:
         map_name (string): Map under consideration
         trajectory_array_1: Numpy array with shape (n_Time,2|1, 5, 3) with the first index indicating the team, the second the player and the third the coordinate
+                            Alternatively the last dimension can have size 1 containing the area_id. Used only with geodesic and graph distance
         trajectory_array_2: Numpy array with shape (n_Time,2|1, 5, 3) with the first index indicating the team, the second the player and the third the coordinate
+                            Alternatively the last dimension can have size 1 containing the area_id. Used only with geodesic and graph distance
         distance_type: String indicating how the distance between two player positions should be calculated. Options are "geodesic", "graph", "euclidean" and "edit_distance"
         dtw: Boolean indicating whether matching should be performed via dynamic time warping (true) or euclidean (false)
     Returns:
@@ -544,7 +546,7 @@ def fast_area_state_distance(
     """
     if (not np.any(position_array_1)) or (not np.any(position_array_2)):
         return sys.maxsize
-    pos_distance = 0
+    pos_distance: float = 0
     for team in range(position_array_1.shape[0]):
         side_distance = inf
         # Generate all possible mappings between players from array1 and array2. (Map player1 from array1 to player1 from array2 and player2's to each other or match player1's with player2's and so on)
@@ -552,7 +554,7 @@ def fast_area_state_distance(
             range(position_array_1.shape[1]), position_array_2.shape[1]
         ):
             # Distance team distance for the current mapping
-            cur_dist = 0
+            cur_dist: float = 0
             n_skipped = 0
             # Calculate the distance between each pair of players in the current mapping
             for player2, player1 in enumerate(mapping):
@@ -604,7 +606,7 @@ def fast_position_state_distance(
     Returns:
         A float representing the distance between these two game states
     """
-    pos_distance = 0
+    pos_distance: float = 0
     for team in range(position_array_1.shape[0]):
         side_distance = inf
         # Generate all possible mappings between players from array1 and array2. (Map player1 from array1 to player1 from array2 and player2's to each other or match player1's with player2's and so on)

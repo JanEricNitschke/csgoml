@@ -8,6 +8,7 @@ Typical usage example:
 
 import shutil
 import argparse
+import time
 import sys
 import os
 import re
@@ -29,6 +30,7 @@ def find_missing(my_set: set[int]) -> list[int]:
         return []
     lst = sorted(my_set)
     logging.info("Demo indices that have already been downloaded:")
+    logging.info("Done : %s", lst)
     logging.info("Minimum: %s", lst[0])
     logging.info("Maximum: %s", lst[-1])
     missing = [x for x in range(lst[0], lst[-1] + 1) if x not in my_set]
@@ -56,18 +58,18 @@ def main(args):
     parser.add_argument(
         "--startid",
         type=int,
-        default=70151,
+        default=70418,
         help="Analyze demos with a name above this id",
     )
     parser.add_argument(
         "--endid",
         type=int,
-        default=70201,
+        default=70501,
         help="Analyze demos with a name below this id",
     )
     options = parser.parse_args(args)
 
-    # Done are: 68900-70150;
+    # Done are: 68900-70417;
 
     if options.debug:
         logging.basicConfig(
@@ -96,17 +98,21 @@ def main(args):
         if os.path.isdir(directory):
             for filename in os.listdir(directory):
                 if filename.endswith(".json"):
-                    match_id = re.search(r".+_(\d{5}).json", filename).group(1)
+                    search_result = re.search(r".+_(\d{5}).json", filename)
+                    if search_result is None:
+                        continue
+                    match_id = search_result.group(1)
                     if match_id not in done_indices:
                         done_indices.add(int(match_id))
 
     _ = find_missing(done_indices)
 
-    gateway = ApiGateway("https://www.hltv.org/", regions=EXTRA_REGIONS)
-    gateway.start()
+    # gateway = ApiGateway("https://www.hltv.org/", regions=EXTRA_REGIONS)
+    # gateway.start()
 
     session = requests.Session()
-    session.mount("https://www.hltv.org/", gateway)
+    # session.mount("https://www.hltv.org/", gateway)
+
     urls = [
         "https://www.hltv.org/download/demo/" + str(x)
         for x in range(
@@ -121,14 +127,23 @@ def main(args):
     logging.info("Will download demos for %s matches.", len(urls))
     timeout = 100
     for url in urls:
+        time.sleep(5)
         filename = options.dir + url.split("/")[-1] + ".rar"
         logging.info(filename)
         with session.get(url, stream=True, timeout=timeout) as raw:
+            # with requests.get(url, stream=True, timeout=timeout) as raw:
+            logging.info("Status code: %s", raw.status_code)
+            logging.info("Headers: %s", raw.headers)
+            # logging.info("Content: %s", raw.content)
+            # with open(filename, "wb") as file:
+            #     shutil.copyfileobj(raw.raw, file)
+            # logging.info("Content: %s", raw.content)
             with open(filename, "wb") as file:
-                shutil.copyfileobj(raw.raw, file)
+                for chunk in raw.iter_content(chunk_size=1024 * 1024):  # 1024*1024, 128
+                    file.write(chunk)
 
     # Only run this line if you are no longer going to run the script, as it takes longer to boot up again next time.
-    gateway.shutdown()
+    # gateway.shutdown()
 
 
 if __name__ == "__main__":

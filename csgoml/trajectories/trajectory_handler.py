@@ -12,7 +12,7 @@ Typical usage example:
 import os
 import random
 import logging
-from typing import Optional
+from typing import Optional, Union
 import numpy as np
 import pandas as pd
 from sklearn.model_selection import train_test_split
@@ -28,7 +28,8 @@ class TrajectoryHandler:
 
     Attributes:
         input (string): Path to the json input file containing all the trajectory data for every round on a given map.
-        datasets (dict): Dictionary of datasets derived from input. split by Pos/Token, CT,T,Both, time, train/test/val.
+        datasets (dict[str, np.ndarray]): Dictionary of position and token trajectory numpy arrays
+        aux (dict[str, np.ndarray]): Dictionary of auxilliary information about about trajectories.
         random_state (int): Integer for random_states
         time (int): Maximum time that is reasonable for a round to have
         map_name (string): Name of the map under consideration
@@ -42,28 +43,28 @@ class TrajectoryHandler:
         time: int = 175,
     ):
         logging.info("Starting init")
-        self.map_name = map_name
+        self.map_name: str = map_name
         if random_state is None:
-            self.random_state = random.randint(1, 10**8)
+            self.random_state: int = random.randint(1, 10**8)
         else:
             self.random_state = random_state
-        self.input = json_path
+        self.input: str = json_path
         if os.path.isfile(self.input):
             with open(self.input, encoding="utf-8") as pre_analyzed:
                 complete_dataframe = pd.read_json(pre_analyzed)
         else:
             logging.error("File %s does not exist!", self.input)
             raise FileNotFoundError("File does not exist!")
-        self.time = time
+        self.time: int = time
 
         logging.debug("Initial dataframe:")
         logging.debug(complete_dataframe)
 
-        self.datasets = {}
-        self.datasets["Aux"] = {}
+        self.datasets: dict[str, np.ndarray] = {}
+        self.aux: dict[str, np.ndarray] = {}
         for column in complete_dataframe:
             if column != "position_df":
-                self.datasets["Aux"][column] = complete_dataframe[column].to_numpy()
+                self.aux[column] = complete_dataframe[column].to_numpy()
         # Transform the position_df from a json dict to df and also transform ticks to seconds
         dataframe = complete_dataframe[["position_df"]]
         dataframe["position_df"] = dataframe["position_df"].apply(
@@ -89,7 +90,7 @@ class TrajectoryHandler:
         """Transforms a json dictionary to a pandas dataframe and converts ticks to seconds.
 
         Args:
-            json_format_dict: A dictionary in json format holding information player positions during a CS:GO round
+            json_format_dict: A dictionary in json format holding information about player positions during a CS:GO round
 
         Returns:
             A pandas dataframe corresponding to the input json with the tick values transformed to seconds.
@@ -156,7 +157,6 @@ class TrajectoryHandler:
 
         Args:
             position_df: A dataframe of player positions during a round.
-            token: A string clarifying which token should be used.
 
         Returns:
             A two dimensional numpy array containing the transformed token at each timestep
@@ -187,15 +187,10 @@ class TrajectoryHandler:
         """Transforms data frame by throwing away all unnecessary features
         and then turning it into a (multidimensional) array.
 
-        If coordinates is true then the result is a 4d array where for each timestep there is a 3d array representing team, player number and the feature.
-        If it is false then for each time step there is an array corresponding to all token characters
+        The result is a 4d array where for each timestep there is a 3d array representing team, player number and the feature.
 
         Args:
             position_df: A dataframe of player positions during a round.
-            configuration: tuple of:
-                team: A string indicating whether to include positions for players on the CT side, T side or both sides
-                time: An integer indicating
-                coordinates: A string indicating whether player coordinates should be used directly ("positions") or the summarizing tokens ("tokens") instead.
 
         Returns:
             A multi-dimensional numpy array containing split tokens or player positions (organized by team, playnumber, coordinate)
@@ -241,8 +236,9 @@ class TrajectoryHandler:
 
         First gets the array for the correct coordinate type and then slices it by the desired side and time.
         Finally the dataset is split into train, val and test sets and returned together with the labels.
-        Shape of the position numpy array is #Rounds,self.time,side(2),player(5),feature(5[x,y,z,area,alive])
+        Shape of the position numpy array is #Round,self.time,side(2),player(5),feature(5[x,y,z,area,alive])
         Shape of the token numpy array is #Round,self.time,len(token(self.map_name)) First half of the token length is CT second is T
+        Shape of the aux arrays is #Round
 
         Args:
             coordinate_type (string): A string indicating whether player coordinates should be used directly ("position") or the summarizing tokens ("token") instead.
@@ -252,14 +248,17 @@ class TrajectoryHandler:
 
         Returns:
             Numpy arrays for train, val and test labels and features. Shapes depend on desired configuration. Order is train_label, val_label, test_label, train_features, val_features, test_features"""
-        label = self.datasets["Aux"]["Winner"]
-
+        label = self.aux["Winner"]
         if coordinate_type == "position":
-            side_conversion = {"CT": [0], "T": [1], "BOTH": [0, 1]}
+            side_conversion: Union[dict[str, list[int]], dict[str, tuple[int, int]]] = {
+                "CT": [0],
+                "T": [1],
+                "BOTH": [0, 1],
+            }
             features_of_interest = [0, 1, 2]
             if consider_alive:
                 features_of_interest.append(4)
-            indices = np.ix_(
+            indices: tuple[np.typing.NDArray[np.int8], ...] = np.ix_(
                 range(self.datasets["position"].shape[0]),
                 range(time),
                 side_conversion[side],
@@ -309,7 +308,7 @@ class TrajectoryHandler:
 
         First gets the array for the correct coordinate type and then slices it by the desired side and time.
         A shuffle of the relevant array for clustering is returned together with the matching positions (shuffled coherently) needed for plotting the clusters.
-        Shape of the position numpy array is #Rounds,self.time,side(2),player(5),feature(5[x,y,z,area,alive]).
+        Shape of the position numpy array is #Round,self.time,side(2),player(5),feature(5[x,y,z,area,alive]).
         Shape of the token numpy array is #Round,self.time,len(token(self.map_name)) First half of the token length is CT second is T.
 
         Args:
@@ -329,7 +328,7 @@ class TrajectoryHandler:
             array_for_plotting = array_for_plotting[:, :, :, :, :3]
             array_for_clustering = array_for_plotting
         elif coordinate_type_for_distance == "area":
-            indices = np.ix_(
+            indices: tuple[np.typing.NDArray[np.int8], ...] = np.ix_(
                 range(min(self.datasets["position"].shape[0], n_rounds)),
                 range(time),
                 side_conversion[side],

@@ -34,7 +34,7 @@ Typical usage example:
 """
 
 import os
-from typing import Optional, Dict
+from typing import Optional, Dict, Literal
 import random
 import logging
 from collections import defaultdict
@@ -43,7 +43,7 @@ import matplotlib.pyplot as plt
 from sklearn.neighbors import NearestNeighbors
 from sklearn.cluster import DBSCAN
 from sklearn_extra.cluster import KMedoids
-from numba import typed, types
+from numba import typed, types  # type: ignore[attr-defined]
 from awpy.data import NAV, AREA_DIST_MATRIX, PLACE_DIST_MATRIX
 from csgoml.trajectories.trajectory_handler import TrajectoryHandler
 from csgoml.utils.nav_utils import (
@@ -87,11 +87,11 @@ class TrajectoryClusterer:
         self,
         trajectory_config: tuple[str, int, int, str, bool],
         clustering_config: dict,
-    ) -> True:
+    ) -> Literal[True]:
         """Does everything needed to cluster a configuration and plot the results
 
         Args:
-            trajectory_config (tuple): Tuple of (coordinate_type, n_rounds, time, side, dtw) where:
+            trajectory_config (tuple[str, int, int, str, bool]): Tuple of (coordinate_type, n_rounds, time, side, dtw) where:
                 coordinate_type_for_distance (string): A string indicating whether player coordinates should be used directly ("position"), the areas ("area") or the summarizing tokens ("token") instead.
                 n_rounds (int): How many rounds should be in the final output. Can be necessary to not use all of them due to time constraints.
                 time (integer): An integer indicating the first how many seconds should be considered
@@ -111,7 +111,7 @@ class TrajectoryClusterer:
                 'do_kmed' (bool): Whether to run k-medoids clustering
                 'kmed_n_clusters' (int): The number of clusters to form as well as the number of medoids to generate. Example: 4
         Returns:
-            w.i.p.
+            True
         """
         # Get config and set up paths
         coordinate_type, n_rounds, time, side, dtw = trajectory_config
@@ -366,7 +366,7 @@ class TrajectoryClusterer:
 
     def get_compressed_area_dist_matrix(
         self,
-    ) -> typed.Dict.empty(types.int64, types.DictType(types.int64, types.float64)):
+    ) -> dict[types.int64, dict[types.int64, types.float64]]:
         """Generates a compressed area distance matrix
 
         Args:
@@ -390,7 +390,7 @@ class TrajectoryClusterer:
 
     def get_compressed_place_dist_matrix(
         self,
-    ) -> typed.Dict.empty(types.string, types.DictType(types.string, types.float64)):
+    ) -> dict[types.string, dict[types.string, types.float64]]:
         """Generates a compressed place distance matrix
 
         Args:
@@ -423,7 +423,7 @@ class TrajectoryClusterer:
         map_area_names = set()
         for area_id in NAV[self.map_name]:
             map_area_names.add(NAV[self.map_name][area_id]["areaName"])
-        map_area_names = sorted(list(map_area_names))
+        map_area_names = sorted(list(map_area_names))  # type: ignore[assignment]
         map_area_names = typed.List(map_area_names)
         return map_area_names
 
