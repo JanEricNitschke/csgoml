@@ -33,6 +33,8 @@ class TrajectoryHandler:
         random_state (int): Integer for random_states
         time (int): Maximum time that is reasonable for a round to have
         map_name (string): Name of the map under consideration
+    Raises:
+        FileNotFoundError: If there is no file at the path of the input string
     """
 
     def __init__(

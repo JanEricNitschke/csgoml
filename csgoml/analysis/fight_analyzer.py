@@ -387,6 +387,9 @@ class FightAnalyzer:
         Returns:
             Tuples consisting of total number of kills and CT win percentage.
             If no kills happend then return (0, 0)
+
+        Raises:
+            AssertionError: If the query does not return any value
         """
         ct_pos = ", ".join(f'"{val}"' for val in positions["CT"]["Allowed"])
         t_pos = ", ".join(f'"{val}"' for val in positions["T"]["Allowed"])
