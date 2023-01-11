@@ -1,9 +1,9 @@
 """Runs over each demo separated by map and produces a dataframe tracking player positions.
 
-For each map folder in the provided directory this scripts produces a dataframe trackining player movement in each round.
+For each map folder in the provided directory this script produces a dataframe tracking player movement in each round.
 The produced dataframe has one row per round and for each round columns for the matchid, mapname, roundnumber, winning side and a dataframe containing the trajectory data.
 The trajectory data contains for each parsed frame (every 128th recorded tick. Ideally 1 frame per second but can be less depending on server configuration) each players
-x,y,z coordinates, name and alive status. additionally three position tokens are generated. one encapsulating the positions of each t side player, one of each ct side player and a combined one.
+x,y,z coordinates, name and alive status. additionally three position tokens are generated. One encapsulating the positions of each t side player, one of each ct side player and a combined one.
 The dataframe is finally exported to a json file.
 
 

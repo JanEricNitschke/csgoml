@@ -1,5 +1,5 @@
 """
-This module contains the TrajectoryHandler that reads in the precomputed trajectories and makes them easily availalbe in the form of numpy array.
+This module contains the TrajectoryHandler that reads in the precomputed trajectories and makes them easily availalbe in the form of numpy arrays.
 
 Typical usage example:
 

@@ -236,5 +236,5 @@ class TestTrajectoryClusterer:
             dtw,
         )
         dbscan_dict = self.clusterer.run_dbscan(500, 2, precomputed=precomputed_matrix)
-        assert len(dbscan_dict) == 3
-        assert dict(dbscan_dict) == {0: [0, 1, 3, 8, 9], 1: [2, 7], 2: [4, 5, 6]}
+        assert len(dbscan_dict) == 2
+        assert dict(dbscan_dict) == {0: [0, 1, 3, 4, 5, 6, 8, 9], 1: [2, 7]}

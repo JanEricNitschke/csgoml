@@ -9,8 +9,7 @@ auxiliary/AWS_Steps/FightAnalyzer/lambda/pymysql/
 auxiliary/AWS_Steps/FightAnalyzer/lambda/PyMySQL-1.0.2.dist-info/
 auxiliary/AWS_Steps/FightAnalyzer/lambda/rds_config.py
 Plots/
-data/bugged/
-data/old/
+data/*/
 data/area_distance_matrix_de_cbble.json
 data/area_distance_matrix_de_dust2.json
 data/area_distance_matrix_de_nuke.json

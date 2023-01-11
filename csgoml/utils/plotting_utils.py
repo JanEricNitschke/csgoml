@@ -397,7 +397,7 @@ def get_shortest_distances_mapping(
             if current_positions[current_i] is None:
                 continue
             if dist_type in ["geodesic", "graph"]:
-                if AREA_DIST_MATRIX is None or map_name not in AREA_DIST_MATRIX:
+                if map_name not in AREA_DIST_MATRIX:
                     this_dist = min(
                         area_distance(
                             map_name,

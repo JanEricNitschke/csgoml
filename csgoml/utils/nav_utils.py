@@ -3,10 +3,6 @@
 
     Typical usage example:
 
-    area_matrix = get_area_distance_matrix()
-    logging.info(area_matrix["de_dust2"]["ExtendedA"]["CTSpawn"])
-    logging.info(area_matrix["de_dust2"]["CTSpawn"]["ExtendedA"])
-
     centroids, reps = generate_centroids("de_dust2")
     graph = area_distance(
         "de_dust2", centroids["ExtendedA"], centroids["CTSpawn"], dist_type="graph"
@@ -36,6 +32,19 @@
         "de_dust2", reps["CTSpawn"],  reps["ExtendedA"], dist_type="geodesic"
     )
     plot_path("test_path","de_dust2", graph, geodesic)
+
+    from csgoml.utils.nav_utils import (
+        get_traj_matrix_area,
+        get_traj_matrix_token,
+        get_traj_matrix_position,
+    )
+    precomputed = get_traj_matrix_token(
+        precompute_array=clustering_array,
+        dist_matrix=dist_matrix,
+        map_area_names=map_area_names,
+        dtw=dtw,
+    )
+
 
 
 """

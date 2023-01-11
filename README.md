@@ -59,6 +59,6 @@ Run as a script it illustrates the basic functionality of these functions as wel
 
 # nav_utils.py
 This is a module containing functions augmenting navigation capabilities of [awpy](https://github.com/pnxenopoulos/awpy).
-It contains functions to precompute distance matrices for both areas and places of each map.
-Included are also plotting functions to validate the results.
+It contains functions to calculate distances between game states and game state trajectories based on player positions or tokens.
+Included are also plotting functions to validate distance calculations.
 The matrices for the places and for same maps for the area are included in this repo while for other maps the area matrices are too large and thus stored separately [here](https://cernbox.cern.ch/index.php/s/T1BJ69qKLlK1fSu).

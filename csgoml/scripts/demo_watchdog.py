@@ -1,7 +1,7 @@
 """Watch directory for new demo files to unpack and parse.
 
     Have watchdog check for new rar files
-    If it finds one it shoud unpack it and run DemoAnalyzer_Sorter.py over the resulting folder and have each json names as DemoName_RarNumber.json
+    If it finds one it shoud unpack it and run DemoAnalyzer_Sorter.py over the resulting folder and have each jsons name as DemoName_RarNumber.json
     Then move the json to a destination folder
 
     Typical usage example:
@@ -152,10 +152,10 @@ def main(args):
         patterns, ignore_patterns, ignore_directories, case_sensitive
     )
 
-    my_event_handler.on_created = on_created # type: ignore[assignment]
-    my_event_handler.on_deleted = on_deleted # type: ignore[assignment]
-    my_event_handler.on_modified = on_modified # type: ignore[assignment]
-    my_event_handler.on_moved = on_moved # type: ignore[assignment]
+    my_event_handler.on_created = on_created  # type: ignore[assignment]
+    my_event_handler.on_deleted = on_deleted  # type: ignore[assignment]
+    my_event_handler.on_modified = on_modified  # type: ignore[assignment]
+    my_event_handler.on_moved = on_moved  # type: ignore[assignment]
 
     path = options.dir
     go_recursively = False

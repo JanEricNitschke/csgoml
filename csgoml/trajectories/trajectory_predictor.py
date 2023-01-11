@@ -1,6 +1,25 @@
 """
 This module contains the TrajectoryPredictor.
 It gets its inputs properly formatted from a TrajectoryHandler and then builds/trains DNNs to predict the round winner based on player trajectory data.
+
+Typical usage example:
+
+    predictor = trajectory_predictor.TrajectoryPredictor(
+        analysis_path=analysis_path,
+        trajectory_handler=handler,
+        random_state=random_state,
+        map_name=map_name,
+    )
+    traj_config = ("position", 20, "T", False)
+    dnn_config = {
+        "batch_size": 32,
+        "learning_rate": 0.00007,
+        "epochs": 50,
+        "patience": 5,
+        "nodes_per_layer": 32,
+    }
+    dnn_config = {}
+    predictor.do_predicting(trajectory_config=traj_config, dnn_config=dnn_config)
 """
 
 import os
