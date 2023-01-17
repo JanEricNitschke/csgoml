@@ -16,13 +16,14 @@ The dataframe is finally exported to a json file.
 import os
 import sys
 import logging
-from typing import Union, Optional
+from typing import Union, Optional, Literal, cast
 import argparse
 import json
 import copy
 import pandas as pd
 from awpy.analytics.nav import generate_position_token, find_closest_area
 from awpy.data import NAV
+from awpy.types import GameFrame, Token, GameRound, PlayerInfo, Game
 
 
 def initialize_round_positions() -> dict[str, list]:
@@ -51,8 +52,8 @@ def initialize_round_positions() -> dict[str, list]:
 
 
 def build_intermediate_frames(
-    current_frame: dict, previous_frame: dict, second_difference: int
-) -> list[dict]:
+    current_frame: GameFrame, previous_frame: GameFrame, second_difference: int
+) -> list[GameFrame]:
     """Builds intermediate frames if fewer than 1 were recorded per second due to the server configuration.
 
     Linearly interpolates the players x,y,z positions from one frame to the next while keeping everything else as it is in the first frame.
@@ -66,7 +67,7 @@ def build_intermediate_frames(
     Returns:
         A list of intermediate frames from after previous_frame to including current_frame
     """
-    intermdiate_frames = []
+    intermdiate_frames: list[GameFrame] = []
     for i in range(second_difference, 0, -1):
         this_frame = copy.deepcopy(current_frame)
         for side in ["t", "ct"]:
@@ -94,7 +95,7 @@ def build_intermediate_frames(
     return intermdiate_frames
 
 
-def get_postion_token(frame: dict, map_name: str, token_length: int) -> dict:
+def get_postion_token(frame: GameFrame, map_name: str, token_length: int) -> Token:
     """Generate a dictionary of position tokens from frame dictionary and map_name.
 
     The position token is a string of integers representing the number of players in a given unique named area.
@@ -109,7 +110,7 @@ def get_postion_token(frame: dict, map_name: str, token_length: int) -> dict:
         Dictionary of three position tokens. One for each side and aditionally a combined one
     """
     try:
-        tokens = generate_position_token(map_name, frame)
+        tokens: Token = generate_position_token(map_name, frame)
     except TypeError:
         tokens = {
             "tToken": token_length * "0",
@@ -197,7 +198,7 @@ def check_size(dictionary: dict[str, list]) -> int:
     return length
 
 
-def frame_is_empty(current_round: dict) -> bool:
+def frame_is_empty(current_round: GameRound) -> bool:
     """Checks whether a round dicionary contains None or an empty list frames.
 
     None or empty frames will raise exceptions when trying to extract player information out of them.
@@ -219,7 +220,7 @@ def frame_is_empty(current_round: dict) -> bool:
     return False
 
 
-def get_player_id(player: dict) -> Union[int, str]:
+def get_player_id(player: PlayerInfo) -> Union[int, str]:
     """Extracts a players steamID from their player dictionary in a given frame.
 
     Each player has a unique steamID by which they can be identified.
@@ -237,7 +238,7 @@ def get_player_id(player: dict) -> Union[int, str]:
     return player["steamID"]
 
 
-def pad_to_full_length(round_positions: dict) -> None:
+def pad_to_full_length(round_positions: dict[str, list]) -> None:
     """Pads each entry in a given round_positions dictionary to the full length.
 
     For every player their name, status and position should be stored for every timestep in the round.
@@ -247,7 +248,7 @@ def pad_to_full_length(round_positions: dict) -> None:
     Afterwards a check is performed to assert that every entry in the dictionary has the same length.
 
     Args:
-        round_positions (dict): Dictionary containing information about all players for each timestep
+        round_positions (dict[str, list]): Dictionary containing information about all players for each timestep
 
     Returns:
         None. Dictionary is padded in place.
@@ -303,11 +304,11 @@ def partial_step(
 
 
 def append_to_round_positions(
-    round_positions: dict,
-    side: str,
+    round_positions: dict[str, list],
+    side: Literal["ct", "t"],
     id_number_dict: dict,
     player_id: Union[int, str],
-    player: dict,
+    player: PlayerInfo,
     second_difference: int,
     map_name: str,
 ) -> None:
@@ -316,7 +317,7 @@ def append_to_round_positions(
     If the time difference between the most recent and the previous frame is larger than expected also add interpolated values for the missing time steps.
 
     Args:
-        round_positions (dict): Dictionary containing information about all players for each timestep
+        round_positions (dict[str, list]): Dictionary containing information about all players for each timestep
         side (str): A string describing the side the given player is currently playing on. Should be either "ct" or "t"
         id_number_dict (dict): A dictionary correlating a players steamID with their ranking number.
         player_id (Union[int, str]): An integer or string containing a players steamID or bots name
@@ -442,7 +443,7 @@ def get_token_length(map_name: str) -> int:
     Returns:
         Integer of the length of position tokens for this map
     """
-    area_names = set()
+    area_names: set[str] = set()
     if map_name not in NAV:
         return 1
     for area in NAV[map_name]:
@@ -451,7 +452,7 @@ def get_token_length(map_name: str) -> int:
 
 
 def initialize_round(
-    current_round: dict,
+    current_round: GameRound,
 ) -> tuple[
     bool,
     int,
@@ -498,30 +499,28 @@ def initialize_round(
 
 
 def analyze_players(
-    frame: dict,
+    frame: GameFrame,
     dict_initialized: dict,
     id_number_dict: dict[str, dict[str, str]],
-    side: str,
-    round_positions: dict,
+    side: Literal["ct", "t"],
+    round_positions: dict[str, list],
     second_difference: int,
     map_name: str,
 ) -> None:
     """Analyzes the players in a given frame and side
 
     Args:
-        frame (dict): Dicitionary containg all information about the current round
+        frame (GameFrame): Dicitionary containg all information about the current round
         dict_initialized (dict[str, bool]): Dict containing information about whether or not a given side has been initialized already
         id_number_dict (dict[str, dict[str, str]]): Dict mapping player to a number
-        side (str): String of the current side
-        round_positions (dict): Dictionary containg all player trajectories of the current round
+        side (Literal["ct","t"]): String of the current side
+        round_positions (dict[str, list]): Dictionary containg all player trajectories of the current round
         second_difference (int): Time difference from last frame to the current one
         map_name (str): Name of the map under consideration
 
     Returns:
-        A tuple of:
-            skip_round (bool): Whether the current round should be skipped
-            round_positions (dict): A dictionary of all the players positions throughout the round"""
-    for player_index, player in enumerate(frame[side]["players"]):
+        None (round_positions is appended to in place)"""
+    for player_index, player in enumerate(frame[side]["players"] or []):
         # logging.info(f)
         player_id = get_player_id(player)
         # If the dict of the team has not been initialized add that player. Should only happen once per player per team per round
@@ -547,11 +546,11 @@ def analyze_players(
 
 
 def add_general_information(
-    frame: dict,
-    current_round: dict,
+    frame: GameFrame,
+    current_round: GameRound,
     second_difference: int,
     token_length: int,
-    round_positions: dict,
+    round_positions: dict[str, list],
     ticks: list[int],
     index: int,
     map_name: str,
@@ -563,7 +562,7 @@ def add_general_information(
         current_round (dict): Dict containing all information about the current round
         second_difference (int): Time difference from last frame to the current one
         token_length: (int): Length of the position token for the current map
-        round_positions (dict): Dictionary containg all player trajectories of the current round
+        round_positions (dict[str, list]): Dictionary containg all player trajectories of the current round
         ticks (list[int]): Will contain the current and previous tick
         index (int): Index of the current frame
         map_name (str): Name of the map under consideration
@@ -571,6 +570,10 @@ def add_general_information(
 
     Returns:
         None (round_positions)"""
+    if not current_round["frames"] or (index - last_good_frame) >= len(
+        current_round["frames"]
+    ):
+        return
     token_frames = (
         [frame]
         if second_difference == 1
@@ -601,7 +604,7 @@ def add_general_information(
 
 
 def analyze_frames(
-    current_round: dict, map_name: str, token_length: int, tick_rate: int
+    current_round: GameRound, map_name: str, token_length: int, tick_rate: int
 ) -> tuple[bool, dict]:
     """Analyzes the frames in a given round
 
@@ -623,7 +626,7 @@ def analyze_frames(
         round_positions,
         ticks,
     ) = initialize_round(current_round)
-    for index, frame in enumerate(current_round["frames"]):
+    for index, frame in enumerate(current_round["frames"] or []):
         # There should never be more than 5 players alive in a team.
         # If that does happen completely skip the round.
         # Propagate that information past the loop by setting skip_round to true
@@ -648,6 +651,7 @@ def analyze_frames(
         else:
             second_difference = int((ticks[0] - ticks[1]) / tick_rate)
         for side in ["ct", "t"]:
+            side = cast(Literal["ct", "t"], side)
             analyze_players(
                 frame,
                 dict_initialized,
@@ -678,7 +682,7 @@ def analyze_frames(
 
 
 def analyze_rounds(
-    data: dict, position_dataset_dict: dict[str, list], match_id: str
+    data: Game, position_dataset_dict: dict[str, list], match_id: str
 ) -> None:
     """Analyzes all rounds in a game and adds their relevant data to position_dataset_dict.
 
@@ -697,7 +701,7 @@ def analyze_rounds(
     map_name = data["mapName"]
     token_length = get_token_length(map_name)
     tick_rate = 1 << (data["tickRate"] - 1).bit_length()
-    for current_round in data["gameRounds"]:
+    for current_round in data["gameRounds"] or []:
         # If there are no frames in the round skip it.
         if frame_is_empty(current_round):
             continue

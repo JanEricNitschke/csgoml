@@ -68,6 +68,7 @@ from awpy.analytics.nav import (
     position_state_distance,
     token_state_distance,
 )
+from awpy.types import DistanceType
 
 
 def mark_areas(
@@ -161,7 +162,10 @@ def plot_path(
             south_east_y = position_transform(map_name, area["southEastY"], "y")
             north_west_y = position_transform(map_name, area["northWestY"], "y")
         except KeyError:
-            pass
+            south_east_x = area["southEastX"]
+            north_west_x = area["northWestX"]
+            south_east_y = area["southEastY"]
+            north_west_y = area["northWestY"]
         # Get its lower left points, height and width
         width = south_east_x - north_west_x
         height = north_west_y - south_east_y
@@ -207,7 +211,7 @@ def trajectory_distance(
     map_name: str,
     trajectory_array_1: np.ndarray,
     trajectory_array_2: np.ndarray,
-    distance_type: str = "geodesic",
+    distance_type: DistanceType = "geodesic",
     dtw: bool = False,
 ) -> float:
     """Calculates a distance distance between two trajectories

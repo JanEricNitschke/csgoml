@@ -26,6 +26,7 @@ import numpy as np
 import boto3
 from awpy.analytics.nav import find_closest_area
 from awpy.data import NAV
+from awpy.types import Game, KillAction, GameRound
 import pymysql
 
 
@@ -85,7 +86,7 @@ class FightAnalyzer:
         return NAV[map_name][area_id]["areaName"]
 
     def check_position(
-        self, event: dict, map_name: str
+        self, event: KillAction, map_name: str
     ) -> tuple[Optional[str], Optional[str]]:
         """Grabs the CT and T areas of the event
 
@@ -114,7 +115,7 @@ class FightAnalyzer:
         )
         return None, None
 
-    def get_game_time(self, event: dict, ticks: dict) -> int:
+    def get_game_time(self, event: KillAction, ticks: dict) -> int:
         """Convert event tick to seconds since roundstart
 
         Args:
@@ -128,8 +129,8 @@ class FightAnalyzer:
         return game_time
 
     def check_weapons(
-        self, current_round: dict, event: dict
-    ) -> tuple[str, set[str], set[str]]:
+        self, current_round: GameRound, event: KillAction
+    ) -> Optional[tuple[str, set[str], set[str]]]:
         """Grabs the attacker weapon and the weapons of the victim in the last frame before the event
 
         Args:
@@ -142,53 +143,52 @@ class FightAnalyzer:
         logging.debug("Checking weapons!")
         victim_weapons = set()
         attacker_weapons = set()
+        if not event["victimSide"] in {"CT", "T"} or not event["attackerSide"] in {
+            "CT",
+            "T",
+        }:
+            return None
         # Loop as long as the current frames is before out event of interest and before the last frame
         while (
-            self.current_frame_index < len(current_round["frames"])
+            self.current_frame_index < len(current_round["frames"] or [])
             and current_round["frames"][self.current_frame_index]["tick"]
             <= event["tick"]
         ):
             # Check if players exist for this frame and side
-            if (
+            # Loop over the players
+            for player in (
                 current_round["frames"][self.current_frame_index][
                     event["victimSide"].lower()
                 ]["players"]
-                is not None
+                or []
             ):
-                # Loop over the players
-                for player in current_round["frames"][self.current_frame_index][
-                    event["victimSide"].lower()
-                ]["players"]:
-                    # If the player matches our victim
-                    if (
-                        event["victimSteamID"]
-                        and player["steamID"] == event["victimSteamID"]
-                    ):
-                        if player["inventory"] is None:
-                            continue
-                        # Grab the weapons as our victims weapons
-                        victim_weapons = {
-                            weapon["weaponName"] for weapon in player["inventory"]
-                        }
+                # If the player matches our victim
+                if (
+                    event["victimSteamID"]
+                    and player["steamID"] == event["victimSteamID"]
+                ):
+                    if player["inventory"] is None:
+                        continue
+                    # Grab the weapons as our victims weapons
+                    victim_weapons = {
+                        weapon["weaponName"] for weapon in player["inventory"]
+                    }
             # Same for attacker side
-            if (
+            for player in (
                 current_round["frames"][self.current_frame_index][
                     event["attackerSide"].lower()
                 ]["players"]
-                is not None
+                or []
             ):
-                for player in current_round["frames"][self.current_frame_index][
-                    event["attackerSide"].lower()
-                ]["players"]:
-                    if (
-                        event["attackerSteamID"]
-                        and player["steamID"] == event["attackerSteamID"]
-                    ):
-                        if player["inventory"] is None:
-                            continue
-                        attacker_weapons = {
-                            weapon["weaponName"] for weapon in player["inventory"]
-                        }
+                if (
+                    event["attackerSteamID"]
+                    and player["steamID"] == event["attackerSteamID"]
+                ):
+                    if player["inventory"] is None:
+                        continue
+                    attacker_weapons = {
+                        weapon["weaponName"] for weapon in player["inventory"]
+                    }
             # Iterate through the frames
             self.current_frame_index += 1
         # Step back one frame because we can have multiple events associated with one frame
@@ -196,7 +196,7 @@ class FightAnalyzer:
         # Assign CT and T weapons based on victim and attacker weapons
         if event["attackerSide"] == "T":
             CT_weapons, T_weapons = victim_weapons, attacker_weapons
-        elif event["attackerSide"] == "CT":
+        else:  # event["attackerSide"] == "CT":
             CT_weapons, T_weapons = attacker_weapons, victim_weapons
         logging.debug("Attacker weapon: %s", event["weapon"])
         logging.debug("Victim weapons: %s", " ".join(victim_weapons))
@@ -204,14 +204,14 @@ class FightAnalyzer:
 
     def summarize_round(
         self,
-        event: dict,
+        event: KillAction,
         game_time: int,
         kill_weapon: str,
         CT_weapons: set[str],
         T_weapons: set[str],
         CT_position: str,
         T_position: str,
-        current_round: dict,
+        current_round: GameRound,
         match_id: str,
         map_name: str,
         is_pro_game: bool,
@@ -261,7 +261,7 @@ class FightAnalyzer:
             self.cursor.execute(sql_weapon, val_weapon)
 
     def analyze_map(
-        self, data: dict, map_name: str, match_id: str, is_pro_game: bool
+        self, data: Game, map_name: str, match_id: str, is_pro_game: bool
     ) -> None:
         """Loop over all rounds and their events and add them to a MYSQL database.
 
@@ -278,7 +278,7 @@ class FightAnalyzer:
         ticks = {}
         # Round tickrate to power of two that is equal or larger
         ticks["tickRate"] = 1 << (data["tickRate"] - 1).bit_length()
-        for current_round in data["gameRounds"]:
+        for current_round in data["gameRounds"] or []:
             self.current_frame_index = 0
             ticks["freezeTimeEndTick"] = current_round["freezeTimeEndTick"]
             logging.debug("Round:")
@@ -296,9 +296,10 @@ class FightAnalyzer:
                 CT_position, T_position = self.check_position(event, map_name)
                 if not CT_position or not T_position:
                     continue
-                kill_weapon, CT_weapons, T_weapons = self.check_weapons(
-                    current_round, event
-                )
+                used_weapons = self.check_weapons(current_round, event)
+                if used_weapons is None:
+                    continue
+                kill_weapon, CT_weapons, T_weapons = used_weapons
                 self.summarize_round(
                     event,
                     game_time,
@@ -348,7 +349,7 @@ class FightAnalyzer:
                         # checking if it is a file
                         if os.path.isfile(file_path):
                             with open(file_path, encoding="utf-8") as demo_json:
-                                demo_data = json.load(demo_json)
+                                demo_data: Game = json.load(demo_json)
                             match_id = os.path.splitext(filename)[0]
                             if match_id in done_set:
                                 logging.debug(

@@ -23,6 +23,7 @@ import shutil
 import argparse
 from typing import Optional
 from awpy.parser import DemoParser
+from awpy.types import Game
 
 
 class DemoAnalyzerSorter:
@@ -103,7 +104,7 @@ class DemoAnalyzerSorter:
         except TypeError:
             logging.exception("This demo has a type error while cleaning.")
 
-    def get_map_name(self, data: dict) -> str:
+    def get_map_name(self, data: Game) -> str:
         """Extracts the map name from CS:GO demo parsed to json.
 
         Most of the commonly used CS:GO maps have a name of the format de_XYZ

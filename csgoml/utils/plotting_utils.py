@@ -54,6 +54,7 @@ from awpy.analytics.nav import (
     generate_centroids,
 )
 from awpy.data import NAV, MAP_DATA, AREA_DIST_MATRIX
+from awpy.types import DistanceType
 from csgoml.utils.nav_utils import transform_to_traj_dimensions, trajectory_distance
 
 
@@ -269,7 +270,10 @@ def plot_mid(
             south_east_y = position_transform(map_name, area["southEastY"], "y")
             north_west_y = position_transform(map_name, area["northWestY"], "y")
         except KeyError:
-            pass
+            south_east_x = area["southEastX"]
+            north_west_x = area["northWestX"]
+            south_east_y = area["southEastY"]
+            north_west_y = area["northWestY"]
         # Get its lower left points, height and width
         width = south_east_x - north_west_x
         height = north_west_y - south_east_y
@@ -373,7 +377,7 @@ def get_shortest_distances_mapping(
     map_name: str,
     leaders: dict[str, LeadersLastLevel],
     current_positions: list[list[float]],
-    dist_type: str = "geodesic",
+    dist_type: DistanceType = "geodesic",
 ) -> list[str]:
     """Gets the mapping between players in the current round and lead players that has the shortest total distance between mapped players.
 
@@ -401,8 +405,8 @@ def get_shortest_distances_mapping(
                     this_dist = min(
                         area_distance(
                             map_name,
-                            str(int(leaders[list(leaders)[leader_i]]["pos"][3])),
-                            str(int(current_positions[current_i][3])),
+                            leaders[list(leaders)[leader_i]]["pos"][3],
+                            current_positions[current_i][3],
                             dist_type=dist_type,
                         )["distance"],
                         area_distance(
@@ -452,7 +456,7 @@ def get_shortest_distances_mapping_trajectory(
     map_name: str,
     leaders: np.ndarray,
     current_positions: np.ndarray,
-    dist_type: str = "geodesic",
+    dist_type: DistanceType = "geodesic",
     dtw: bool = False,
 ) -> tuple[int, ...]:
     """Gets the mapping between players in the current round and lead players that has the shortest total distance between mapped players.
@@ -511,7 +515,7 @@ def plot_rounds_different_players_trajectory_image(
     map_name: str = "de_ancient",
     map_type: str = "original",
     dark: bool = False,
-    dist_type: str = "geodesic",
+    dist_type: DistanceType = "geodesic",
     dtw: bool = False,
     dpi: int = 1000,
 ) -> Literal[True]:
@@ -578,7 +582,7 @@ def plot_rounds_different_players_trajectory_gif(
     dark: bool = False,
     fps: int = 2,
     n_frames: int = 9000,
-    dist_type: str = "geodesic",
+    dist_type: DistanceType = "geodesic",
     dtw: bool = False,
     dpi: int = 300,
 ) -> Literal[True]:
@@ -682,7 +686,7 @@ def plot_rounds_different_players_position_image(
     map_type: str = "original",
     dark: bool = False,
     n_frames: int = 9000,
-    dist_type: str = "geodesic",
+    dist_type: DistanceType = "geodesic",
     dpi: int = 1000,
 ) -> Literal[True]:
     """Plots a collection of rounds and saves as a .gif. Each player in the first round is assigned a separate color. Players in the other rounds are matched by proximity.
@@ -832,7 +836,7 @@ def plot_rounds_different_players_position_gif(
     dark: bool = False,
     fps: int = 2,
     n_frames: int = 9000,
-    dist_type: str = "geodesic",
+    dist_type: DistanceType = "geodesic",
     dpi: int = 300,
 ) -> Literal[True]:
     """Plots a collection of rounds and saves as a .gif. Each player in the first round is assigned a separate color. Players in the other rounds are matched by proximity.
@@ -991,7 +995,7 @@ def plot_rounds_different_players(
     dark: bool = False,
     fps: int = 10,
     n_frames: int = 9000,
-    dist_type: str = "geodesic",
+    dist_type: DistanceType = "geodesic",
     image: bool = False,
     trajectory: bool = False,
     dtw: bool = False,

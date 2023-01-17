@@ -643,7 +643,7 @@ class TestTrajectoryInputPreparation:
                 ]
             },
         }
-        current_round = {}
+        current_round = {"frames": [current_frame]}
         second_difference = 1
         last_good_frame = 1
         token_length = 25
