@@ -6,7 +6,6 @@ Typical usage example:
 """
 #!/usr/bin/env python
 
-import shutil
 import argparse
 import time
 import sys
@@ -14,7 +13,8 @@ import os
 import re
 import logging
 import requests
-from requests_ip_rotator import ApiGateway, EXTRA_REGIONS
+
+# from requests_ip_rotator import ApiGateway, EXTRA_REGIONS
 
 
 def find_missing(my_set: set[int]) -> list[int]:
@@ -58,18 +58,18 @@ def main(args):
     parser.add_argument(
         "--startid",
         type=int,
-        default=70418,
+        default=70501,
         help="Analyze demos with a name above this id",
     )
     parser.add_argument(
         "--endid",
         type=int,
-        default=70501,
+        default=70601,
         help="Analyze demos with a name below this id",
     )
     options = parser.parse_args(args)
 
-    # Done are: 68900-70417;
+    # Done are: 68900-70500;
 
     if options.debug:
         logging.basicConfig(
@@ -125,22 +125,24 @@ def main(args):
 
     logging.info(urls)
     logging.info("Will download demos for %s matches.", len(urls))
-    timeout = 100
+    timeout = 10
     for url in urls:
-        time.sleep(5)
         filename = options.dir + url.split("/")[-1] + ".rar"
         logging.info(filename)
-        with session.get(url, stream=True, timeout=timeout) as raw:
-            # with requests.get(url, stream=True, timeout=timeout) as raw:
-            logging.info("Status code: %s", raw.status_code)
-            logging.info("Headers: %s", raw.headers)
-            # logging.info("Content: %s", raw.content)
-            # with open(filename, "wb") as file:
-            #     shutil.copyfileobj(raw.raw, file)
-            # logging.info("Content: %s", raw.content)
-            with open(filename, "wb") as file:
-                for chunk in raw.iter_content(chunk_size=1024 * 1024):  # 1024*1024, 128
-                    file.write(chunk)
+        try:
+            with session.get(url, stream=True, timeout=timeout) as raw:
+                # with requests.get(url, stream=True, timeout=timeout) as raw:
+                logging.info("Status code: %s", raw.status_code)
+                logging.info("Headers: %s", raw.headers)
+                with open(filename, "wb") as file:
+                    for chunk in raw.iter_content(
+                        chunk_size=1024 * 1024
+                    ):  # 1024*1024, 128
+                        file.write(chunk)
+            time.sleep(5)
+        except requests.exceptions.ConnectionError as e:
+            logging.error("Got time out")
+            logging.error(e)
 
     # Only run this line if you are no longer going to run the script, as it takes longer to boot up again next time.
     # gateway.shutdown()
