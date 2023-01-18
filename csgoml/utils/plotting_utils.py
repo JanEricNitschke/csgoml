@@ -246,6 +246,7 @@ def plot_mid(
     Returns:
         None (Directly saves the plot to file)
     """
+    logging.info("Plotting mid points for %s", map_name)
     cent_ids, rep_ids = generate_centroids(map_name)
     fig, axis = plot_map(map_name=map_name, map_type="simpleradar", dark=True)
     fig.set_size_inches(19.2, 10.8)
@@ -1132,6 +1133,10 @@ def main(args):
             map_name=map_name,
             map_type="simpleradar",
             dark=False,
+        )
+        plot_mid(
+            output_path=options.output,
+            map_name=map_name,
         )
 
 

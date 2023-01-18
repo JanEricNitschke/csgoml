@@ -12,7 +12,7 @@ setup(
     # Project uses reStructuredText, so ensure that the docutils get
     # installed or upgraded on the target machine
     install_requires=[
-        "awpy>=1.1.9",
+        "awpy>=1.2.1",
         "boto3>=1.20.48",
         "pymysql[rsa]>=1.0.2",
         "patool>=1.12",
