@@ -274,26 +274,28 @@ def plot_mid(
     fig.set_size_inches(19.2, 10.8)
     # Grab points, hull and centroid for each named area
     area_points, hulls, _ = get_areas_hulls_centers(map_name)
-    for area in area_points:
+    for area_name in area_points:
         # Dont plot the "" area as it stretches across the whole map and messes with clarity
         # but add it to the legend
-        if not area:
+        if not area_name:
             axis.plot(np.NaN, np.NaN, label="None")
             continue
         if (
             map_name in MAP_DATA
             and "z_cutoff" in MAP_DATA[map_name]
             and (
-                NAV[map_name][cent_ids[area]]["southEastZ"]
-                + NAV[map_name][cent_ids[area]]["northWestZ"]
+                NAV[map_name][cent_ids[area_name]]["southEastZ"]
+                + NAV[map_name][cent_ids[area_name]]["northWestZ"]
             )
             / 2
             < MAP_DATA[map_name]["z_cutoff"]
         ):
-            hulls[area][:, 1] = np.array(
-                list(map(lambda y: y + 1024, hulls[area][:, 1]))
+            hulls[area_name][:, 1] = np.array(
+                list(map(lambda y: y + 1024, hulls[area_name][:, 1]))
             )
-        axis.plot(hulls[area][:, 0], hulls[area][:, 1], "-", lw=3, label=area)
+        axis.plot(
+            hulls[area_name][:, 0], hulls[area_name][:, 1], "-", lw=3, label=area_name
+        )
     handles, labels = axis.get_legend_handles_labels()
     lgd = axis.legend(handles, labels, loc="upper left", bbox_to_anchor=(1.01, 1.01))
     for area_id in NAV[map_name]:
