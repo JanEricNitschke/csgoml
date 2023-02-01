@@ -166,21 +166,21 @@ class TestPlottingUtils:
         assert plot_map_areas(self.outputpath, map_name="de_mirage", dpi=100) is None
         assert plot_map_areas(self.outputpath, map_name="de_inferno", dpi=100) is None
         with pytest.raises(FileNotFoundError):
-            plot_map_areas(self.outputpath, map_name="cs_rush", dpi=100)
+            plot_map_areas(self.outputpath, map_name="de_does_not_exist", dpi=100)
 
     def test_plot_mid(self):
         """Tests plot_mid"""
         assert plot_mid(self.outputpath, "de_mirage", dpi=100) is None
         assert plot_mid(self.outputpath, "de_inferno", dpi=100) is None
         with pytest.raises(ValueError):
-            plot_mid(self.outputpath, "cs_rush", dpi=100)
+            plot_mid(self.outputpath, "de_does_not_exist", dpi=100)
 
     def test_plot_map_tiles(self):
         """Tests plot_map_tiles"""
         assert plot_map_tiles(self.outputpath, map_name="de_mirage", dpi=100) is None
         assert plot_map_tiles(self.outputpath, map_name="de_inferno", dpi=100) is None
         with pytest.raises(FileNotFoundError):
-            plot_map_tiles(self.outputpath, map_name="cs_rush", dpi=100)
+            plot_map_tiles(self.outputpath, map_name="de_does_not_exist", dpi=100)
 
     def test_plot_rounds_different_players(self):
         """Tests plot_rounds_different_players"""

@@ -53,12 +53,18 @@ from awpy.analytics.nav import (
     stepped_hull,
     generate_centroids,
 )
-from awpy.data import NAV, MAP_DATA, AREA_DIST_MATRIX
+from awpy.data import NAV, MAP_DATA, AREA_DIST_MATRIX, NAV_GRAPHS
 from awpy.types import DistanceType
 from csgoml.utils.nav_utils import transform_to_traj_dimensions, trajectory_distance
 
 
-def get_areas_hulls_centers(map_name: str) -> tuple[dict, dict, dict]:
+def get_areas_hulls_centers(
+    map_name: str,
+) -> tuple[
+    dict[str, list[tuple[float, float]]],
+    dict[str, np.ndarray],
+    dict[str, tuple[float, float]],
+]:
     """Gets the sets of points making up the named areas of a map. Then builds their hull and centroid.
 
     Args:
@@ -67,9 +73,9 @@ def get_areas_hulls_centers(map_name: str) -> tuple[dict, dict, dict]:
     Returns:
         Three dictionary containing the points, hull and centroid of each named area in the map
     """
-    hulls = {}
-    centers = {}
-    area_points = collections.defaultdict(list)
+    hulls: dict[str, np.ndarray] = {}
+    centers: dict[str, tuple[float, float]] = {}
+    area_points: dict[str, list[tuple[float, float]]] = collections.defaultdict(list)
     for a in NAV[map_name]:
         area = NAV[map_name][a]
         try:
@@ -203,6 +209,7 @@ def plot_map_areas(
     logging.info("Plotting areas for %s", map_name)
     fig, axis = plot_map(map_name=map_name, map_type=map_type, dark=dark)
     fig.set_size_inches(19.2, 10.8)
+    cent_ids, _ = generate_centroids(map_name)
     # Grab points, hull and centroid for each named area
     area_points, hulls, centers = get_areas_hulls_centers(map_name)
     for area in sorted(area_points):
@@ -211,11 +218,26 @@ def plot_map_areas(
         if not area:
             axis.plot(np.NaN, np.NaN, label="None")
             continue
+        text_y = centers[area][1]
+        if (
+            map_name in MAP_DATA
+            and "z_cutoff" in MAP_DATA[map_name]
+            and (
+                NAV[map_name][cent_ids[area]]["southEastZ"]
+                + NAV[map_name][cent_ids[area]]["northWestZ"]
+            )
+            / 2
+            < MAP_DATA[map_name]["z_cutoff"]
+        ):
+            hulls[area][:, 1] = np.array(
+                list(map(lambda y: y + 1024, hulls[area][:, 1]))
+            )
+            text_y += 1024
         axis.plot(hulls[area][:, 0], hulls[area][:, 1], "-", lw=3, label=area)
         # Add name of area into its middle
         axis.text(
             centers[area][0] - (centers[area][0] - hulls[area][0][0]) / 1.5,
-            centers[area][1],
+            text_y,
             area,
             c="#EB0841",
         )
@@ -258,12 +280,25 @@ def plot_mid(
         if not area:
             axis.plot(np.NaN, np.NaN, label="None")
             continue
+        if (
+            map_name in MAP_DATA
+            and "z_cutoff" in MAP_DATA[map_name]
+            and (
+                NAV[map_name][cent_ids[area]]["southEastZ"]
+                + NAV[map_name][cent_ids[area]]["northWestZ"]
+            )
+            / 2
+            < MAP_DATA[map_name]["z_cutoff"]
+        ):
+            hulls[area][:, 1] = np.array(
+                list(map(lambda y: y + 1024, hulls[area][:, 1]))
+            )
         axis.plot(hulls[area][:, 0], hulls[area][:, 1], "-", lw=3, label=area)
     handles, labels = axis.get_legend_handles_labels()
     lgd = axis.legend(handles, labels, loc="upper left", bbox_to_anchor=(1.01, 1.01))
-    for a in NAV[map_name]:
-        area = NAV[map_name][a]
-        if a not in cent_ids.values() and a not in rep_ids.values():
+    for area_id in NAV[map_name]:
+        area = NAV[map_name][area_id]
+        if area_id not in cent_ids.values() and area_id not in rep_ids.values():
             continue
         try:
             south_east_x = position_transform(map_name, area["southEastX"], "x")
@@ -280,12 +315,21 @@ def plot_mid(
         height = north_west_y - south_east_y
         southwest_x = north_west_x
         southwest_y = south_east_y
+        south_east_z = area["southEastZ"]
+        north_west_z = area["northWestZ"]
+        avg_z = (south_east_z + north_west_z) / 2
+        if (
+            map_name in MAP_DATA
+            and "z_cutoff" in MAP_DATA[map_name]
+            and avg_z < MAP_DATA[map_name]["z_cutoff"]
+        ):
+            southwest_y += 1024
         color = "yellow"
-        if a in cent_ids.values() and a in rep_ids.values():
+        if area_id in cent_ids.values() and area_id in rep_ids.values():
             color = "green"
-        elif a in cent_ids.values():
+        elif area_id in cent_ids.values():
             color = "red"
-        elif a in rep_ids.values():
+        elif area_id in rep_ids.values():
             color = "blue"
         rect = patches.Rectangle(
             (southwest_x, southwest_y),
@@ -360,6 +404,92 @@ def plot_map_tiles(
         axis.add_patch(rect)
     plt.savefig(
         os.path.join(output_path, f"tiles_{map_name}.png"),
+        bbox_inches="tight",
+        dpi=dpi,
+    )
+    fig.clear()
+    plt.close()
+
+
+def plot_map_connections(
+    output_path: str,
+    map_name: str = "de_ancient",
+    map_type: str = "original",
+    dark: bool = False,
+    dpi: int = 1000,
+) -> None:
+    """Plot all navigation mesh tiles in a given map.
+
+    Args:
+        output_path (string): Path to the output folder
+        map_name (string): Map to search
+        map_type (string): "original" or "simpleradar"
+        dark (boolean): Only for use with map_type="simpleradar". Indicates if you want to use the SimpleRadar dark map type
+        dpi (int): DPI of the resulting image
+
+    Returns:
+        None, saves .png
+    """
+    logging.info("Plotting connections for %s", map_name)
+    fig, axis = plot_map(map_name=map_name, map_type=map_type, dark=dark)
+    fig.set_size_inches(19.2, 21.6)
+    # Loop over each nav mesh tile
+    for a in NAV[map_name]:
+        area = NAV[map_name][a]
+        south_east_x = position_transform(map_name, area["southEastX"], "x")
+        north_west_x = position_transform(map_name, area["northWestX"], "x")
+        south_east_y = position_transform(map_name, area["southEastY"], "y")
+        north_west_y = position_transform(map_name, area["northWestY"], "y")
+        south_east_z = area["southEastZ"]
+        north_west_z = area["northWestZ"]
+        avg_z = (south_east_z + north_west_z) / 2
+        # Get its lower left points, height and width
+        width = south_east_x - north_west_x
+        height = north_west_y - south_east_y
+        southwest_x = north_west_x
+        southwest_y = south_east_y
+        if (
+            map_name in MAP_DATA
+            and "z_cutoff" in MAP_DATA[map_name]
+            and avg_z < MAP_DATA[map_name]["z_cutoff"]
+        ):
+            southwest_y += 1024
+        rect = patches.Rectangle(
+            (southwest_x, southwest_y),
+            width,
+            height,
+            linewidth=1,
+            edgecolor="yellow",
+            facecolor="None",
+        )
+        axis.add_patch(rect)
+    for source, dest in NAV_GRAPHS[map_name].edges():
+        source_node = NAV_GRAPHS[map_name].nodes()[source]
+        dest_node = NAV_GRAPHS[map_name].nodes()[dest]
+
+        x1, x2 = source_node["center"][0], dest_node["center"][0]
+        y1, y2 = source_node["center"][1], dest_node["center"][1]
+        try:
+            x1, x2 = position_transform(map_name, x1, "x"), position_transform(
+                map_name, x2, "x"
+            )
+            y1, y2 = position_transform(map_name, y1, "y"), position_transform(
+                map_name, y2, "y"
+            )
+        finally:
+            if (
+                map_name in MAP_DATA
+                and "z_cutoff" in MAP_DATA[map_name]
+                and source_node["center"][2] < MAP_DATA[map_name]["z_cutoff"]
+            ):
+                y1, y2 = y1 + 1024, y2 + 1024
+            axis.plot(
+                [x1, x2],
+                [y1, y2],
+                color="red",
+            )
+    plt.savefig(
+        os.path.join(output_path, f"connections_{map_name}.png"),
         bbox_inches="tight",
         dpi=dpi,
     )
@@ -1121,7 +1251,12 @@ def main(args):
         )
 
     logging.info("Generating tile and area files for all maps.")
+    before_nuke = True
     for map_name in NAV:
+        if map_name == "de_nuke":
+            before_nuke = False
+        if before_nuke:
+            continue
         plot_map_areas(
             output_path=options.output,
             map_name=map_name,
@@ -1129,6 +1264,12 @@ def main(args):
             dark=False,
         )
         plot_map_tiles(
+            output_path=options.output,
+            map_name=map_name,
+            map_type="simpleradar",
+            dark=False,
+        )
+        plot_map_connections(
             output_path=options.output,
             map_name=map_name,
             map_type="simpleradar",
