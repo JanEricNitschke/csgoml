@@ -18,7 +18,7 @@ def main(args):
     parser.add_argument(
         "-d", "--debug", action="store_true", default=False, help="Enable debug output."
     )
-    parser.add_argument("-m", "--map", default="ancient", help="Map to analyze")
+    parser.add_argument("-m", "--map", default="cache", help="Map to analyze")
     parser.add_argument(
         "-l",
         "--log",
@@ -67,8 +67,11 @@ def main(args):
         + ".json"
     )
 
+    # analysis_path = os.path.join(
+    #     r"E:\PhD\MachineLearning\CSGOData\ParsedDemos", options.map, "Analysis"
+    # )
     analysis_path = os.path.join(
-        r"E:\PhD\MachineLearning\CSGOData\ParsedDemos", options.map, "Analysis"
+        r"D:\CSGO\Demos\Maps", options.map, "Analysis"
     )
     map_name = "de_" + options.map
 
@@ -76,9 +79,9 @@ def main(args):
         json_path=file, random_state=random_state, map_name=map_name
     )
 
-    for info in handler.datasets["Aux"]:
+    for info in handler.aux:
         logging.debug(info)
-        logging.debug(handler.datasets["Aux"][info])
+        logging.debug(handler.aux[info])
     logging.debug(handler.datasets["token"].shape)
     logging.debug(handler.datasets["token"])
     logging.debug(handler.datasets["position"].shape)
@@ -90,7 +93,7 @@ def main(args):
         random_state=random_state,
         map_name=map_name,
     )
-    traj_config = ("token", 10, 10, "T", False)
+    traj_config = ("area", 1000, 10, "T", False)
     # clust_config = {
     #     "do_histogram": False,
     #     "n_bins": 50,
@@ -106,13 +109,13 @@ def main(args):
     clust_config = {
         "do_histogram": False,
         "n_bins": 50,
-        "do_knn": True,
+        "do_knn": False,
         "knn_ks": [2, 3, 4, 5, 10, 20, 50, 100, 200, 400, 500, 600],
         "plot_all_trajectories": False,
-        "do_dbscan": True,
+        "do_dbscan": False,
         "dbscan_eps": 500,
         "dbscan_minpt": 2,
-        "do_kmed": True,
+        "do_kmed": False,
         "kmed_n_clusters": 3,
     }
     logging.info(

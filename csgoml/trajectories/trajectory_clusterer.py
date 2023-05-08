@@ -34,10 +34,12 @@ Typical usage example:
 """
 
 import os
+import sys
 from typing import Optional, Dict, Literal
 import random
 import logging
 from collections import defaultdict
+import itertools
 import numpy as np
 import matplotlib.pyplot as plt
 from sklearn.neighbors import NearestNeighbors
@@ -376,17 +378,25 @@ class TrajectoryClusterer:
         old_dist_matrix = AREA_DIST_MATRIX[self.map_name]
         d1_type = types.DictType(types.int64, types.float64)
         dist_matrix = typed.Dict.empty(types.int64, d1_type)
-        for area1 in old_dist_matrix:
-            for area2 in old_dist_matrix[area1]:
-                if (int(area1)) not in dist_matrix:
-                    dist_matrix[int(area1)] = typed.Dict.empty(
-                        key_type=types.int64,
-                        value_type=types.float64,
-                    )
-                dist_matrix[int(area1)][int(area2)] = old_dist_matrix[area1][area2][
+        dist_matrix = np.zeros((len(old_dist_matrix), len(old_dist_matrix)))
+        matching = {}
+        for idx1, area1 in enumerate(sorted(old_dist_matrix)):
+            matching[int(area1)] = idx1
+            for idx2, area2 in enumerate(sorted(old_dist_matrix[area1])):
+                dist_matrix[idx1, idx2] = min(old_dist_matrix[area1][area2][
                     "geodesic"
-                ]
-        return dist_matrix
+                ], old_dist_matrix[area2][area1][
+                    "geodesic"
+                ], sys.maxsize / 6)
+                # if (int(area1)) not in dist_matrix:
+                #     dist_matrix[int(area1)] = typed.Dict.empty(
+                #         key_type=types.int64,
+                #         value_type=types.float64,
+                #     )
+                # dist_matrix[int(area1)][int(area2)] = old_dist_matrix[area1][area2][
+                #     "geodesic"
+                # ]
+        return dist_matrix, matching
 
     def get_compressed_place_dist_matrix(
         self,
@@ -401,6 +411,7 @@ class TrajectoryClusterer:
         d1_type = types.DictType(types.string, types.float64)
         dist_matrix = typed.Dict.empty(types.string, d1_type)
         for place1 in old_dist_matrix:
+
             for place2 in old_dist_matrix[place1]:
                 if place1 not in dist_matrix:
                     dist_matrix[place1] = typed.Dict.empty(
@@ -445,7 +456,7 @@ class TrajectoryClusterer:
         Returns:
             A numpy array of the distance matrix of all trajectories in clustering_array"""
         if os.path.exists(precomputed_matrix_path):
-            logging.info("Loading precomputed distances from file")
+            logging.info("Loading precomputed distances from file %s", precomputed_matrix_path)
             precomputed = np.load(precomputed_matrix_path)
         else:
             logging.info("Precomputing areas")
@@ -453,23 +464,45 @@ class TrajectoryClusterer:
                 "Precomputing all round distances for %s combinations.",
                 (len(clustering_array) ** 2) // 2,
             )
-            if coordinate_type in ["area", "token"]:
-                if coordinate_type == "area":
-                    dist_matrix = self.get_compressed_area_dist_matrix()
-                    precomputed = get_traj_matrix_area(
-                        precompute_array=clustering_array,
-                        dist_matrix=dist_matrix,
-                        dtw=dtw,
-                    )
-                else:  # coordinate_type == "token"
-                    map_area_names = self.get_map_area_names()
-                    dist_matrix = self.get_compressed_place_dist_matrix()
-                    precomputed = get_traj_matrix_token(
-                        precompute_array=clustering_array,
-                        dist_matrix=dist_matrix,
-                        map_area_names=map_area_names,
-                        dtw=dtw,
-                    )
+            if coordinate_type == "area":
+                dist_matrix, matching = self.get_compressed_area_dist_matrix()
+                logging.info(clustering_array.shape)
+                # logging.info(sorted(matching))
+                # logging.info(clustering_array)
+                def get_matching(x):
+                    if int(x) not in matching:
+                        # logging.info(f"Did not find {x}")
+                        return matching[141]
+                    return matching[int(x)]
+                clustering_array = np.vectorize(get_matching)(clustering_array)
+                logging.info(clustering_array.shape)
+                clustering_array = np.squeeze(clustering_array, axis=-1)
+                logging.info(clustering_array.shape)
+                permutations = np.array(list(itertools.permutations(range(clustering_array.shape[-1]))))
+                precomputed = get_traj_matrix_area(
+                    precompute_array=clustering_array,
+                    dist_matrix=dist_matrix,
+                    dtw=dtw,
+                    permutations=permutations
+                )
+            elif coordinate_type == "token":  # coordinate_type == "token"
+                map_area_names = self.get_map_area_names()
+                dist_matrix = self.get_compressed_place_dist_matrix()
+                precomputed = get_traj_matrix_token(
+                    precompute_array=clustering_array,
+                    dist_matrix=dist_matrix,
+                    map_area_names=map_area_names,
+                    dtw=dtw,
+                )
+            # elif coordinate_type == "place":
+            #     map_area_names = self.get_map_area_names()
+            #     dist_matrix = self.get_compressed_place_dist_matrix()
+            #     precomputed = get_traj_matrix_token(
+            #         precompute_array=clustering_array,
+            #         dist_matrix=dist_matrix,
+            #         map_area_names=map_area_names,
+            #         dtw=dtw,
+            #     )
             else:  # coordinate_type == "position"
                 precomputed = get_traj_matrix_position(
                     precompute_array=clustering_array, dtw=dtw
