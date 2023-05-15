@@ -67,6 +67,9 @@ def main(args):
         + ".json"
     )
 
+    # analysis_path = os.path.join(
+    #     r"E:\PhD\MachineLearning\CSGOData\ParsedDemos", options.map, "Analysis"
+    # )
     analysis_path = os.path.join(
         r"D:\CSGO\Demos\Maps", options.map, "Analysis"
     )

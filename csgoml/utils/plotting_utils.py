@@ -182,7 +182,7 @@ def plot_round_tokens(
     images = []
     for file in image_files:
         images.append(imageio.imread(file))
-    imageio.mimsave(filename, images, fps=fps)
+    imageio.mimsave(filename, images, duration=1000/fps)
     shutil.rmtree("csgo_tmp/")
     return True
 
@@ -807,7 +807,7 @@ def plot_rounds_different_players_trajectory_gif(
     images = []
     for file in image_files:
         images.append(imageio.imread(file))
-    imageio.mimsave(filename, images, fps=fps)
+    imageio.mimsave(filename, images, duration=1000/fps)
     shutil.rmtree("csgo_tmp/")
     return True
 
@@ -1115,7 +1115,7 @@ def plot_rounds_different_players_position_gif(
     images = []
     for file in image_files:
         images.append(imageio.imread(file))
-    imageio.mimsave(filename, images, fps=fps)
+    imageio.mimsave(filename, images, duration=1000/fps)
     shutil.rmtree("csgo_tmp/")
     return True
 
