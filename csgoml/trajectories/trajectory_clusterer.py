@@ -138,6 +138,7 @@ class TrajectoryClusterer:
             coordinate_type,
             dtw,
         )
+        logging.info(precomputed_matrix.shape)
         logging.info(precomputed_matrix)
 
         # Create path for plots
@@ -376,8 +377,6 @@ class TrajectoryClusterer:
         Returns:
              typed dict of compressed matrix"""
         old_dist_matrix = AREA_DIST_MATRIX[self.map_name]
-        d1_type = types.DictType(types.int64, types.float64)
-        dist_matrix = typed.Dict.empty(types.int64, d1_type)
         dist_matrix = np.zeros((len(old_dist_matrix), len(old_dist_matrix)))
         matching = {}
         for idx1, area1 in enumerate(sorted(old_dist_matrix)):
@@ -455,7 +454,7 @@ class TrajectoryClusterer:
 
         Returns:
             A numpy array of the distance matrix of all trajectories in clustering_array"""
-        if os.path.exists(precomputed_matrix_path):
+        if  os.path.exists(precomputed_matrix_path):
             logging.info("Loading precomputed distances from file %s", precomputed_matrix_path)
             precomputed = np.load(precomputed_matrix_path)
         else:

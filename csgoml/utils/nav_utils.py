@@ -277,12 +277,12 @@ def trajectory_distance(
 
 
 # @njit
-def fast_area_trajectory_distance(
+# @np.vectorize
+@njit
+def compute_dtw(
     trajectory_array_1: np.ndarray,
     trajectory_array_2: np.ndarray,
-    dist_matrix: dict,
-    dtw: bool = False,
-    permutations = None
+    dist_matrix: np.ndarray,
 ) -> float:
     """Calculates a distance distance between two trajectories
 
@@ -295,45 +295,20 @@ def fast_area_trajectory_distance(
     Returns:
         A float representing the distance between these two trajectories
     """
+
     length = max(len(trajectory_array_1), len(trajectory_array_2))
-    if dtw:
-        DTW = typed.Dict.empty(key_float, value_float)
+    DTW = typed.Dict.empty(key_float, value_float)
+    DTW[(-1, -1)] = 0
 
-        for i in range(len(trajectory_array_1)):
-            DTW[(i, -1)] = inf
-        for i in range(len(trajectory_array_2)):
-            DTW[(-1, i)] = inf
-        DTW[(-1, -1)] = 0
+    for i in range(len(trajectory_array_1)):
+        DTW[(i, -1)] = inf
+        for j in range(len(trajectory_array_2)):
+            DTW[(-1, j)] = inf
+            DTW[(i, j)] = dist_matrix[i, j] + min(
+                DTW[(i - 1, j)], DTW[(i, j - 1)], DTW[(i - 1, j - 1)]
+            )
 
-        for i in range(len(trajectory_array_1)):
-            for j in range(len(trajectory_array_2)):
-                dist = fast_area_state_distance(
-                    position_array_1=trajectory_array_1[i],
-                    position_array_2=trajectory_array_2[j],
-                    dist_matrix=dist_matrix,
-                    permutations=permutations
-                )
-                DTW[(i, j)] = dist + min(
-                    DTW[(i - 1, j)], DTW[(i, j - 1)], DTW[(i - 1, j - 1)]
-                )
-
-        return (DTW[len(trajectory_array_1) - 1, len(trajectory_array_2) - 1]) / length
-
-    return fast_area_state_distance(trajectory_array_1, trajectory_array_2, dist_matrix=dist_matrix, permutations=permutations).mean(-1)
-    dist = 0
-    for time in range(length):
-        dist += fast_area_state_distance(
-            position_array_1=trajectory_array_1[time]
-            if time in range(len(trajectory_array_1))
-            else trajectory_array_1[-1],
-            position_array_2=trajectory_array_2[time]
-            if time in range(len(trajectory_array_2))
-            else trajectory_array_2[-1],
-            dist_matrix=dist_matrix,
-            permutations=permutations
-        )
-    return dist / length
-
+    return (DTW[len(trajectory_array_1) - 1, len(trajectory_array_2) - 1]) / length
 
 # @njit
 def fast_token_trajectory_distance(
@@ -455,15 +430,36 @@ def get_traj_matrix_area(
     Returns:
         Numpy array of distances between trajectories
     """
-    precomputed = np.zeros((len(precompute_array), len(precompute_array)))
-    for i in range(len(precompute_array)):
-        if i % 50 == 0:
-            logging.info(i)
-        for j in range(i + 1, len(precompute_array)):
-            precomputed[i][j] = fast_area_trajectory_distance(
-                precompute_array[i], precompute_array[j], dist_matrix, dtw=dtw, permutations=permutations
-            )
-    precomputed += precomputed.T
+    # Call this vectorized
+    if dtw:
+        precomputed = np.zeros((len(precompute_array), len(precompute_array)))
+        for i in range(len(precompute_array)):
+            if i % 50 == 0:
+                logging.info(i)
+            for j in range(i + 1, len(precompute_array)):
+                traj_array_1 = precompute_array[i]
+                traj_array_2 = precompute_array[j]
+                dtw_matrix = dist_matrix[traj_array_1[:, np.newaxis, ..., permutations], traj_array_2[..., np.newaxis, :]].mean(-1).min(-1).mean(-1)
+                logging.info(dtw_matrix.shape)
+                precomputed[i][j] = compute_dtw(
+                    precompute_array[i], precompute_array[j], dtw_matrix
+                )
+        precomputed += precomputed.T
+    else:
+        try:
+            precomputed = dist_matrix[precompute_array[:, np.newaxis, ..., permutations], precompute_array[..., np.newaxis, :]].mean(-1).min(-1).mean(-1).mean(-1)
+        except MemoryError as e:
+            logging.info("Caught memory error %s", e)
+            precomputed = np.zeros((len(precompute_array), len(precompute_array)))
+            for i in range(len(precompute_array)):
+                if i % 50 == 0:
+                    logging.info(i)
+                for j in range(i + 1, len(precompute_array)):
+                    traj_array_1 = precompute_array[i]
+                    traj_array_2 = precompute_array[j]
+                    precomputed[i][j] = dist_matrix[traj_array_1[..., permutations], traj_array_2[..., np.newaxis, :]].mean(-1).min(-1).mean(-1).mean(-1)
+            precomputed += precomputed.T
+
     return precomputed
 
 
@@ -566,7 +562,6 @@ def fast_area_state_distance(
         A float representing the distance between these two game states
     """
     return dist_matrix[position_array_1[..., permutations], position_array_2[..., np.newaxis, :]].mean(-1).min(-1).mean(-1)
-
 
 @njit
 def euclidean(a, b):
