@@ -1,32 +1,34 @@
-"""Downloads demos from hltv.org
-
-Typical usage example:
-
-    python download_demos.py --dir "D:\\Downloads\\Demos\\" --startid 68899 --endid 68799
-"""
 #!/usr/bin/env python
+r"""Downloads demos from hltv.org.
+
+Example::
+
+    python download_demos.py --dir "D:\\Downloads\\Demos" --startid 68899 --endid 68799
+"""
+
 
 import argparse
-import time
-import sys
+import logging
 import os
 import re
-import logging
-import requests
+import sys
+import time
+from pathlib import Path
 
-# from requests_ip_rotator import ApiGateway, EXTRA_REGIONS
+import requests
 
 
 def find_missing(my_set: set[int]) -> list[int]:
-    """Finds missing elements in a sorted list
+    """Finds missing elements in a set.
 
     Args:
-        lst: A sorted list of integers
+        my_set: A set of integers
 
     Returns:
-        A list of all integers that are missing in the original list (between the start and end of it)
+        A list of all integers that are missing in the original list.
+        (between the start and end of it)
     """
-    if len(my_set) < 0.5:
+    if not my_set:
         return []
     lst = sorted(my_set)
     logging.info("Demo indices that have already been downloaded:")
@@ -38,8 +40,32 @@ def find_missing(my_set: set[int]) -> list[int]:
     return missing
 
 
-def main(args):
-    """Downloads demos from hltv.org"""
+def _get_done_indices(pro_path: str) -> set[int]:
+    """Get the indices of all parsed demos in a directory.
+
+    Args:
+        pro_path (str): Path to the directory to check
+
+    Returns:
+        set[int]: Set of all already parsed demo indices.
+    """
+    done_indices: set[int] = set()
+    # check already processed demos:
+    for directoryname in Path(pro_path).iterdir():
+        if os.path.isdir(directoryname):
+            for filename in directoryname.iterdir():
+                if filename.suffix == ".json":
+                    search_result = re.search(r".+_(\d{5}).json", filename.name)
+                    if search_result is None:
+                        continue
+                    match_id = search_result[1]
+                    if match_id not in done_indices:
+                        done_indices.add(int(match_id))
+    return done_indices
+
+
+def main(args: list[str]) -> None:
+    """Downloads demos from hltv.org."""
     parser = argparse.ArgumentParser("Analyze the early mid fight on inferno")
     parser.add_argument(
         "-d", "--debug", action="store_true", default=False, help="Enable debug output."
@@ -90,31 +116,17 @@ def main(args):
             datefmt="%Y-%m-%d %H:%M:%S",
         )
 
-    done_indices = set()
     # check already processed demos:
     pro_path = r"E:\PhD\MachineLearning\CSGOData\ParsedDemos"
-    for directoryname in os.listdir(pro_path):
-        directory = os.path.join(pro_path, directoryname)
-        if os.path.isdir(directory):
-            for filename in os.listdir(directory):
-                if filename.endswith(".json"):
-                    search_result = re.search(r".+_(\d{5}).json", filename)
-                    if search_result is None:
-                        continue
-                    match_id = search_result.group(1)
-                    if match_id not in done_indices:
-                        done_indices.add(int(match_id))
 
-    _ = find_missing(done_indices)
+    done_indices = _get_done_indices(pro_path=pro_path)
 
-    # gateway = ApiGateway("https://www.hltv.org/", regions=EXTRA_REGIONS)
-    # gateway.start()
+    find_missing(done_indices)
 
     session = requests.Session()
-    # session.mount("https://www.hltv.org/", gateway)
 
     urls = [
-        "https://www.hltv.org/download/demo/" + str(x)
+        f"https://www.hltv.org/download/demo/{x!s}"
         for x in range(
             options.startid,
             options.endid,
@@ -140,32 +152,9 @@ def main(args):
                     ):  # 1024*1024, 128
                         file.write(chunk)
             time.sleep(5)
-        except requests.exceptions.ConnectionError as e:
-            logging.error("Got time out")
-            logging.error(e)
-
-    # Only run this line if you are no longer going to run the script, as it takes longer to boot up again next time.
-    # gateway.shutdown()
+        except requests.exceptions.ConnectionError:
+            logging.exception("Got time out")
 
 
 if __name__ == "__main__":
     main(sys.argv[1:])
-
-
-# CONNECTIONS=5
-# TIMEOUT=5
-# out = []
-
-# with concurrent.futures.ThreadPoolExecutor(max_workers=CONNECTIONS) as executor:
-#     future_to_url = (executor.submit(request_demo, url, TIMEOUT) for url in urls)
-#     for future in concurrent.futures.as_completed(future_to_url):
-#         try:
-#             data = future.result()
-#         except Exception as exc:
-#             data = str(type(exc))
-#         finally:
-#             out.append(data)
-#             print(str(len(out)),end="\r")
-
-# def request_demo(url, timeout):
-#     logging.info(url)
