@@ -360,7 +360,6 @@ class FightAnalyzer:
                     is_pro_game=is_pro_game,
                 )
 
-    # generator function
     def _demo_files(self, done_set: set[Any]) -> Iterator[Path]:
         """Crawl all desired directories and filter maps and files.
 
