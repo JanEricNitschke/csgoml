@@ -1,9 +1,9 @@
-from setuptools import setup, find_packages
-
 from pathlib import Path
 
+from setuptools import find_packages, setup
+
 this_directory = Path(__file__).parent
-long_description = (this_directory / "README.md").read_text()
+long_description = (this_directory / "README.md").read_text(encoding="utf-8")
 
 setup(
     name="csgoml",
@@ -12,24 +12,24 @@ setup(
     # Project uses reStructuredText, so ensure that the docutils get
     # installed or upgraded on the target machine
     install_requires=[
-        "awpy>=1.2.1",
+        "awpy>=1.2.3",
         "boto3>=1.20.48",
-        "pymysql[rsa]>=1.0.2",
+        "PyMySQL[rsa]>=1.0.2",
         "patool>=1.12",
         "watchdog>=2.1.6",
         "requests_ip_rotator>=1.0.10",
-        "numpy>=1.18.1",
-        "matplotlib>=3.1.2",
-        "sympy>=1.10.1",
-        "numba>=0.56.2",
-        "imageio>=2.9.0",
-        "requests>=2.25.1",
-        "tqdm>=4.55.2",
-        "pandas>=1.3.5",
-        "scikit-learn>=1.0.2",
-        "scikit-learn-extra>=0.2.0",
-        "tensorflow>=2.8.0rc1",
-        "scipy>=1.7.3",
+        "numpy>=1.24.3",
+        "matplotlib>=3.7.1",
+        "sympy>=1.12.0",
+        "numba>=0.57.0",
+        "imageio>=2.28.1",
+        "requests>=2.30.0",
+        "tqdm>=4.65.0",
+        "pandas>=2.0.1",
+        "scikit-learn>=1.2.2",
+        "scikit-learn-extra>=0.3.0",
+        "tensorflow>=2.12.0",
+        "scipy>=1.10.1",
     ],
     # metadata to display on PyPI
     author="Jan-Eric Nitschke",
