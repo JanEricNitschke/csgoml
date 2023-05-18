@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 """Determine whether a given engagement is favourable to the T or CT side.
 
-    Typical usage example:
+Example::
 
     analyzer = FightAnalyzer(
         connection,
@@ -23,6 +23,8 @@ import logging
 import math
 import os
 import sys
+from collections.abc import Iterator
+from pathlib import Path
 from typing import Any
 
 import boto3
@@ -286,6 +288,7 @@ class FightAnalyzer:
             t_position,
             kill_weapon,
         )
+        logging.debug("Adding event with characteristics: %s", val_event)
         self.cursor.execute(
             (
                 "INSERT INTO Events (MatchID, Round, Pro, MapName, Time, CTWon, "
@@ -357,6 +360,43 @@ class FightAnalyzer:
                     is_pro_game=is_pro_game,
                 )
 
+    # generator function
+    def _demo_files(self, done_set: set[Any]) -> Iterator[Path]:
+        """Crawl all desired directories and filter maps and files.
+
+        Also logs the traversed and skipped files and folders and commits
+        on the connection after each map_dir.
+
+        Args:
+            done_set (set): Set of matchids that should be skipped as they
+                have already been analyzed.
+
+        Yields:
+            Paths of all the desired files.
+        """
+        logging.debug("Excluding matches with id: %s", done_set)
+        for path in self.directories:
+            for map_dir in Path(path).iterdir():
+                logging.info("Scanning directory: %s", map_dir)
+                if f"de_{map_dir.name}" not in NAV and map_dir.name not in NAV:
+                    logging.info(
+                        "Map %s|%s is not in supplied navigation files. Skipping it.",
+                        f"de_{map_dir.name}",
+                        map_dir.name,
+                    )
+                    continue
+                for file in map_dir.glob("*.json"):
+                    if file.stem in done_set:
+                        logging.debug(
+                            "There are already events from the file with "
+                            "the matchid %s in the database. Skipping it.",
+                            file.stem,
+                        )
+                        continue
+                    logging.info("Working on file %s", file)
+                    yield file
+                self.connection.commit()
+
     def analyze_demos(self) -> None:
         """Loops over the specified directory and analyzes each demo file.
 
@@ -369,41 +409,19 @@ class FightAnalyzer:
         Returns:
             None (Modifies external MYSQL DB)
         """
-        sql = "SELECT DISTINCT e.MatchID FROM Events e"
-        self.cursor.execute(sql)
+        self.cursor.execute("SELECT DISTINCT e.MatchID FROM Events e")
         done_set = {x[0] for x in self.cursor.fetchall()}
-        for maps_dir in self.directories:
-            is_pro_game = maps_dir != r"D:\CSGO\Demos\Maps"
-            for map_dir in os.listdir(maps_dir):
-                if f"de_{map_dir}" not in NAV and map_dir not in NAV:
-                    logging.info(
-                        "Map %s|%s is not in supplied navigation files. Skipping it.",
-                        f"de_{map_dir}",
-                        map_dir,
-                    )
-                    continue
-                logging.info("Scanning directory: %s", map_dir)
-                for filename in os.listdir(os.path.join(maps_dir, map_dir)):
-                    if not filename.endswith(".json"):
-                        continue
-                    logging.debug("Working on file %s", filename)
-                    file_path = os.path.join(maps_dir, map_dir, filename)
-                    # checking if it is a file
-                    if os.path.isfile(file_path):
-                        match_id = os.path.splitext(filename)[0]
-                        if match_id in done_set:
-                            logging.debug(
-                                "There are already events from the file with "
-                                "the matchid %s in the database. Skipping it.",
-                                match_id,
-                            )
-                            continue
-                        logging.info(match_id)
-                        with open(file_path, encoding="utf-8") as demo_json:
-                            demo_data: Game = json.load(demo_json)
-                        self.analyze_map(demo_data, match_id, is_pro_game=is_pro_game)
-                        self.n_analyzed += 1
-                self.connection.commit()
+
+        for demo_file in self._demo_files(done_set):
+            logging.info(match_id := demo_file.stem)
+            with open(demo_file, encoding="utf-8") as demo_json:
+                demo_data: Game = json.load(demo_json)
+            self.analyze_map(
+                demo_data,
+                match_id,
+                is_pro_game=r"D:\CSGO\Demos\Maps" in demo_file.parents,
+            )
+            self.n_analyzed += 1
         logging.info("Analyzed a total of %s demos!", self.n_analyzed)
 
     def get_wilson_interval(
@@ -770,9 +788,11 @@ def main(args: list[str]) -> None:
         analyzer.analyze_demos()
 
     logging.info("With TRamp allowed:")
-    analyzer.calculate_ct_win_percentage(
-        event,
-        cursor,
+    logging.info(
+        analyzer.calculate_ct_win_percentage(
+            event,
+            cursor,
+        )
     )
 
     cursor.close()
