@@ -29,16 +29,25 @@ import json
 import logging
 import os
 import sys
-from collections.abc import Iterator
+from collections.abc import Iterator, Mapping
 from pathlib import Path
-from typing import Literal, cast, overload
+from typing import Any, Literal, cast, overload
 
 import pandas as pd
 from awpy.analytics.nav import find_closest_area, generate_position_token
 from awpy.data import NAV
-from awpy.types import Game, GameFrame, GameRound, PlayerInfo, Token
+from awpy.types import (
+    Game,
+    GameFrame,
+    GameRound,
+    PlayerInfo,
+    Token,
+    int_to_string_n_players,
+    proper_player_number,
+    upper_side,
+)
 
-from csgoml.types import PositionDataset, RoundPositions
+from csgoml.types import DictInitialized, IDNumberDict, PositionDataset, RoundPositions
 
 N_PLAYERS = 5
 
@@ -250,7 +259,9 @@ def initialize_position_dataset_dict() -> PositionDataset:
     return position_dataset_dict
 
 
-def check_size(dictionary: dict[str, list]) -> int:
+# Tighten this to Mapping[str, list] if that ever properly type checks
+# with @final TypedDicts. -> Make them final if that is the case.
+def check_size(dictionary: Mapping[str, Any]) -> int:
     """Checks that the size of each list behind every dictionary key is the same.
 
     The input dictionary is expected to have a
@@ -332,7 +343,7 @@ def get_player_id(player: PlayerInfo) -> int | str:
     return player["name"] if player["steamID"] == 0 else player["steamID"]
 
 
-def pad_to_full_length(round_positions: dict[str, list]) -> None:
+def pad_to_full_length(round_positions: RoundPositions) -> None:
     """Pads each entry in a given round_positions dictionary to the full length.
 
     For every player their name, status and position
@@ -346,7 +357,7 @@ def pad_to_full_length(round_positions: dict[str, list]) -> None:
     every entry in the dictionary has the same length.
 
     Args:
-        round_positions (dict[str, list]): Dictionary containing information
+        round_positions (RoundPositions): Dictionary containing information
             about all players for each timestep
 
     Returns:
@@ -355,12 +366,12 @@ def pad_to_full_length(round_positions: dict[str, list]) -> None:
     """
     if len(round_positions["Tick"]) == 0:
         return
-    for key, value in round_positions.items():
+    for key in round_positions:
         if "Alive" in key:
             # If the Alive list is completely empty fill it with a dead player
             # If the player left mid round he is considered dead
             # for the time after leaving, so pad it to full length with False
-            if len(value) == 0:
+            if len(round_positions[key]) == 0:
                 logging.debug("An alive key has length 0. Padding to length of tick!")
                 logging.debug("Start tick: %s", round_positions["Tick"][0])
                 round_positions[key] = [0] * len(round_positions["Tick"])
@@ -383,7 +394,7 @@ def pad_to_full_length(round_positions: dict[str, list]) -> None:
             round_positions[key] += [round_positions[key][-1]] * (
                 len(round_positions["Tick"]) - len(round_positions[key])
             )
-    _ = check_size(round_positions)
+    check_size(round_positions)
 
 
 def partial_step(
@@ -409,9 +420,9 @@ def partial_step(
 
 
 def append_to_round_positions(
-    round_positions: dict[str, list],
+    round_positions: RoundPositions,
     side: Literal["ct", "t"],
-    id_number_dict: dict,
+    id_number_dict: IDNumberDict,
     player_id: int | str,
     player: PlayerInfo,
     second_difference: int,
@@ -444,89 +455,138 @@ def append_to_round_positions(
     # Add name of the player.
     # Mainly for debugging purposes. Can be removed for actual analysis
     for i in range(second_difference, 0, -1):
-        name_val = (
-            player["name"]
-            if i == 1
-            else round_positions[
-                side.upper() + "Player" + id_number_dict[side][str(player_id)] + "Name"
-            ][-1]
+        append_step_to_round_positions(
+            round_positions,
+            side,
+            id_number_dict,
+            player_id,
+            player,
+            second_difference,
+            map_name,
+            step=i,
         )
-        alive_val = (
-            int(player["isAlive"])
-            if i == 1
-            else round_positions[
-                side.upper() + "Player" + id_number_dict[side][str(player_id)] + "Alive"
-            ][-1]
+
+
+def append_step_to_round_positions(
+    round_positions: RoundPositions,
+    side: Literal["ct", "t"],
+    id_number_dict: IDNumberDict,
+    player_id: int | str,
+    player: PlayerInfo,
+    second_difference: int,
+    map_name: str,
+    step: int,
+) -> None:
+    """Append a players information from the most recent frame to round_position dict..
+
+    If the time difference between the most recent and the previous frame is larger
+    than expected also add interpolated values for the missing time steps.
+
+    Args:
+        round_positions (dict[str, list]): Dictionary containing information
+            about all players for each timestep
+        side (str): Describing the side the given player is currently playing on.
+            Should be either "ct" or "t"
+        id_number_dict (dict): Dict correlating a players steamID with their ranking.
+        player_id (int | str]): Integer or string containing a players steamID
+            or bots name
+        player (dict): Dict containing the players position and status
+            for the most recent timestep
+        second_difference (int): Time difference between this
+            and the previous frame in seconds.
+            If it is larger than 1 then interpolation has to be done.
+        map_name (str): A string of the maps name
+        step (int): The
+
+    Returns:
+        None (Dictionary is appended to in place)
+    """
+    # Add the relevant information of this player to the rounds dict.
+    # Add name of the player.
+    # Mainly for debugging purposes. Can be removed for actual analysis
+    name_val = (
+        player["name"]
+        if step == 1
+        else round_positions[
+            upper_side(side) + "Player" + id_number_dict[side][str(player_id)] + "Name"
+        ][-1]
+    )
+    alive_val = (
+        int(player["isAlive"])
+        if step == 1
+        else round_positions[
+            upper_side(side) + "Player" + id_number_dict[side][str(player_id)] + "Alive"
+        ][-1]
+    )
+    x_val = (
+        player["x"]
+        if step == 1
+        else partial_step(
+            player["x"],
+            round_positions[
+                upper_side(side) + "Player" + id_number_dict[side][str(player_id)] + "x"
+            ][-1],
+            second_difference,
+            step,
         )
-        x_val = (
-            player["x"]
-            if i == 1
-            else partial_step(
-                player["x"],
-                round_positions[
-                    side.upper() + "Player" + id_number_dict[side][str(player_id)] + "x"
-                ][-1],
-                second_difference,
-                i,
-            )
+    )
+    y_val = (
+        player["y"]
+        if step == 1
+        else partial_step(
+            player["y"],
+            round_positions[
+                upper_side(side) + "Player" + id_number_dict[side][str(player_id)] + "y"
+            ][-1],
+            second_difference,
+            step,
         )
-        y_val = (
-            player["y"]
-            if i == 1
-            else partial_step(
-                player["y"],
-                round_positions[
-                    side.upper() + "Player" + id_number_dict[side][str(player_id)] + "y"
-                ][-1],
-                second_difference,
-                i,
-            )
+    )
+    z_val = (
+        player["z"]
+        if step == 1
+        else partial_step(
+            player["z"],
+            round_positions[
+                upper_side(side) + "Player" + id_number_dict[side][str(player_id)] + "z"
+            ][-1],
+            second_difference,
+            step,
         )
-        z_val = (
-            player["z"]
-            if i == 1
-            else partial_step(
-                player["z"],
-                round_positions[
-                    side.upper() + "Player" + id_number_dict[side][str(player_id)] + "z"
-                ][-1],
-                second_difference,
-                i,
-            )
-        )
-        area_val = (
-            find_closest_area(map_name, [x_val, y_val, z_val])["areaId"]
-            if map_name in NAV
-            else -1
-        )
-        round_positions[
-            side.upper() + "Player" + id_number_dict[side][str(player_id)] + "Name"
-        ].append(name_val)
-        # Alive status so the model doesn't have to learn from stopping trajectories.
-        round_positions[
-            side.upper() + "Player" + id_number_dict[side][str(player_id)] + "Alive"
-        ].append(alive_val)
-        round_positions[
-            side.upper() + "Player" + id_number_dict[side][str(player_id)] + "x"
-        ].append(x_val)
-        round_positions[
-            side.upper() + "Player" + id_number_dict[side][str(player_id)] + "y"
-        ].append(y_val)
-        round_positions[
-            side.upper() + "Player" + id_number_dict[side][str(player_id)] + "z"
-        ].append(z_val)
-        round_positions[
-            side.upper() + "Player" + id_number_dict[side][str(player_id)] + "Area"
-        ].append(area_val)
+    )
+    area_val = (
+        find_closest_area(map_name, [x_val, y_val, z_val])["areaId"]
+        if map_name in NAV
+        else -1
+    )
+    round_positions[
+        upper_side(side) + "Player" + id_number_dict[side][str(player_id)] + "Name"
+    ].append(name_val)
+    # Alive status so the model doesn't have to learn from stopping trajectories.
+    round_positions[
+        upper_side(side) + "Player" + id_number_dict[side][str(player_id)] + "Alive"
+    ].append(alive_val)
+    round_positions[
+        upper_side(side) + "Player" + id_number_dict[side][str(player_id)] + "x"
+    ].append(x_val)
+    round_positions[
+        upper_side(side) + "Player" + id_number_dict[side][str(player_id)] + "y"
+    ].append(y_val)
+    round_positions[
+        upper_side(side) + "Player" + id_number_dict[side][str(player_id)] + "z"
+    ].append(z_val)
+    round_positions[
+        upper_side(side) + "Player" + id_number_dict[side][str(player_id)] + "Area"
+    ].append(area_val)
 
 
 @overload
-def convert_winner_to_int(kills: Literal["CT"]) -> Literal[1]:
+def convert_winner_to_int(winner_string: Literal["CT"]) -> Literal[1]:
     ...
 
 
 @overload
-def convert_winner_to_int(kills: Literal["T"]) -> Literal[0]:
+def convert_winner_to_int(winner_string: Literal["T"]) -> Literal[0]:
     ...
 
 
@@ -572,14 +632,7 @@ def get_token_length(map_name: str) -> int:
 
 def initialize_round(
     current_round: GameRound,
-) -> tuple[
-    bool,
-    int,
-    dict[str, dict[str, str]],
-    dict[str, bool],
-    dict[str, list],
-    list[int],
-]:
+) -> tuple[bool, int, IDNumberDict, DictInitialized, RoundPositions, list[int],]:
     """Initializes the variables for the current round.
 
     Args:
@@ -600,9 +653,12 @@ def initialize_round(
     skip_round = False
     last_good_frame = 1
     # Dict for mapping players steamID to player number for each round
-    id_number_dict: dict[str, dict[str, str]] = {"t": {}, "ct": {}}
+    id_number_dict: IDNumberDict = {
+        "t": {},
+        "ct": {},
+    }
     # Dict to check if mapping has already been initialized this round
-    dict_initialized: dict[str, bool] = {"t": False, "ct": False}
+    dict_initialized: DictInitialized = {"t": False, "ct": False}
     # Initialize the dict that tracks player position, status and name for each round
     round_positions = initialize_round_positions()
     logging.debug("Round number %s", current_round["roundNum"])
@@ -622,10 +678,10 @@ def initialize_round(
 
 def analyze_players(
     frame: GameFrame,
-    dict_initialized: dict,
-    id_number_dict: dict[str, dict[str, str]],
+    dict_initialized: DictInitialized,
+    id_number_dict: IDNumberDict,
     side: Literal["ct", "t"],
-    round_positions: dict[str, list],
+    round_positions: RoundPositions,
     second_difference: int,
     map_name: str,
 ) -> None:
@@ -646,12 +702,17 @@ def analyze_players(
         None (round_positions is appended to in place)
     """
     for player_index, player in enumerate(frame[side]["players"] or []):
+        # There should only be 5 players in a frame -> so index 0 - 4
+        if not proper_player_number(player_index) or player_index == N_PLAYERS:
+            continue
         player_id = get_player_id(player)
         # If the dict of the team has not been initialized add that player.
         # Should only happen once per player per team per round
         # But for each team can happen on different rounds in some rare cases.
         if dict_initialized[side] is False:
-            id_number_dict[side][str(player_id)] = str(player_index + 1)
+            id_number_dict[side][str(player_id)] = int_to_string_n_players(
+                player_index + 1
+            )
         # If a player joins mid round
         # (either a bot due to player leaving or player (re)joining)
         # do not use him for this round.
@@ -676,7 +737,7 @@ def add_general_information(
     current_round: GameRound,
     second_difference: int,
     token_length: int,
-    round_positions: dict[str, list],
+    round_positions: RoundPositions,
     ticks: list[int],
     index: int,
     map_name: str,
@@ -720,11 +781,13 @@ def add_general_information(
             token_length,
         )
         round_positions["Tick"].append(
-            partial_step(
-                ticks[0],
-                ticks[1],
-                second_difference,
-                i,
+            round(
+                partial_step(
+                    ticks[0],
+                    ticks[1],
+                    second_difference,
+                    i,
+                )
             )
         )
         round_positions["token"].append(tokens["token"])
@@ -735,7 +798,7 @@ def add_general_information(
 
 def analyze_frames(
     current_round: GameRound, map_name: str, token_length: int, tick_rate: int
-) -> tuple[bool, dict]:
+) -> tuple[bool, RoundPositions]:
     """Analyzes the frames in a given round.
 
     Args:
@@ -821,7 +884,7 @@ def analyze_frames(
 
 
 def analyze_rounds(
-    data: Game, position_dataset_dict: dict[str, list], match_id: str
+    data: Game, position_dataset_dict: PositionDataset, match_id: str
 ) -> None:
     """Analyzes all rounds in a game and adds their relevant data.
 
@@ -882,20 +945,20 @@ def analyze_rounds(
         )
 
 
-def _map_directories(base_dir: str, done: set[str], to_do: set[str]) -> Iterator[Path]:
+def _map_directories(base_dir: str) -> Iterator[Path]:
     """Crawl all desired directories and filter them.
 
     Args:
         base_dir (str): Path of the base directory from which subdirectories
             should be crawled.
-        done (set[str]): Set of directories which are already done and should
-            not be visited again.
-        to_do (set[str]): Set of directories to do specifically.
-            If not empty skip all other directories not contained within.
 
     Yields:
         Paths of all the desired files.
     """
+    # List of maps already done -> Do not do them again
+    done: set[str] = {"cache", "cbble", "dust2", "inferno", "mirage", "nuke"}
+    # List of maps to specifically do -> only do those
+    to_do: set[str] = {"ancient"}
     for directory in Path(base_dir).iterdir():
         if directory.is_dir():
             logging.info("Looking at directory %s", directory)
@@ -919,7 +982,7 @@ def main(args: list[str]) -> None:
     )
     parser.add_argument(
         "--dir",
-        default=r"E:\PhD\MachineLearning\CSGOData\ParsedDemos",
+        default=r"D:\CSGO\Demos\Maps",
         help="Path to directory containing the individual map directories.",
     )
     parser.add_argument(
@@ -959,21 +1022,18 @@ def main(args: list[str]) -> None:
         )
 
     logging.info("Starting")
-    # List of maps already done -> Do not do them again
-    done: set[str] = {"ancient", "cache", "cbble", "dust2", "inferno", "mirage", "nuke"}
-    # List of maps to specifically do -> only do those
-    to_do: set[str] = set()
-    for directory in _map_directories(options.dir, done, to_do):
+
+    for directory in _map_directories(options.dir):
         output_json_path = (
-            directory
+            str(directory)
             + r"\Analysis\Prepared_Input_Tensorflow_"
             + directory.name
             + ".json"
         )
-        seen_match_ids = set()
+        seen_match_ids: set[str] = set()
         if not options.reanalyze and os.path.exists(output_json_path):
             with open(output_json_path, encoding="utf-8") as pre_analyzed:
-                prev_dataframe = pd.read_json(pre_analyzed)
+                prev_dataframe = pd.read_json(pre_analyzed, dtype={"MatchID": str})
             seen_match_ids = set(prev_dataframe["MatchID"].unique())
         else:
             prev_dataframe = pd.DataFrame()
@@ -984,16 +1044,15 @@ def main(args: list[str]) -> None:
             seen_match_ids,
         )
         position_dataset_dict = initialize_position_dataset_dict()
-        for files_done, filename in enumerate(os.listdir(directory)):
-            file_path = os.path.join(directory, filename)
-            match_id = filename.rsplit(".", 1)[0]
+        for files_done, file_path in enumerate(directory.iterdir()):
+            match_id = file_path.stem
             # checking if it is a file
             if (
                 match_id not in seen_match_ids
                 and os.path.isfile(file_path)
-                and filename.endswith(".json")
+                and file_path.suffix == ".json"
             ):
-                logging.info("Analyzing file %s", filename)
+                logging.info("Analyzing file %s", file_path.name)
                 with open(file_path, encoding="utf-8") as demo_json:
                     data = json.load(demo_json)
                 analyze_rounds(data, position_dataset_dict, match_id)

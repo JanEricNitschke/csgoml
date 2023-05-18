@@ -1,33 +1,34 @@
-"""Tests for trajectory_input_preparation.py"""
+"""Tests for trajectory_input_preparation.py."""
 
-import pytest
 import pandas as pd
+import pytest
+
 from csgoml.scripts.trajectory_input_preparation import (
-    initialize_round_positions,
-    build_intermediate_frames,
-    get_postion_token,
-    initialize_position_dataset_dict,
-    check_size,
-    frame_is_empty,
-    get_player_id,
-    pad_to_full_length,
-    partial_step,
-    append_to_round_positions,
-    convert_winner_to_int,
-    get_token_length,
-    initialize_round,
-    analyze_players,
     add_general_information,
     analyze_frames,
+    analyze_players,
     analyze_rounds,
+    append_to_round_positions,
+    build_intermediate_frames,
+    check_size,
+    convert_winner_to_int,
+    frame_is_empty,
+    get_player_id,
+    get_postion_token,
+    get_token_length,
+    initialize_position_dataset_dict,
+    initialize_round,
+    initialize_round_positions,
+    pad_to_full_length,
+    partial_step,
 )
 
 
 class TestTrajectoryInputPreparation:
-    """Class to test trajectory_input_preparation.py"""
+    """Class to test trajectory_input_preparation.py."""
 
     def test_initialize_round_positions(self):
-        """Tests initialize_round_positions"""
+        """Tests initialize_round_positions."""
         round_positions = {
             "Tick": [],
             "token": [],
@@ -98,7 +99,7 @@ class TestTrajectoryInputPreparation:
         assert initialize_round_positions() == round_positions
 
     def test_build_intermediate_frames(self):
-        """Tests build_intermediate_frames"""
+        """Tests build_intermediate_frames."""
         previous_frame = {
             "t": {
                 "players": [
@@ -229,7 +230,7 @@ class TestTrajectoryInputPreparation:
         assert int_frames == [int_frame, current_frame]
 
     def test_get_postion_token(self):
-        """Tests get_postion_token"""
+        """Tests get_postion_token."""
         frame = {
             "t": {
                 "players": [
@@ -310,7 +311,7 @@ class TestTrajectoryInputPreparation:
         }
 
     def test_initialize_position_dataset_dict(self):
-        """Tests initialize_position_dataset_dict"""
+        """Tests initialize_position_dataset_dict."""
         position_dataset_dict = {
             "MatchID": [],
             "MapName": [],
@@ -321,7 +322,7 @@ class TestTrajectoryInputPreparation:
         assert initialize_position_dataset_dict() == position_dataset_dict
 
     def test_check_size(self):
-        """Tests check_size"""
+        """Tests check_size."""
         my_dict = {"entry1": ["0"] * 10, "entry2": ["o"] * 10}
         assert check_size(my_dict) == 10
         my_dict["entry2"].append("o")
@@ -331,7 +332,7 @@ class TestTrajectoryInputPreparation:
         assert check_size(my_dict) == 11
 
     def test_frame_is_empty(self):
-        """Tests frame_is_empty"""
+        """Tests frame_is_empty."""
         round_dict = {
             "roundNum": 10,
             "frames": [
@@ -384,7 +385,7 @@ class TestTrajectoryInputPreparation:
         assert frame_is_empty(round_dict)
 
     def test_get_player_id(self):
-        """Tests get_player_id"""
+        """Tests get_player_id."""
         player_dict = {"steamID": 76561198049899734, "name": "JanEric1"}
         my_id = get_player_id(player_dict)
         assert isinstance(my_id, int)
@@ -395,7 +396,7 @@ class TestTrajectoryInputPreparation:
         assert my_id == "Bot John"
 
     def test_pad_to_full_length(self):
-        """Tests pad_to_full_length"""
+        """Tests pad_to_full_length."""
         round_pos_dict = {"Tick": [], "Alive": [], "PlayerX": [], "PlayerName": []}
         padded_pos_dict = {"Tick": [], "Alive": [], "PlayerX": [], "PlayerName": []}
         pad_to_full_length(round_positions=round_pos_dict)
@@ -430,7 +431,7 @@ class TestTrajectoryInputPreparation:
         assert round_pos_dict == padded_pos_dict
 
     def test_partial_step(self):
-        """Tests partial_step"""
+        """Tests partial_step."""
         current = 200
         previous = 100
         second_difference = 1
@@ -449,7 +450,7 @@ class TestTrajectoryInputPreparation:
         assert partial_step(current, previous, second_difference, step_value) == current
 
     def test_append_to_round_positions(self):
-        """Tests append_to_round_positions"""
+        """Tests append_to_round_positions."""
         round_positions = initialize_round_positions()
         exp_round_positions = initialize_round_positions()
         side = "t"
@@ -482,20 +483,20 @@ class TestTrajectoryInputPreparation:
         assert round_positions == exp_round_positions
 
     def test_convert_winner_to_int(self):
-        """Tests convert_winner_to_int"""
+        """Tests convert_winner_to_int."""
         assert convert_winner_to_int("CT") == 1
         assert convert_winner_to_int("T") == 0
         assert convert_winner_to_int("Nope") is None
 
     def test_get_token_length(self):
-        """Tests get_token_length"""
+        """Tests get_token_length."""
         assert get_token_length("de_inferno") == 25
         assert get_token_length("de_nuke") == 30
         assert get_token_length("de_ancient") == 20
         assert get_token_length("cs_rush") == 1
 
     def test_initialize_round(self):
-        """Tests initialize_round"""
+        """Tests initialize_round."""
         round_dict = {"winningSide": "CT", "roundNum": 17}
         assert initialize_round(round_dict) == (
             False,
@@ -525,7 +526,7 @@ class TestTrajectoryInputPreparation:
         )
 
     def test_analyze_players(self):
-        """Tests analyze_players"""
+        """Tests analyze_players."""
         id_number_dict = {"t": {}, "ct": {}}
         dict_initialized = {"t": False, "ct": False}
         round_positions = initialize_round_positions()
@@ -604,7 +605,7 @@ class TestTrajectoryInputPreparation:
         assert len(round_positions["CTPlayer2Name"]) == 2
 
     def test_add_general_information(self):
-        """Tests add_general_information"""
+        """Tests add_general_information."""
         current_frame = {
             "t": {
                 "players": [
@@ -669,15 +670,15 @@ class TestTrajectoryInputPreparation:
             assert isinstance(value, list)
             if key in ["token", "Ttoken", "CTtoken", "interpolated", "Tick"]:
                 assert len(value) == 1
-                if key == "interpolated":
-                    assert value == [0]
                 if key == "Tick":
                     assert value == [128.0]
+                elif key == "interpolated":
+                    assert value == [0]
             else:
                 assert len(value) == 0
 
     def test_analyze_frames(self):
-        """Tests analyze_frames"""
+        """Tests analyze_frames."""
         current_round = {
             "roundNum": 10,
             "frames": [
@@ -970,7 +971,7 @@ class TestTrajectoryInputPreparation:
         assert round_positions["Tick"] == [256.0]
 
     def test_analyze_rounds(self):
-        """Tests analyze_rounds"""
+        """Tests analyze_rounds."""
         data = {
             "mapName": "de_inferno",
             "tickRate": 128,
