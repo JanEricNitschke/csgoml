@@ -1,21 +1,24 @@
-"""Tests for trajectory_clusterer.py"""
+"""Tests for trajectory_clusterer.py."""
 # pylint: disable=attribute-defined-outside-init
 
-import os
 import json
+import os
 import shutil
+
+import numpy as np
 import pandas as pd
 import requests
 from numba import typed
-from csgoml.trajectories.trajectory_handler import TrajectoryHandler
+
 from csgoml.trajectories.trajectory_clusterer import TrajectoryClusterer
+from csgoml.trajectories.trajectory_handler import TrajectoryHandler
 
 
 class TestTrajectoryClusterer:
-    """Class to test TrajectoryClusterer"""
+    """Class to test TrajectoryClusterer."""
 
     def setup_class(self):
-        """Setup class by defining loading dictionary of test json files"""
+        """Setup class by defining loading dictionary of test json files."""
         with open("tests/test_trajectory_json.json", encoding="utf-8") as f:
             self.json_data = json.load(f)
         for file in self.json_data:
@@ -39,10 +42,11 @@ class TestTrajectoryClusterer:
         )
 
     def teardown_class(self):
-        """Set sorter to none, deletes all demofiles, JSON and directories"""
+        """Set sorter to none, deletes all demofiles, JSON and directories."""
         files_in_directory = os.listdir()
-        filtered_files = [file for file in files_in_directory if file.endswith(".json")]
-        if len(filtered_files) > 0:
+        if filtered_files := [
+            file for file in files_in_directory if file.endswith(".json")
+        ]:
             for f in filtered_files:
                 os.remove(f)
         shutil.rmtree(self.outputpath)
@@ -50,22 +54,21 @@ class TestTrajectoryClusterer:
         self.handler = None
 
     @staticmethod
-    def _get_jsonfile(json_link, json_name):
-        print("Requesting " + json_link)
+    def _get_jsonfile(json_link: str, json_name: str) -> None:
+        print(f"Requesting {json_link}")
         r = requests.get(json_link, timeout=20)
-        open(json_name + ".json", "wb").write(r.content)
+        with open(f"{json_name}.json", "wb") as json_file:
+            json_file.write(r.content)
 
     def test_get_compressed_area_dist_matrix(self):
-        """Tests get_compressed_area_dist_matrix"""
-        compressed_matrix = self.clusterer.get_compressed_area_dist_matrix()
-        keys = list(compressed_matrix.keys())
-        assert isinstance(compressed_matrix, typed.typeddict.Dict)
-        assert isinstance(compressed_matrix[keys[0]], typed.typeddict.Dict)
-        assert isinstance(compressed_matrix[keys[0]][keys[1]], float)
-        assert compressed_matrix[keys[0]][keys[0]] == 0
+        """Tests get_compressed_area_dist_matrix."""
+        dist_matrix, matching = self.clusterer.get_compressed_area_dist_matrix()
+        assert isinstance(dist_matrix, np.ndarray)
+        assert len(dist_matrix.shape) == 2
+        assert isinstance(matching, dict)
 
     def test_get_compressed_place_dist_matrix(self):
-        """Tests get_compressed_place_dist_matrix"""
+        """Tests get_compressed_place_dist_matrix."""
         compressed_matrix = self.clusterer.get_compressed_place_dist_matrix()
         keys = list(compressed_matrix.keys())
         assert isinstance(compressed_matrix, typed.typeddict.Dict)
@@ -74,7 +77,7 @@ class TestTrajectoryClusterer:
         assert compressed_matrix[keys[0]][keys[0]] == 0
 
     def test_get_map_area_names(self):
-        """Tests get_map_area_names"""
+        """Tests get_map_area_names."""
         map_area_names = self.clusterer.get_map_area_names()
         assert len(map_area_names) == 20
         assert map_area_names == typed.List(
@@ -103,10 +106,12 @@ class TestTrajectoryClusterer:
         )
 
     def test_get_trajectory_distance_matrix(self):
-        """Tests get_trajectory_distance_matrix"""
-        traj_config = ("token", 10, 10, "T", False)
-        coordinate_type, n_rounds, time, side, dtw = traj_config
-        config_snippet = f"{self.clusterer.map_name}_{side}_{time}_{dtw}_{coordinate_type}_{n_rounds}_{self.clusterer.random_state}"
+        """Tests get_trajectory_distance_matrix."""
+        coordinate_type, n_rounds, time, side, dtw = "token", 10, 10, "T", False
+        config_snippet = (
+            f"{self.clusterer.map_name}_{side}_{time}_{dtw}_"
+            f"{coordinate_type}_{n_rounds}_{self.clusterer.random_state}"
+        )
         config_path = os.path.join(self.clusterer.analysis_path, config_snippet)
         if not os.path.exists(config_path):
             os.makedirs(config_path)
@@ -136,10 +141,11 @@ class TestTrajectoryClusterer:
             dtw=dtw,
         )
         assert (traj_matrix1 == traj_matrix2).all()
-
-        traj_config = ("position", 10, 10, "T", False)
-        coordinate_type, n_rounds, time, side, dtw = traj_config
-        config_snippet = f"{self.clusterer.map_name}_{side}_{time}_{dtw}_{coordinate_type}_{n_rounds}_{self.clusterer.random_state}"
+        coordinate_type, n_rounds, time, side, dtw = "position", 10, 10, "T", False
+        config_snippet = (
+            f"{self.clusterer.map_name}_{side}_{time}_{dtw}_"
+            f"{coordinate_type}_{n_rounds}_{self.clusterer.random_state}"
+        )
         config_path = os.path.join(self.clusterer.analysis_path, config_snippet)
         if not os.path.exists(config_path):
             os.makedirs(config_path)
@@ -163,9 +169,11 @@ class TestTrajectoryClusterer:
         )
         assert os.path.exists(precomputed_matrix_path)
 
-        traj_config = ("area", 10, 10, "T", False)
-        coordinate_type, n_rounds, time, side, dtw = traj_config
-        config_snippet = f"{self.clusterer.map_name}_{side}_{time}_{dtw}_{coordinate_type}_{n_rounds}_{self.clusterer.random_state}"
+        coordinate_type, n_rounds, time, side, dtw = "area", 10, 10, "T", False
+        config_snippet = (
+            f"{self.clusterer.map_name}_{side}_{time}_{dtw}_"
+            f"{coordinate_type}_{n_rounds}_{self.clusterer.random_state}"
+        )
         config_path = os.path.join(self.clusterer.analysis_path, config_snippet)
         if not os.path.exists(config_path):
             os.makedirs(config_path)
@@ -190,10 +198,12 @@ class TestTrajectoryClusterer:
         assert os.path.exists(precomputed_matrix_path)
 
     def test_run_kmed(self):
-        """Tests run_kmed"""
-        traj_config = ("token", 10, 10, "T", False)
-        coordinate_type, n_rounds, time, side, dtw = traj_config
-        config_snippet = f"{self.clusterer.map_name}_{side}_{time}_{dtw}_{coordinate_type}_{n_rounds}_{self.clusterer.random_state}"
+        """Tests run_kmed."""
+        coordinate_type, n_rounds, time, side, dtw = "token", 10, 10, "T", False
+        config_snippet = (
+            f"{self.clusterer.map_name}_{side}_{time}_{dtw}_"
+            f"{coordinate_type}_{n_rounds}_{self.clusterer.random_state}"
+        )
         config_path = os.path.join(self.clusterer.analysis_path, config_snippet)
         if not os.path.exists(config_path):
             os.makedirs(config_path)
@@ -208,17 +218,19 @@ class TestTrajectoryClusterer:
             precomputed_matrix_path,
             [],
             coordinate_type,
-            dtw,
+            dtw=dtw,
         )
         kmed_dict = self.clusterer.run_kmed(3, precomputed=precomputed_matrix)
         assert len(kmed_dict) == 3
         assert dict(kmed_dict) == {0: [0, 1], 1: [2, 5, 6, 7], 2: [3, 4, 8, 9]}
 
     def test_run_dbscan(self):
-        """Tests run_dbscan"""
-        traj_config = ("token", 10, 10, "T", False)
-        coordinate_type, n_rounds, time, side, dtw = traj_config
-        config_snippet = f"{self.clusterer.map_name}_{side}_{time}_{dtw}_{coordinate_type}_{n_rounds}_{self.clusterer.random_state}"
+        """Tests run_dbscan."""
+        coordinate_type, n_rounds, time, side, dtw = "token", 10, 10, "T", False
+        config_snippet = (
+            f"{self.clusterer.map_name}_{side}_{time}_{dtw}_"
+            f"{coordinate_type}_{n_rounds}_{self.clusterer.random_state}"
+        )
         config_path = os.path.join(self.clusterer.analysis_path, config_snippet)
         if not os.path.exists(config_path):
             os.makedirs(config_path)
@@ -233,7 +245,7 @@ class TestTrajectoryClusterer:
             precomputed_matrix_path,
             [],
             coordinate_type,
-            dtw,
+            dtw=dtw,
         )
         dbscan_dict = self.clusterer.run_dbscan(500, 2, precomputed=precomputed_matrix)
         assert len(dbscan_dict) == 2

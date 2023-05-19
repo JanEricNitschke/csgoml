@@ -86,7 +86,13 @@ def main(args: list[str]) -> None:
         random_state=random_state,
         map_name=map_name,
     )
-    traj_config = ("area", 1000, 10, "T", False)
+    traj_config = {
+        "coordinate_type_for_distance": "area",
+        "n_rounds": 1000,
+        "time": 10,
+        "side": "T",
+        "dtw": False,
+    }
     clust_config = {
         "do_histogram": False,
         "n_bins": 50,
@@ -100,9 +106,7 @@ def main(args: list[str]) -> None:
         "kmed_n_clusters": 3,
     }
     logging.info(
-        clusterer.do_clustering(
-            trajectory_config=traj_config, clustering_config=clust_config
-        )
+        clusterer.do_clustering(traj_config=traj_config, clust_config=clust_config)
     )
 
 

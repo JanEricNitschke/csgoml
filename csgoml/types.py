@@ -1,6 +1,6 @@
 """This module contains the type definitions for the parsed json structure."""
 
-from typing import Literal, TypedDict
+from typing import Literal, TypedDict, final
 
 import pandas as pd
 
@@ -159,3 +159,57 @@ class PositionDatasetJSON(TypedDict):
     Round: list[int]
     Winner: list[Literal[0, 1]]
     position_df: list[RoundPositions]
+
+
+@final
+class TrajectoryConfig(TypedDict):
+    """Holds information about trajectories to analyze."""
+
+    coordinate_type_for_distance: str
+    n_rounds: int
+    time: int
+    side: Literal["CT", "T", "BOTH"]
+    dtw: bool
+
+
+@final
+class ClusteringConfig(TypedDict):
+    """Holds information about how to cluster trajectories."""
+
+    do_histogram: bool
+    n_bins: int
+    do_knn: bool
+    knn_ks: list[int]
+    plot_all_trajectories: bool
+    do_dbscan: bool
+    dbscan_eps: int
+    dbscan_minpt: int
+    do_kmed: bool
+    kmed_n_clusters: int
+
+
+@final
+class UserClusteringConfig(TypedDict, total=False):
+    """Non clustering config."""
+
+    coordinate_type_for_distance: str
+    n_rounds: int
+    time: int
+    side: Literal["CT", "T", "BOTH"]
+    dtw: bool
+
+
+@final
+class UserTrajectoryConfig(TypedDict, total=False):
+    """Non total TrajectoryConfig."""
+
+    do_histogram: bool
+    n_bins: int
+    do_knn: bool
+    knn_ks: list[int]
+    plot_all_trajectories: bool
+    do_dbscan: bool
+    dbscan_eps: int
+    dbscan_minpt: int
+    do_kmed: bool
+    kmed_n_clusters: int

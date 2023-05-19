@@ -64,7 +64,7 @@ class TrajectoryHandler:
             time (int, optional): _description_. Defaults to 175.
 
         Raises:
-            FileNotFoundError: _description_
+            FileNotFoundError: If the file path is invalid.
         """
         logging.info("Starting init")
         self.map_name: str = map_name
