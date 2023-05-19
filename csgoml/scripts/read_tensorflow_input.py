@@ -11,8 +11,12 @@ import argparse
 import logging
 import os
 import sys
+from typing import TYPE_CHECKING
 
 from csgoml.trajectories import trajectory_clusterer, trajectory_handler
+
+if TYPE_CHECKING:
+    from csgoml.types import UserClusteringConfig, UserTrajectoryConfig
 
 
 def main(args: list[str]) -> None:
@@ -86,14 +90,14 @@ def main(args: list[str]) -> None:
         random_state=random_state,
         map_name=map_name,
     )
-    traj_config = {
+    traj_config: UserTrajectoryConfig = {
         "coordinate_type_for_distance": "area",
         "n_rounds": 1000,
         "time": 10,
         "side": "T",
         "dtw": False,
     }
-    clust_config = {
+    clust_config: UserClusteringConfig = {
         "do_histogram": False,
         "n_bins": 50,
         "do_knn": False,

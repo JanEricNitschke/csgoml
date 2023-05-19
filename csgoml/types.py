@@ -189,7 +189,7 @@ class ClusteringConfig(TypedDict):
 
 
 @final
-class UserClusteringConfig(TypedDict, total=False):
+class UserTrajectoryConfig(TypedDict, total=False):
     """Non clustering config."""
 
     coordinate_type_for_distance: str
@@ -200,7 +200,7 @@ class UserClusteringConfig(TypedDict, total=False):
 
 
 @final
-class UserTrajectoryConfig(TypedDict, total=False):
+class UserClusteringConfig(TypedDict, total=False):
     """Non total TrajectoryConfig."""
 
     do_histogram: bool
