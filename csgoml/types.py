@@ -149,3 +149,13 @@ class PositionDataset(TypedDict):
     Round: list[int]
     Winner: list[Literal[0, 1]]
     position_df: list[pd.DataFrame]
+
+
+class PositionDatasetJSON(TypedDict):
+    """Holds information about the rounds of a game."""
+
+    MatchID: list[str]
+    MapName: list[str]
+    Round: list[int]
+    Winner: list[Literal[0, 1]]
+    position_df: list[RoundPositions]

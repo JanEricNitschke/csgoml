@@ -1,20 +1,23 @@
-"""Tests for trajectory_handler.py"""
+"""Tests for trajectory_handler.py."""
 # pylint: disable=attribute-defined-outside-init
 
-import os
 import json
-import pytest
+import os
+from typing import Literal
+
 import numpy as np
 import pandas as pd
+import pytest
 import requests
+
 from csgoml.trajectories.trajectory_handler import TrajectoryHandler
 
 
 class TestTrajectoryHandler:
-    """Class to test TrajectoryHandler"""
+    """Class to test TrajectoryHandler."""
 
     def setup_class(self):
-        """Setup class by defining loading dictionary of test json files"""
+        """Setup class by defining loading dictionary of test json files."""
         with open("tests/test_trajectory_json.json", encoding="utf-8") as f:
             self.json_data = json.load(f)
         for file in self.json_data:
@@ -24,6 +27,7 @@ class TestTrajectoryHandler:
         self.random_state = 123
         self.map_name = "de_ancient"
         self.json_path = "ancient_trajectory_json.json"
+        self.side_dim = {"CT": 1, "T": 1, "BOTH": 2}
         self.handler = TrajectoryHandler(
             json_path=self.json_path,
             random_state=self.random_state,
@@ -31,22 +35,25 @@ class TestTrajectoryHandler:
         )
 
     def teardown_class(self):
-        """Set sorter to none, deletes all demofiles, JSON and directories"""
+        """Set sorter to none, deletes all demofiles, JSON and directories."""
         files_in_directory = os.listdir()
-        filtered_files = [file for file in files_in_directory if file.endswith(".json")]
-        if len(filtered_files) > 0:
+        if filtered_files := [
+            file for file in files_in_directory if file.endswith(".json")
+        ]:
             for f in filtered_files:
                 os.remove(f)
         self.handler = None
 
     @staticmethod
-    def _get_jsonfile(json_link, json_name):
-        print("Requesting " + json_link)
+    def _get_jsonfile(json_link: str, json_name: str) -> None:
+        print(f"Requesting {json_link}")
         r = requests.get(json_link, timeout=20)
-        open(json_name + ".json", "wb").write(r.content)
+        with open(f"{json_name}.json", "wb") as json_file:
+            json_file.write(r.content)
 
-    def test_TrajectoryHandler_init(self):
-        """Tests TrajectoryHandler.__init__"""
+    def test_trajectory_handler_init(self):
+        # sourcery skip: extract-duplicate-method
+        """Tests TrajectoryHandler.__init__."""
         with pytest.raises(FileNotFoundError):
             TrajectoryHandler(
                 json_path="file_does_not_exists.json",
@@ -76,7 +83,7 @@ class TestTrajectoryHandler:
         assert self.handler.datasets["position"].dtype == np.float64
 
     def test_transform_to_data_frame(self):
-        """Tests __transform_to_data_frame"""
+        """Tests __transform_to_data_frame."""
         test_df = self.complete_dataframe.copy()
         assert isinstance(test_df["position_df"].iloc[0], dict)
         test_df["position_df"] = test_df["position_df"].apply(
@@ -85,7 +92,7 @@ class TestTrajectoryHandler:
         assert isinstance(test_df["position_df"].iloc[0], pd.DataFrame)
 
     def test_transform_ticks_to_seconds(self):
-        """Tests __transform_ticks_to_seconds"""
+        """Tests __transform_ticks_to_seconds."""
         tick = 128
         start_tick = 0
         second = self.handler._TrajectoryHandler__transform_ticks_to_seconds(
@@ -107,7 +114,7 @@ class TestTrajectoryHandler:
         assert second == 5
 
     def test_get_predictor_input(self):
-        """Tests get_predictor_input"""
+        """Tests get_predictor_input."""
         coordinate_type = "position"  # "token"
         side = "CT"  # "BOTH" "T"
         side_dim = {"CT": 1, "T": 1, "BOTH": 2}
@@ -121,7 +128,7 @@ class TestTrajectoryHandler:
             val_features,
             test_features,
         ) = self.handler.get_predictor_input(
-            coordinate_type, side, time, consider_alive
+            coordinate_type, side, time, consider_alive=consider_alive
         )
         labels = [train_labels, val_labels, test_labels]
         for label in labels:
@@ -161,7 +168,7 @@ class TestTrajectoryHandler:
             val_features,
             test_features,
         ) = self.handler.get_predictor_input(
-            coordinate_type, side, time, consider_alive
+            coordinate_type, side, time, consider_alive=consider_alive
         )
         shape = train_features.shape
         assert shape[4] == 4
@@ -176,7 +183,7 @@ class TestTrajectoryHandler:
             val_features,
             test_features,
         ) = self.handler.get_predictor_input(
-            coordinate_type, side, time, consider_alive
+            coordinate_type, side, time, consider_alive=consider_alive
         )
         shape = train_features.shape
         assert len(shape) == 3
@@ -190,19 +197,18 @@ class TestTrajectoryHandler:
             val_features,
             test_features,
         ) = self.handler.get_predictor_input(
-            coordinate_type, side, time, consider_alive
+            coordinate_type, side, time, consider_alive=consider_alive
         )
         shape = train_features.shape
         assert shape[2] == token_length // 2
 
-    def test_get_clustering_input(self):
-        """Tests get_clustering_input"""
+    def test_get_clustering_input_token(self):
+        """Tests get_clustering_input for token."""
         max_length = len(self.handler.datasets["token"])
-        n_rounds = 100
         coordinate_type_for_distance = "position"  # "area", "token"
-        side = "CT"  # "BOTH" "T"
-        side_dim = {"CT": 1, "T": 1, "BOTH": 2}
+        n_rounds = 100
         time = 20
+        side = "CT"  # "BOTH" "T"
         array_for_plotting, array_for_clustering = self.handler.get_clustering_input(
             n_rounds, coordinate_type_for_distance, side, time
         )
@@ -210,50 +216,51 @@ class TestTrajectoryHandler:
         assert isinstance(array_for_clustering, np.ndarray)
         plot_shape = array_for_plotting.shape
         clust_shape = array_for_clustering.shape
-        assert len(plot_shape) == 5
-        assert plot_shape[0] == max_length
-        assert plot_shape[1] == time
-        assert plot_shape[2] == side_dim[side]
-        assert plot_shape[3] == 5
-        assert plot_shape[4] == 3
-        assert len(clust_shape) == 5
-        assert clust_shape[0] == max_length
-        assert clust_shape[1] == time
-        assert clust_shape[2] == side_dim[side]
-        assert clust_shape[3] == 5
-        assert clust_shape[4] == 3
-        side = "BOTH"
+        self._check_array_shape(plot_shape, max_length, time, side, 5, 3)
+        self._check_array_shape(clust_shape, max_length, time, side, 5, 3)
+
+    def _check_array_shape(
+        self,
+        array_shape: tuple[int, ...],
+        length: int,
+        time: int,
+        side: Literal["CT", "T", "BOTH"],
+        players: int,
+        features: int,
+    ) -> None:
+        assert len(array_shape) == 5
+        assert array_shape[0] == length
+        assert array_shape[1] == time
+        assert array_shape[2] == self.side_dim[side]
+        assert array_shape[3] == players
+        assert array_shape[4] == features
+
+    def test_get_clustering_input_area(self):
+        """Tests get_clustering_input for area."""
         coordinate_type_for_distance = "area"
         n_rounds = 50
+        time = 20
+        side = "BOTH"
         array_for_plotting, array_for_clustering = self.handler.get_clustering_input(
             n_rounds, coordinate_type_for_distance, side, time
         )
         plot_shape = array_for_plotting.shape
         clust_shape = array_for_clustering.shape
-        assert len(plot_shape) == 5
-        assert plot_shape[0] == n_rounds
-        assert plot_shape[1] == time
-        assert plot_shape[2] == side_dim[side]
-        assert plot_shape[3] == 5
-        assert plot_shape[4] == 4
-        assert len(clust_shape) == 5
-        assert clust_shape[0] == n_rounds
-        assert clust_shape[1] == time
-        assert clust_shape[2] == side_dim[side]
-        assert clust_shape[3] == 5
-        assert clust_shape[4] == 1
+        self._check_array_shape(plot_shape, n_rounds, time, side, 5, 4)
+        self._check_array_shape(clust_shape, n_rounds, time, side, 5, 1)
+
+    def test_get_clustering_input_token_2(self):
+        """Tests get_clustering_input."""
         coordinate_type_for_distance = "token"
+        n_rounds = 50
+        time = 20
+        side = "BOTH"
         array_for_plotting, array_for_clustering = self.handler.get_clustering_input(
             n_rounds, coordinate_type_for_distance, side, time
         )
         plot_shape = array_for_plotting.shape
         clust_shape = array_for_clustering.shape
-        assert len(plot_shape) == 5
-        assert plot_shape[0] == n_rounds
-        assert plot_shape[1] == time
-        assert plot_shape[2] == side_dim[side]
-        assert plot_shape[3] == 5
-        assert plot_shape[4] == 4
+        self._check_array_shape(plot_shape, n_rounds, time, side, 5, 4)
         assert len(clust_shape) == 3
         assert clust_shape[0] == n_rounds
         assert clust_shape[1] == time
