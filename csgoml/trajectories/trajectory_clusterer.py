@@ -49,6 +49,7 @@ from typing import Literal
 
 import matplotlib.pyplot as plt
 import numpy as np
+import numpy.typing as npt
 from awpy.data import AREA_DIST_MATRIX, NAV, PLACE_DIST_MATRIX
 from awpy.types import DistanceType
 from numba import typed, types
@@ -555,7 +556,7 @@ class TrajectoryClusterer:
 
     def get_compressed_area_dist_matrix(
         self,
-    ) -> tuple[types.int64, dict[types.int64, types.float64]]:
+    ) -> tuple[npt.NDArray, dict[types.int64, types.float64]]:
         """Generates a compressed area distance matrix.
 
         Args:
@@ -659,8 +660,6 @@ class TrajectoryClusterer:
                     return matching[141] if int(x) not in matching else matching[int(x)]
 
                 clustering_array = np.vectorize(get_matching)(clustering_array)
-                logging.info(clustering_array.shape)
-                clustering_array = np.squeeze(clustering_array, axis=-1)
                 logging.info(clustering_array.shape)
                 precomputed = get_traj_matrix_area(
                     precompute_array=clustering_array,

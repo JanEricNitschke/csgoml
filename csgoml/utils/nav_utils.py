@@ -307,9 +307,8 @@ def trajectory_distance(
     )
 
 
-# @njit
 # @np.vectorize
-@njit
+# @njit
 def compute_dtw(
     trajectory_array_1: np.ndarray,
     trajectory_array_2: np.ndarray,
@@ -499,6 +498,10 @@ def get_traj_matrix_area(
     Returns:
         Numpy array of distances between trajectories
     """
+    # Reduce Shape of precompute array is:
+    # N_rounds, N_times, N_teams, N_players, N_features
+    # With N_features always being 1 here. So just squeeze that away at the start.
+    precompute_array = np.squeeze(precompute_array, axis=-1)
     permutations = np.array(
         list(itertools.permutations(range(precompute_array.shape[-1])))
     )

@@ -281,29 +281,24 @@ class TestNavUtils:
                 [[[[3]]], [[[4]]], [[[5]]]],
             ]
         )
-        d1_type = types.DictType(types.int64, types.float64)
-        dist_matrix = typed.Dict.empty(types.int64, d1_type)
-        for i in range(1, 6):
-            if (i) not in dist_matrix:
-                dist_matrix[i] = typed.Dict.empty(
-                    key_type=types.int64,
-                    value_type=types.float64,
-                )
-            for j in range(1, 6):
-                dist_matrix[i][j] = float(abs(i - j))
+        dist_matrix = np.zeros((6, 6))
+        for i, j in itertools.product(range(1, 6), range(1, 6)):
+            dist_matrix[i, j] = float(abs(i - j))
         target_precomputed = np.zeros((len(to_precompute), len(to_precompute)))
         target_precomputed[0][1] = target_precomputed[1][0] = 1.0
         target_precomputed[0][2] = target_precomputed[2][0] = 2.0
         target_precomputed[1][2] = target_precomputed[2][1] = 1.0
         calc_precomputed = get_traj_matrix_area(to_precompute, dist_matrix, dtw=False)
-        assert (target_precomputed == calc_precomputed).all()
+        print(calc_precomputed.shape)
+        print(calc_precomputed)
         assert target_precomputed.shape == calc_precomputed.shape
+        assert (target_precomputed == calc_precomputed).all()
         calc_precomputed = get_traj_matrix_area(to_precompute, dist_matrix, dtw=True)
         target_precomputed[0][1] = target_precomputed[1][0] = 2 / 3
         target_precomputed[0][2] = target_precomputed[2][0] = 2.0
         target_precomputed[1][2] = target_precomputed[2][1] = 2 / 3
-        assert (target_precomputed == calc_precomputed).all()
         assert target_precomputed.shape == calc_precomputed.shape
+        assert (target_precomputed == calc_precomputed).all()
 
     def test_get_traj_matrix_token(self):
         """Tests get_traj_matrix_token."""
