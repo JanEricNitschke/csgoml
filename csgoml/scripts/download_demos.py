@@ -17,6 +17,8 @@ from pathlib import Path
 
 import requests
 
+from csgoml.helpers import setup_logging
+
 
 def find_missing(my_set: set[int]) -> list[int]:
     """Finds missing elements in a set.
@@ -71,15 +73,15 @@ def main(args: list[str]) -> None:
         "-d", "--debug", action="store_true", default=False, help="Enable debug output."
     )
     parser.add_argument(
-        "--dir",
-        default="D:\\Downloads\\Demos\\",
-        help="Directory that the downloaded files should be saved to",
-    )
-    parser.add_argument(
         "-l",
         "--log",
         default=r"D:\CSGO\ML\CSGOML\logs\DownloadDemos.log",
         help="Path to output log.",
+    )
+    parser.add_argument(
+        "--dir",
+        default="D:\\Downloads\\Demos\\",
+        help="Directory that the downloaded files should be saved to",
     )
     parser.add_argument(
         "--startid",
@@ -97,24 +99,7 @@ def main(args: list[str]) -> None:
 
     # Done are: 68900-70500;
 
-    if options.debug:
-        logging.basicConfig(
-            filename=options.log,
-            encoding="utf-8",
-            level=logging.DEBUG,
-            filemode="w",
-            format="%(asctime)s %(levelname)-8s %(message)s",
-            datefmt="%Y-%m-%d %H:%M:%S",
-        )
-    else:
-        logging.basicConfig(
-            filename=options.log,
-            encoding="utf-8",
-            level=logging.INFO,
-            filemode="w",
-            format="%(asctime)s %(levelname)-8s %(message)s",
-            datefmt="%Y-%m-%d %H:%M:%S",
-        )
+    setup_logging(options)
 
     # check already processed demos:
     pro_path = r"E:\PhD\MachineLearning\CSGOData\ParsedDemos"

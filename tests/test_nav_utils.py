@@ -1,53 +1,54 @@
-"""Tests for nav_utils.py"""
-# pylint: disable=attribute-defined-outside-init
+"""Tests for nav_utils.py."""
 
-import sys
-import os
 import itertools
+
+# pylint: disable=attribute-defined-outside-init
 import math
+import os
 import shutil
+import sys
 from cmath import inf
+
 import numpy as np
-from scipy.spatial import distance
-from numba import typed, types
 from awpy.analytics.nav import (
     area_distance,
 )
+from numba import typed, types
+from scipy.spatial import distance
+
 from csgoml.utils.nav_utils import (
-    trajectory_distance,
-    fast_area_trajectory_distance,
-    fast_token_trajectory_distance,
-    fast_position_trajectory_distance,
-    get_traj_matrix_area,
-    get_traj_matrix_token,
-    get_traj_matrix_position,
-    permutations,
-    fast_area_state_distance,
     euclidean,
     fast_position_state_distance,
+    fast_position_trajectory_distance,
     fast_token_state_distance,
-    trajectory_distance_wrapper,
-    transform_to_traj_dimensions,
+    fast_token_trajectory_distance,
+    get_traj_matrix_area,
+    get_traj_matrix_position,
+    get_traj_matrix_token,
     mark_areas,
     plot_path,
+    trajectory_distance,
+    trajectory_distance_wrapper,
+    transform_to_traj_dimensions,
 )
 
 
 class TestNavUtils:
-    """Class to test nav_utils.py"""
+    """Class to test nav_utils.py."""
 
     def setup_class(self):
-        """Setup class by creating plot directory"""
+        """Setup class by creating plot directory."""
         self.outputpath = "plotting_tests"
         if not os.path.exists(self.outputpath):
             os.makedirs(self.outputpath)
 
     def teardown_class(self):
-        """Set sorter to none, deletes all demofiles, JSON and directories"""
+        """Set sorter to none, deletes all demofiles, JSON and directories."""
         shutil.rmtree(self.outputpath)
 
     def test_trajectory_distance(self):
-        """Tests trajectory_distance"""
+        # sourcery skip: extract-duplicate-method
+        """Tests trajectory_distance."""
         traj_pos_state1 = np.array(
             [[[[1, 0, 0]]], [[[101, 0, 0]]], [[[201, 0, 0]]], [[[201, 0, 0]]]]
         )
@@ -174,33 +175,8 @@ class TestNavUtils:
         assert isinstance(dist, float)
         assert round(dist, 2) == 7.10
 
-    def test_fast_area_trajectory_distance(self):
-        """Tests fast_area_trajectory_distance"""
-        traj_pos_state1 = np.array([[[[1]]], [[[2]]], [[[3]]], [[[3]]]])
-        traj_pos_state2 = np.array([[[[2]]], [[[3]]], [[[4]]]])
-        d1_type = types.DictType(types.int64, types.float64)
-        dist_matrix = typed.Dict.empty(types.int64, d1_type)
-        for i in range(1, 5):
-            if (i) not in dist_matrix:
-                dist_matrix[i] = typed.Dict.empty(
-                    key_type=types.int64,
-                    value_type=types.float64,
-                )
-            for j in range(1, 5):
-                dist_matrix[i][j] = float(abs(i - j) ** 2)
-        dist = fast_area_trajectory_distance(
-            traj_pos_state1, traj_pos_state2, dist_matrix, dtw=False
-        )
-        assert isinstance(dist, float)
-        assert round(dist, 2) == round(4 / 4, 2)
-        dist = fast_area_trajectory_distance(
-            traj_pos_state1, traj_pos_state2, dist_matrix, dtw=True
-        )
-        assert isinstance(dist, float)
-        assert round(dist, 2) == round(2 / 4, 2)
-
     def test_fast_token_trajectory_distance(self):
-        """Tests fast_token_trajectory_distance"""
+        """Tests fast_token_trajectory_distance."""
         token_array1 = np.array(
             [
                 [
@@ -276,7 +252,7 @@ class TestNavUtils:
         assert round(dist, 2) == round(2 / 4, 2)
 
     def test_fast_position_trajectory_distance(self):
-        """Tests fast_position_trajectory_distance"""
+        """Tests fast_position_trajectory_distance."""
         traj_pos_state1 = np.array(
             [[[[1, 0, 0]]], [[[101, 0, 0]]], [[[201, 0, 0]]], [[[201, 0, 0]]]]
         )
@@ -297,10 +273,7 @@ class TestNavUtils:
         assert round(dist, 2) == round(200 / 4, 2)
 
     def test_get_traj_matrix_area(self):
-        """Tests get_traj_matrix_area"""
-        # traj_pos_state1 = np.array([[[[1]]], [[[2]]], [[[3]]]])
-        # traj_pos_state2 = np.array([[[[2]]], [[[3]]], [[[4]]]])
-        # traj_pos_state3 = np.array([[[[3]]], [[[4]]], [[[5]]]])
+        """Tests get_traj_matrix_area."""
         to_precompute = np.array(
             [
                 [[[[1]]], [[[2]]], [[[3]]]],
@@ -333,7 +306,7 @@ class TestNavUtils:
         assert target_precomputed.shape == calc_precomputed.shape
 
     def test_get_traj_matrix_token(self):
-        """Tests get_traj_matrix_token"""
+        """Tests get_traj_matrix_token."""
         token_array1 = np.array(
             [
                 [
@@ -440,7 +413,7 @@ class TestNavUtils:
         assert target_precomputed.shape == calc_precomputed.shape
 
     def test_get_traj_matrix_position(self):
-        """Tests get_traj_matrix_position"""
+        """Tests get_traj_matrix_position."""
         traj_pos_state1 = np.array([[[[1, 0, 0]]], [[[2, 0, 0]]], [[[3, 0, 0]]]])
         traj_pos_state2 = np.array([[[[2, 0, 0]]], [[[3, 0, 0]]], [[[4, 0, 0]]]])
         traj_pos_state3 = np.array([[[[3, 0, 0]]], [[[4, 0, 0]]], [[[5, 0, 0]]]])
@@ -459,68 +432,20 @@ class TestNavUtils:
         assert (target_precomputed == calc_precomputed).all()
         assert target_precomputed.shape == calc_precomputed.shape
 
-    def test_permutations(self):
-        """Tests permutations"""
-        array1 = [1, 2, 3, 4]
-        assert sorted(permutations(array1, 4)) == sorted(
-            list(x) for x in itertools.permutations(array1, 4)
-        )
-        assert sorted(permutations(array1, 2)) == sorted(
-            list(x) for x in itertools.permutations(array1, 2)
-        )
-        array2 = [1, 2, 3, 4, 5, 5, 5]
-        assert permutations(array2, 7) == []
-        assert permutations(array2, 6) == []
-
-    def test_fast_area_state_distance(self):
-        """Tests fast_area_state_distance"""
-        d1_type = types.DictType(types.int64, types.float64)
-        dist_matrix = typed.Dict.empty(types.int64, d1_type)
-        for i in range(1, 5):
-            if (i) not in dist_matrix:
-                dist_matrix[i] = typed.Dict.empty(
-                    key_type=types.int64,
-                    value_type=types.float64,
-                )
-            for j in range(1, 5):
-                dist_matrix[i][j] = float(abs(i - j))
-        area_state1 = np.array([[[1]]])
-        area_state2 = np.array([[[2]]])
-        dist = fast_area_state_distance(area_state1, area_state2, dist_matrix)
-        assert isinstance(dist, float)
-        assert dist == 1.0
-        area_state1 = np.array([[[0]]])
-        area_state2 = np.array([[[2]]])
-        dist = fast_area_state_distance(area_state1, area_state2, dist_matrix)
-        assert abs(dist / sys.maxsize - 1) < 0.0001
-        area_state1 = np.array([[[1], [1]]])
-        area_state2 = np.array([[[2], [4]]])
-        dist = fast_area_state_distance(area_state1, area_state2, dist_matrix)
-        assert isinstance(dist, float)
-        assert dist == 2.0
-        area_state1 = np.array([[[1], [0]]])
-        area_state2 = np.array([[[3], [3]]])
-        dist = fast_area_state_distance(area_state1, area_state2, dist_matrix)
-        assert isinstance(dist, float)
-        assert dist == 2.0
-        area_state1 = np.array([[[1], [1]], [[1], [1]]])
-        area_state2 = np.array([[[2], [2]], [[2], [4]]])
-        dist = fast_area_state_distance(area_state1, area_state2, dist_matrix)
-        assert isinstance(dist, float)
-        assert dist == 1.5
-
     def test_euclidean(self):
-        """Tests euclidean"""
+        """Tests euclidean."""
 
     for i in range(1, 10):
-        array1 = np.random.rand(i)
-        array2 = np.random.rand(i)
+        rng = np.random.default_rng()
+        rng.random()
+        array1 = rng.random(i)
+        array2 = rng.random(i)
         assert round(euclidean(array1, array2), 2) == round(
             distance.euclidean(array1, array2), 2
         )
 
     def test_fast_position_state_distance(self):
-        """Tests fast_position_state_distance"""
+        """Tests fast_position_state_distance."""
         pos_state1 = np.array([[[1, 0, 0]]])
         pos_state2 = np.array([[[2, 0, 0]]])
         dist = fast_position_state_distance(pos_state1, pos_state2)
@@ -548,7 +473,7 @@ class TestNavUtils:
         assert round(dist, 2) == round(math.sqrt(3), 2)
 
     def test_fast_token_state_distance(self):
-        """Tests fast_token_state_distance"""
+        """Tests fast_token_state_distance."""
         d1_type = types.DictType(types.string, types.float64)
         dist_matrix = typed.Dict.empty(types.string, d1_type)
         map_area_names = ["One", "Two", "Three", "Four"]
@@ -688,7 +613,7 @@ class TestNavUtils:
         assert dist == 1.0
 
     def test_trajectory_distance_wrapper(self):
-        """Tests trajectory_distance_wrapper"""
+        """Tests trajectory_distance_wrapper."""
         traj_pos_state1 = np.array(
             [[[[1, 0, 0]]], [[[101, 0, 0]]], [[[201, 0, 0]]], [[[201, 0, 0]]]]
         )
@@ -703,7 +628,7 @@ class TestNavUtils:
             traj_pos_state1,
             traj_pos_state2,
             distance_type,
-            dtw,
+            dtw=dtw,
         )
         dtw = True
         assert trajectory_distance_wrapper(
@@ -713,7 +638,7 @@ class TestNavUtils:
             traj_pos_state1,
             traj_pos_state2,
             distance_type,
-            dtw,
+            dtw=dtw,
         )
         token_array1 = np.array(
             [
@@ -814,7 +739,7 @@ class TestNavUtils:
             token_array1,
             token_array2,
             distance_type,
-            dtw,
+            dtw=dtw,
         )
         dtw = False
         assert trajectory_distance_wrapper(
@@ -824,24 +749,21 @@ class TestNavUtils:
             token_array1,
             token_array2,
             distance_type,
-            dtw,
+            dtw=dtw,
         )
 
     def test_transform_to_traj_dimensions(self):
-        """Tests transform_to_traj_dimensions"""
+        """Tests transform_to_traj_dimensions."""
         time = 10
         x = 3
         test_array = np.arange(time * 5 * x).reshape(time, 5, x)
         transformed = transform_to_traj_dimensions(test_array)
         assert transformed.shape == (5, time, 1, 1, x)
-        for step in range(time):
-            for player in range(5):
-                assert (
-                    transformed[player, step, 0, 0] == test_array[step, player]
-                ).all()
+        for step, player in itertools.product(range(time), range(5)):
+            assert (transformed[player, step, 0, 0] == test_array[step, player]).all()
 
     def test_mark_areas(self):
-        """Tests mark_areas"""
+        """Tests mark_areas."""
         areas = {74, 5, 68, 1113}
         assert (
             mark_areas(
@@ -851,7 +773,7 @@ class TestNavUtils:
         )
 
     def test_plot_path(self):
-        """Tests plot_path"""
+        """Tests plot_path."""
         graph = area_distance("de_inferno", 2831, 3030, dist_type="graph")
         geodesic = area_distance("de_inferno", 2831, 3030, dist_type="geodesic")
         assert (

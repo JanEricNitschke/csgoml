@@ -13,6 +13,7 @@ import os
 import sys
 from typing import TYPE_CHECKING
 
+from csgoml.helpers import setup_logging
 from csgoml.trajectories import trajectory_clusterer, trajectory_handler
 
 if TYPE_CHECKING:
@@ -40,24 +41,7 @@ def main(args: list[str]) -> None:
     )
     options = parser.parse_args(args)
 
-    if options.debug:
-        logging.basicConfig(
-            filename=options.log,
-            encoding="utf-8",
-            level=logging.DEBUG,
-            filemode="w",
-            format="%(asctime)s %(levelname)-8s %(message)s",
-            datefmt="%Y-%m-%d %H:%M:%S",
-        )
-    else:
-        logging.basicConfig(
-            filename=options.log,
-            encoding="utf-8",
-            level=logging.INFO,
-            filemode="w",
-            format="%(asctime)s %(levelname)-8s - %(funcName)s - %(message)s",
-            datefmt="%Y-%m-%d %H:%M:%S",
-        )
+    setup_logging(options)
 
     random_state = options.randomstate
 

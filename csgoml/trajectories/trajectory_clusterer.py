@@ -40,7 +40,6 @@ Typical usage example:
     )
 """
 
-import itertools
 import logging
 import os
 import random
@@ -575,10 +574,6 @@ class TrajectoryClusterer:
                     old_dist_matrix[area2][area1]["geodesic"],
                     sys.maxsize / 6,
                 )
-                # if (int(area1)) not in dist_matrix:
-                #     dist_matrix[int(area1)] = typed.Dict.empty(
-                # dist_matrix[int(area1)][int(area2)] = old_dist_matrix[area1][area2][
-                #     "geodesic"
         return dist_matrix, matching
 
     def get_compressed_place_dist_matrix(
@@ -667,14 +662,10 @@ class TrajectoryClusterer:
                 logging.info(clustering_array.shape)
                 clustering_array = np.squeeze(clustering_array, axis=-1)
                 logging.info(clustering_array.shape)
-                permutations = np.array(
-                    list(itertools.permutations(range(clustering_array.shape[-1])))
-                )
                 precomputed = get_traj_matrix_area(
                     precompute_array=clustering_array,
                     dist_matrix=dist_matrix,
                     dtw=dtw,
-                    permutations=permutations,
                 )
             elif coordinate_type == "token":
                 map_area_names = self.get_map_area_names()

@@ -150,7 +150,7 @@ useLibraryCodeForTypes             = false
 reportPropertyTypeMismatch         = "error"
 reportFunctionMemberAccess         = "warning"
 reportMissingTypeStubs             = "none"
-reportUntypedFunctionDecorator     = "error"
+reportUntypedFunctionDecorator     = "warning"
 reportUntypedClassDecorator        = "error"
 reportUntypedBaseClass             = "error"
 reportUntypedNamedTuple            = "error"
@@ -260,6 +260,10 @@ never-returning-functions = ["sys.exit", "argparse.parse_error"]
 evaluation = "max(0, 0 if fatal else 10.0 - ((float(5 * error + warning + refactor + convention) / statement) * 10))"
 
 [tool.pylint.similarities]
+ignore-comments = true
+ignore-docstrings = true
+ignore-imports = true
+ignore-signatures = true
 # Minimum lines number of a similarity.
 min-similarity-lines = 4
 

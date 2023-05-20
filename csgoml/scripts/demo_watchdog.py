@@ -34,6 +34,7 @@ from watchdog.events import (
 )
 from watchdog.observers import Observer
 
+from csgoml.helpers import setup_logging
 from csgoml.preparation import demo_analyzer_sorter
 
 
@@ -137,24 +138,7 @@ def main(args: list[str]) -> None:
     )
     options = parser.parse_args(args)
 
-    if options.debug:
-        logging.basicConfig(
-            filename=options.log,
-            encoding="utf-8",
-            level=logging.DEBUG,
-            filemode="w",
-            format="%(asctime)s %(levelname)-8s %(message)s",
-            datefmt="%Y-%m-%d %H:%M:%S",
-        )
-    else:
-        logging.basicConfig(
-            filename=options.log,
-            encoding="utf-8",
-            level=logging.INFO,
-            filemode="w",
-            format="%(asctime)s %(levelname)-8s %(message)s",
-            datefmt="%Y-%m-%d %H:%M:%S",
-        )
+    setup_logging(options)
 
     patterns = ["*.rar"]
     ignore_patterns = None
