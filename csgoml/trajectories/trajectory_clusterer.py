@@ -158,18 +158,6 @@ class TrajectoryClusterer:
 
         return default_trajectory_config, default_clustering_config
 
-    def _unpack_trajectory_config(
-        self, trajectory_config: TrajectoryConfig
-    ) -> tuple[str, int, int, Literal["CT", "T", "BOTH"], bool]:
-        """Unpack trajectory config dictionary values."""
-        return (
-            trajectory_config["coordinate_type_for_distance"],
-            trajectory_config["n_rounds"],
-            trajectory_config["time"],
-            trajectory_config["side"],
-            trajectory_config["dtw"],
-        )
-
     def do_clustering(
         self,
         traj_config: UserTrajectoryConfig | None,

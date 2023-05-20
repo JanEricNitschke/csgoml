@@ -213,3 +213,46 @@ class UserClusteringConfig(TypedDict, total=False):
     dbscan_minpt: int
     do_kmed: bool
     kmed_n_clusters: int
+
+
+@final
+class DNNConfig(TypedDict):
+    """Holds information about trajectories to analyze."""
+
+    batch_size: int
+    learning_rate: float
+    epochs: int
+    patience: int
+    nodes_per_layer: int
+    input_shape: tuple[int, ...]
+
+
+@final
+class UserDNNConfig(TypedDict, total=False):
+    """Non clustering config."""
+
+    batch_size: int
+    learning_rate: float
+    epochs: int
+    patience: int
+    nodes_per_layer: int
+
+
+@final
+class DNNTrajectoryConfig(TypedDict):
+    """Holds information about trajectories to analyze."""
+
+    coordinate_type: str
+    side: Literal["CT", "T", "BOTH"]
+    time: int
+    consider_alive: bool
+
+
+@final
+class UserDNNTrajectoryConfig(TypedDict, total=False):
+    """Non clustering config."""
+
+    coordinate_type: str
+    side: Literal["CT", "T", "BOTH"]
+    time: int
+    consider_alive: bool

@@ -1,8 +1,9 @@
-"""
-This module contains the TrajectoryPredictor.
-It gets its inputs properly formatted from a TrajectoryHandler and then builds/trains DNNs to predict the round winner based on player trajectory data.
+r"""This module contains the TrajectoryPredictor.
 
-Typical usage example:
+It gets its inputs properly formatted from a TrajectoryHandler and
+then builds/trains DNNs to predict the round winner based on player trajectory data.
+
+Example::
 
     predictor = trajectory_predictor.TrajectoryPredictor(
         analysis_path=analysis_path,
@@ -10,7 +11,12 @@ Typical usage example:
         random_state=random_state,
         map_name=map_name,
     )
-    traj_config = ("position", 20, "T", False)
+    traj_config = {
+        "coordinate_type": "position",
+        "side": "T",
+        "time": 20,
+        "consider_alive": False,
+    }
     dnn_config = {
         "batch_size": 32,
         "learning_rate": 0.00007,
@@ -19,26 +25,38 @@ Typical usage example:
         "nodes_per_layer": 32,
     }
     dnn_config = {}
-    predictor.do_predicting(trajectory_config=traj_config, dnn_config=dnn_config)
+    predictor.do_predicting(traj_config=traj_config, dnn_conf=dnn_config)
 """
 
-import os
-from typing import Optional, Literal
-import random
 import logging
+import os
+import random
+from typing import Literal
+
 import matplotlib.pyplot as plt
-from numpy import ndarray
 import tensorflow as tf
+from numpy import ndarray
 from tensorflow import keras
+
 from csgoml.trajectories.trajectory_handler import TrajectoryHandler
+from csgoml.types import (
+    DNNConfig,
+    DNNTrajectoryConfig,
+    UserDNNConfig,
+    UserDNNTrajectoryConfig,
+)
 
 
 class TrajectoryPredictor:
-    """Builds and trains DNNs to predict the winner of a round based on trajectories of different configurations by grabbing them from its TrajetoryHandler.
+    """Builds and trains DNNs to predict the winner of a round based on trajectories.
+
+    Of different configurations by grabbing them from its TrajetoryHandler.
 
     Attributes:
-        analysis_input (string): Path to where the results (distance matrix and plots) should be stored
-        trajectory_handler (trajectory_handler.TrajectoryHandler): trajectory_handler.TrajectoryHandler from which to grab requested datasets
+        analysis_path (str): Path to where the results
+            (distance matrix and plots) should be stored
+        trajectory_handler (TrajectoryHandler): TrajectoryHandler from which
+            to grab requested datasets
         random_state (int): Integer for random_states
         map_name (string): Name of the map under consideration
     """
@@ -47,111 +65,171 @@ class TrajectoryPredictor:
         self,
         analysis_path: str,
         trajectory_handler: TrajectoryHandler,
-        random_state: Optional[int] = None,
+        random_state: int | None = None,
         map_name: str = "de_ancient",
-    ):
+    ) -> None:
+        """Initialize an instance.
+
+        Args:
+            analysis_path (str): Path to where the results
+                (distance matrix and plots) should be stored
+            trajectory_handler (TrajectoryHandler): TrajectoryHandler from which
+            to grab requested datasets
+            random_state (int): Integer for random_states
+            map_name (str): Name of the map under consideration. Defaults to "ancient"
+        """
         self.analysis_path: str = os.path.join(analysis_path, "predicting")
         if not os.path.exists(self.analysis_path):
             os.makedirs(self.analysis_path)
         self.map_name: str = map_name
         if random_state is None:
-            self.random_state: int = random.randint(1, 10**8)
+            # Not doing cryptography
+            self.random_state: int = random.randint(1, 10**8)  # noqa: S311
         else:
             self.random_state = random_state
         self.trajectory_handler: TrajectoryHandler = trajectory_handler
 
+    def _get_default_configs(
+        self,
+        trajectory_config: UserDNNTrajectoryConfig | None,
+        dnn_config: UserDNNConfig | None,
+    ) -> tuple[DNNTrajectoryConfig, DNNConfig]:
+        """Get default values for trajectory and clustering configuration.
+
+        Returns:
+            tuple[TrajectoryConfig, ClusteringConfig]: _description_
+        """
+        if trajectory_config is None:
+            trajectory_config = {}
+        if dnn_config is None:
+            dnn_config = {}
+
+        default_trajectory_config: DNNTrajectoryConfig = {
+            "coordinate_type": "position",
+            "side": "T",
+            "time": 20,
+            "consider_alive": False,
+        }
+        for key in trajectory_config:
+            default_trajectory_config[key] = trajectory_config[key]
+
+        default_dnn_config: DNNConfig = {
+            "batch_size": 32,
+            "learning_rate": 0.00007,
+            "epochs": 50,
+            "patience": 5,
+            "nodes_per_layer": 32,
+            "input_shape": (1,),
+        }
+        for key in dnn_config:
+            default_dnn_config[key] = dnn_config[key]
+
+        return default_trajectory_config, default_dnn_config
+
     def do_predicting(
-        self, trajectory_config: tuple[str, int, str, bool], dnn_config: dict
+        self, traj_config: UserDNNTrajectoryConfig, dnn_conf: UserDNNConfig
     ) -> Literal[True]:
-        """Does everything needed to cluster a configuration and plot the results
+        """Does everything needed to cluster a configuration and plot the results.
 
         Args:
-            trajectory_config (tuple): Tuple of (coordinate_type, time, side, consider_alive) where:
-                coordinate_type (string): A string indicating whether player coordinates should be used directly ("position") or the summarizing tokens ("token") instead.
-                side (string): A string indicating whether to include positions for players on the CT side ('CT'), T  side ('T') or both sides ('BOTH')
-                time (integer): An integer indicating the first how many seconds should be considered
-                consider_alive (boolean): A boolean indicating whether the alive status of each player should be considered. Only relevant together with coordinate_type of "position"
-            dnn_config (dict): Dictionary containing settings for clustering. Contents:
-                'batch_size' (int): A tf.int64 scalar tf.Tensor, representing the number of consecutive elements of this dataset to combine in a single batch.
+            traj_config (dict): Dict containing settings for trajectories:
+                coordinate_type (str): String indicating whether player coordinates
+                    should be used directly ("position") or
+                    the summarizing tokens ("token") instead.
+                side (str): Sring indicating whether to include positions for
+                    players on the CT side ('CT'), T  side ('T') or both sides ('BOTH')
+                time (int): Integer indicating the first how
+                    many seconds should be considered
+                consider_alive (bool): Bool indicating whether the alive
+                    status of each player should be considered.
+                    Only relevant together with coordinate_type of "position"
+            dnn_conf (dict): Dict containing settings for clustering:
+                'batch_size' (int): A tf.int64 scalar tf.Tensor,
+                    representing the number of consecutive elements
+                    of this dataset to combine in a single batch.
                 'learning_rate' (float): A floating point value. The learning rate.
-                'epochs' (int): Number of epochs to train the model. An epoch is an iteration over the entire x and y data provided.
-                                The model is not trained for a number of iterations given by epochs, but merely until the epoch of index epochs is reached.
-                'patience' (int): Number of epochs with no improvement after which training will be stopped.
+                'epochs' (int): Number of epochs to train the model.
+                    An epoch is an iteration over the entire x and y data provided.
+                    The model is not trained for a number of iterations given by epochs,
+                    but merely until the epoch of index epochs is reached.
+                'patience' (int): Number of epochs with no improvement
+                    after which training will be stopped.
                 'nodes_per_layer' (int): Number of nodes per DNN layer
         Returns:
-            w.i.p."""
-        coordinate_type, time, side, consider_alive = trajectory_config
-        config_snippet = f"{self.map_name}_{side}_{time}_{consider_alive}_{coordinate_type}_{self.random_state}"
-        config_path = os.path.join(self.analysis_path, config_snippet)
-        if not os.path.exists(config_path):
+            w.i.p.
+        """
+        trajectory_config, dnn_config = self._get_default_configs(traj_config, dnn_conf)
+        config_snippet = (
+            f"{self.map_name}_{trajectory_config['side']}_"
+            f"{trajectory_config['time']}_{trajectory_config['consider_alive']}_"
+            f"{trajectory_config['coordinate_type']}_{self.random_state}"
+        )
+        if not os.path.exists(
+            config_path := os.path.join(self.analysis_path, config_snippet)
+        ):
             os.makedirs(config_path)
 
-        self.set_dnn_config_defaults(dnn_config)
-
         # Grab dataset corresponding to config
-        # train_label, val_label, test_label, train_features, val_features, test_features
+        # train_label, val_label, test_label,
+        # train_features, val_features, test_features
         tensors = self.trajectory_handler.get_predictor_input(
-            coordinate_type, side, time, consider_alive
+            trajectory_config["coordinate_type"],
+            trajectory_config["side"],
+            trajectory_config["time"],
+            consider_alive=trajectory_config["consider_alive"],
         )
-
         # Set input_shape properly
-        dnn_config["input_shape"] = tensors[3][0].shape  # train_features[0].shape
+        # Same as: train_features[0].shape
+        # So the shape of any time slice of the features
+        dnn_config["input_shape"] = tensors[3][0].shape
         # Generate batched datasets
-        batch_size = dnn_config["batch_size"]
-        train_dataset, val_dataset, test_dataset = self.get_datasets_from_tensors(
-            tensors, batch_size
-        )
+        datasets = self.get_datasets_from_tensors(tensors, dnn_config["batch_size"])
         #  model, history, test_loss, test_accuracy, test_entropy,
-        (model, history, _, _, _,) = self.get_compile_train_evaluate_model(
-            coordinate_type, (train_dataset, val_dataset, test_dataset), dnn_config
+        (
+            model,
+            history,
+            _,
+            _,
+            _,
+        ) = self.get_compile_train_evaluate_model(
+            trajectory_config["coordinate_type"],
+            datasets,
+            dnn_config,
         )
 
         dnn_snippet = "_".join([str(val) for val in dnn_config.values()])
-        model_path = os.path.join(config_path, f"tf_model_{dnn_snippet}")
-        if not os.path.exists(model_path):
+        if not os.path.exists(
+            model_path := os.path.join(config_path, f"tf_model_{dnn_snippet}")
+        ):
             os.makedirs(model_path)
         model.save(os.path.join(model_path, "SavedModel"))
         model.save(os.path.join(model_path, "HDF5Model.h5"))
 
-        plot_path = os.path.join(config_path, "plots")
-        if not os.path.exists(plot_path):
+        if not os.path.exists(plot_path := os.path.join(config_path, "plots")):
             os.makedirs(plot_path)
 
         self.plot_model(history, plot_path, dnn_snippet, config_snippet)
 
         return True
 
-    def set_dnn_config_defaults(self, dnn_config: dict) -> None:
-        """Sets the defaults in dnn_config in case they have not been set
-        Args:
-            dnn_config (dict): Dictionary containing settings for clustering.
-        Returns:
-            None, modified dnn_config in place"""
-        if "batch_size" not in dnn_config:
-            dnn_config["batch_size"] = 32
-        if "learning_rate" not in dnn_config:
-            dnn_config["learning_rate"] = 0.00007
-        if "epochs" not in dnn_config:
-            dnn_config["epochs"] = 50
-        if "patience" not in dnn_config:
-            dnn_config["patience"] = 5
-        if "nodes_per_layer" not in dnn_config:
-            dnn_config["nodes_per_layer"] = 32
-
     def get_compile_train_evaluate_model(
         self,
         coordinate_type: str,
         datasets: tuple[tf.data.Dataset, tf.data.Dataset, tf.data.Dataset],
-        dnn_config: dict,
+        dnn_config: DNNConfig,
     ) -> tuple[keras.Sequential, tf.keras.callbacks.History, float, float, float]:
-        """Wrapper function to get, compile, train and evaluate a model
+        """Wrapper function to get, compile, train and evaluate a model.
+
         Args:
-            coordinate_type (string): A string indicating whether player coordinates should be used directly ("position") or the summarizing tokens ("token") instead.
-            datasets (tuple[tf.data.Dataset]: train, val and test datasets)
+            coordinate_type (str): String indicating whether player coordinates
+                should be used directly ("position") or
+                the summarizing tokens ("token") instead.
+            datasets (tuple[tf.data.Dataset]): train, val and test datasets
             dnn_config (dict): Dictionary containing settings for clustering.
 
         Returns:
-            tuple of history, loss, accuracy, entropy from model.fit and model.evaluate"""
+            tuple of history, loss, accuracy, entropy from model.fit and model.evaluate
+        """
         train_dataset, val_dataset, test_dataset = datasets
         # Get model
         logging.info(
@@ -177,7 +255,6 @@ class TrajectoryPredictor:
         model.summary()
 
         # Train model
-        # epochs, patience = 50, 5
         logging.info("Training model")
         epochs, patience = dnn_config["epochs"], dnn_config["patience"]
         history = model.fit(
@@ -203,13 +280,18 @@ class TrajectoryPredictor:
         tensors: tuple[ndarray, ndarray, ndarray, ndarray, ndarray, ndarray],
         batch_size: int,
     ) -> tuple[tf.data.Dataset, tf.data.Dataset, tf.data.Dataset]:
-        """Generates batched datasets from tensors
+        """Generates batched datasets from tensors.
 
         Args:
-            tensors (tuple[ndarray]): tuple of numpy arrays of train_labels, val_labels, test_labels, train_features, val_features, test_features
-            batch_size (int):A tf.int64 scalar tf.Tensor, representing the number of consecutive elements of this dataset to combine in a single batch.
+            tensors (tuple[ndarray]): tuple of numpy arrays of
+                train_labels, val_labels, test_labels,
+                train_features, val_features, test_features
+            batch_size (int):A tf.int64 scalar tf.Tensor, representing the number
+                of consecutive elements of this dataset to combine in a single batch.
+
         Returns:
-            A tuple of tf.datasets (train_dataset, val_dataset, test_dataset)"""
+            A tuple of tf.datasets (train_dataset, val_dataset, test_dataset)
+        """
         (
             train_labels,
             val_labels,
@@ -229,35 +311,37 @@ class TrajectoryPredictor:
         ).batch(batch_size)
         return train_dataset, val_dataset, test_dataset
 
-    def get_model(self, coordinate: str, model_config: dict) -> keras.Sequential:
+    def get_model(self, coordinate: str, model_config: DNNConfig) -> keras.Sequential:
         """Grabs or generates a model usable for the specified configuration.
 
         Args:
-            coordinates (string): A string determining if individual players positions ("position") or aggregate tokens ("token) were used
+            coordinate (str): String determining if individual players
+                positions ("position") or aggregate tokens ("token) were used
             model_config (dict): Dictionary of all configuration settings of the model
         Returns:
-            LSTM network model that is applicable to datasets produced according to the given configuration
+            LSTM network model that is applicable to datasets
+            produced according to the given configuration
         """
-        if coordinate == "position":
-            model = self.get_coordinate_model(model_config)
-        else:  # coordinate == "token"
-            model = self.get_token_model(model_config)
-        return model
+        return (
+            self.get_coordinate_model(model_config)
+            if coordinate == "position"
+            else self.get_token_model(model_config)
+        )
 
-    def get_token_model(self, model_config: dict) -> keras.Sequential:
-        """Generate a LSTM network to predict the winner of a round based on position-token trajectory
+    def get_token_model(self, model_config: DNNConfig) -> keras.Sequential:
+        """Generate LSTM network to predict the round result based on token trajectory.
 
         Args:
             model_config (dict): Dictionary of all configuration settings of the model
-                nodes_per_layer: An integer determining how many nodes each network layer should have
-                input_shape (tuple): Tuple of the shape oof the network input
+                nodes_per_layer (int): Determining how many nodes each layer should have
+                input_shape (tuple): Tuple of the shape of the network input
 
         Returns:
             The sequantial tf.keras LSTM model
         """
         nodes_per_layer = model_config["nodes_per_layer"]
         input_shape = model_config["input_shape"]
-        model = tf.keras.Sequential(
+        return tf.keras.Sequential(
             [
                 keras.layers.LSTM(nodes_per_layer, input_shape=input_shape),
                 keras.layers.Dense(
@@ -271,14 +355,13 @@ class TrajectoryPredictor:
                 keras.layers.Dense(1),
             ]
         )
-        return model
 
-    def get_coordinate_model(self, model_config: dict) -> keras.Sequential:
-        """Generate a LSTM network to predict the winner of a round based on player trajectories
+    def get_coordinate_model(self, model_config: DNNConfig) -> keras.Sequential:
+        """Generate a LSTM network to predict the round based on player trajectories.
 
         Args:
             model_config (dict): Dictionary of all configuration settings of the model
-                nodes_per_layer (int): An integer determining how many nodes each network layer should have
+                nodes_per_layer (int): Determining how many nodes each layer should have
                 input_shape (tuple): Tuple of the shape oof the network input
 
         Returns:
@@ -288,11 +371,9 @@ class TrajectoryPredictor:
         input_shape = model_config["input_shape"]
         logging.info(input_shape)
         pooling_size_1 = (2, 2)
-        if input_shape[1] == 2:
-            pooling_size_2 = (2, 2)
-        else:
-            pooling_size_2 = (1, 2)
-        model = tf.keras.Sequential(
+        # Do we have the extra dimension because we are looking at two teams.
+        pooling_size_2 = (2, 2) if input_shape[1] == 2 else (1, 2)  # noqa: PLR2004
+        return tf.keras.Sequential(
             [
                 keras.layers.TimeDistributed(
                     keras.layers.BatchNormalization(),
@@ -342,7 +423,6 @@ class TrajectoryPredictor:
                 keras.layers.Dense(1),
             ]
         )
-        return model
 
     def plot_model(
         self,
@@ -350,17 +430,19 @@ class TrajectoryPredictor:
         plot_path: str,
         dnn_snippet: str,
         config_snippet: str,
-    ):
-        """Plots and logs results for training and evaluating the model corresponding to the configuration
+    ) -> None:
+        """Plot and log results for training and evaluating the model.
+
+        Logs evaluation loss and accuarcy from the test set and
+        produces plots of training vs val loss and accuracy during training
 
         Args:
-            History: History object from model.fit
-            plot_path: A string of the path of the directory where the resultant plots should be saved to
-            dnn_snippet (str): String containing all dnn model related configurations to include in the file name
-            config_snippet (str): String containing all dataset configurations to include in the file name
-
-        Returns:
-            None (Logs evaluation loss and accuarcy from the test set and produces plots of training vs val loss and accuracy during training)
+            history: History object from model.fit
+            plot_path (str): Path of the directory where the plots should be saved to
+            dnn_snippet (str): Contains all dnn model related
+                configurations to include in the file name
+            config_snippet (str): String containing all dataset
+                configurations to include in the file name
         """
         logging.info("Plotting model training progession")
         # Plot training progress
