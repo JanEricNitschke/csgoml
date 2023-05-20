@@ -130,6 +130,7 @@ class TrajectoryClusterer:
             trajectory_config = {}
         if clustering_config is None:
             clustering_config = {}
+
         default_trajectory_config: TrajectoryConfig = {
             "coordinate_type_for_distance": "area",
             "n_rounds": 1000,
@@ -137,7 +138,8 @@ class TrajectoryClusterer:
             "side": "T",
             "dtw": False,
         }
-        default_trajectory_config.update(trajectory_config)
+        for key in trajectory_config:
+            default_trajectory_config[key] = trajectory_config[key]
 
         default_clustering_config: ClusteringConfig = {
             "do_histogram": False,
@@ -151,7 +153,9 @@ class TrajectoryClusterer:
             "do_kmed": False,
             "kmed_n_clusters": 3,
         }
-        default_clustering_config.update(clustering_config)
+        for key in clustering_config:
+            default_clustering_config[key] = clustering_config[key]
+
         return default_trajectory_config, default_clustering_config
 
     def _unpack_trajectory_config(

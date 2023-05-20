@@ -14,17 +14,14 @@ Example::
 import logging
 import os
 import random
-from typing import TYPE_CHECKING
 
 import numpy as np
+import numpy.typing as npt
 import pandas as pd
 from sklearn.model_selection import train_test_split
 from sklearn.utils import shuffle
 
 from csgoml.types import PositionDatasetJSON
-
-if TYPE_CHECKING:
-    import numpy.typing as npt
 
 
 class TrajectoryHandler:
@@ -36,9 +33,9 @@ class TrajectoryHandler:
     Attributes:
         input (string): Path to the json input file containing all
             the trajectory data for every round on a given map.
-        datasets (dict[str, np.ndarray]): Dictionary of position and
+        datasets (dict[str, npt.NDArray]): Dictionary of position and
             token trajectory numpy arrays
-        aux (dict[str, np.ndarray]): Dictionary of auxilliary information
+        aux (dict[str, npt.NDArray]): Dictionary of auxilliary information
             about about trajectories.
         random_state (int): Integer for random_states
         time (int): Maximum time that is reasonable for a round to have
@@ -86,8 +83,8 @@ class TrajectoryHandler:
         logging.debug("Initial dataframe:")
         logging.debug(complete_dataframe)
 
-        self.datasets: dict[str, np.ndarray] = {}
-        self.aux: dict[str, np.ndarray] = {}
+        self.datasets: dict[str, npt.NDArray] = {}
+        self.aux: dict[str, npt.NDArray] = {}
         for column in complete_dataframe:
             if column != "position_df":
                 self.aux[str(column)] = complete_dataframe[column].to_numpy()
@@ -115,6 +112,9 @@ class TrajectoryHandler:
         self.datasets["position"] = np.stack(dataframe["position_array"].to_numpy())
         logging.info("Finished init")
 
+    # Any type Currently needed because pandas-stubs only supports a limited number
+    # of final arguments even though Any - Series would work here but there is no
+    # '-' for type hinting.
     def __transform_to_data_frame(
         self, json_format_dict: PositionDatasetJSON
     ) -> pd.DataFrame:
@@ -152,7 +152,7 @@ class TrajectoryHandler:
         """
         return int((tick - first_tick) / 128)
 
-    def __get_token_array(self, position_df: pd.DataFrame) -> np.ndarray:
+    def __get_token_array(self, position_df: pd.DataFrame) -> npt.NDArray:
         """Transforms a dataframe of player positions and tokens into an array corresponding to the token through the time steps.
 
                 Input dataframe is of the shape:
@@ -204,10 +204,9 @@ class TrajectoryHandler:
             (self.time, len(position_df.iloc[0]["token"])), dtype=np.int64
         )
         # Transform the string into a list of the individual letters(ints) in the string
-        position_df = position_df["token"].apply(list)
         # Convert the dataframe to a list and back into a df to
         # have one column for each entry of the string
-        position_df = pd.DataFrame(position_df.tolist())
+        position_df = pd.DataFrame(position_df["token"].apply(list).tolist())
         # Convert the individual string into the respective integers
         # Pad the df to the specified length
         position_df = position_df.reindex(range(self.time), fill_value=0, method="pad")
@@ -216,7 +215,7 @@ class TrajectoryHandler:
             return_array[:, ind] = position_df[column].to_numpy()
         return return_array
 
-    def __get_position_array(self, position_df: pd.DataFrame) -> np.ndarray:
+    def __get_position_array(self, position_df: pd.DataFrame) -> npt.NDArray:
         """Transforms data frame by throwing away all unnecessary features.
 
         And then turning it into a (multidimensional) array.
@@ -272,7 +271,7 @@ class TrajectoryHandler:
         time: int,
         *,
         consider_alive: bool = False,
-    ) -> np.ndarray:
+    ) -> npt.NDArray:
         """Get the input for the DNN training with positions.
 
         First gets the array for positions.
@@ -314,7 +313,7 @@ class TrajectoryHandler:
         self,
         side: str,
         time: int,
-    ) -> np.ndarray:
+    ) -> npt.NDArray:
         """Get the input for the DNN training with tokens.
 
         First gets the array for tokens
@@ -352,7 +351,9 @@ class TrajectoryHandler:
         time: int,
         *,
         consider_alive: bool = False,
-    ) -> tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
+    ) -> tuple[
+        npt.NDArray, npt.NDArray, npt.NDArray, npt.NDArray, npt.NDArray, npt.NDArray
+    ]:
         """Get the input for the DNN training to predict end of round result.
 
         First gets the array for the correct coordinate type and
@@ -417,7 +418,7 @@ class TrajectoryHandler:
 
     def get_clustering_input(
         self, n_rounds: int, coordinate_type_for_distance: str, side: str, time: int
-    ) -> tuple[np.ndarray, np.ndarray]:
+    ) -> tuple[npt.NDArray, npt.NDArray]:
         """Get the input clustering of round.
 
         First gets the array for the correct coordinate type and
