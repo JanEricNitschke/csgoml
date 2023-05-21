@@ -48,9 +48,7 @@ from typing import Literal
 
 import matplotlib.pyplot as plt
 import numpy as np
-from awpy.data import NAV, PLACE_DIST_MATRIX
 from awpy.types import DistanceType
-from numba import typed, types
 from sklearn.cluster import DBSCAN
 from sklearn.neighbors import NearestNeighbors
 from sklearn_extra.cluster import KMedoids
@@ -58,12 +56,14 @@ from sklearn_extra.cluster import KMedoids
 from csgoml.trajectories.trajectory_handler import TrajectoryHandler
 from csgoml.types import (
     ClusteringConfig,
+    CoordinateTypes,
     TrajectoryConfig,
     UserClusteringConfig,
     UserTrajectoryConfig,
 )
 from csgoml.utils.nav_utils import (
     get_traj_matrix_area,
+    get_traj_matrix_place,
     get_traj_matrix_position,
     get_traj_matrix_token,
 )
@@ -552,51 +552,11 @@ class TrajectoryClusterer:
         )
         plt.close()
 
-    def get_compressed_place_dist_matrix(
-        self,
-    ) -> dict[types.string, dict[types.string, types.float64]]:
-        """Generates a compressed place distance matrix.
-
-        Args:
-            None
-        Returns:
-            typed dict of compressed matrix
-        """
-        old_dist_matrix = PLACE_DIST_MATRIX[self.map_name]
-        d1_type = types.DictType(types.string, types.float64)
-        dist_matrix = typed.Dict.empty(types.string, d1_type)
-        for place1 in old_dist_matrix:
-            for place2 in old_dist_matrix[place1]:
-                if place1 not in dist_matrix:
-                    dist_matrix[place1] = typed.Dict.empty(
-                        key_type=types.string,
-                        value_type=types.float64,
-                    )
-                dist_matrix[place1][place2] = old_dist_matrix[place1][place2][
-                    "geodesic"
-                ]["centroid"]
-        return dist_matrix
-
-    def get_map_area_names(self) -> typed.List:
-        """Generates list of all named place on a map in sorted order.
-
-        Args:
-            None
-
-        Returns:
-            sorted list of named places
-        """
-        map_area_names = {
-            NAV[self.map_name][area_id]["areaName"] for area_id in NAV[self.map_name]
-        }
-        map_area_names = sorted(map_area_names)
-        return typed.List(map_area_names)
-
     def get_trajectory_distance_matrix(
         self,
         precomputed_matrix_path: str,
         clustering_array: np.ndarray,
-        coordinate_type: str,
+        coordinate_type: CoordinateTypes | Literal["place"],
         *,
         dtw: bool,
     ) -> np.ndarray:
@@ -634,12 +594,15 @@ class TrajectoryClusterer:
                     dtw=dtw,
                 )
             elif coordinate_type == "token":
-                map_area_names = self.get_map_area_names()
-                dist_matrix = self.get_compressed_place_dist_matrix()
                 precomputed = get_traj_matrix_token(
                     precompute_array=clustering_array,
-                    dist_matrix=dist_matrix,
-                    map_area_names=map_area_names,
+                    map_name=self.map_name,
+                    dtw=dtw,
+                )
+            elif coordinate_type == "place":
+                precomputed = get_traj_matrix_place(
+                    precompute_array=clustering_array,
+                    map_name=self.map_name,
                     dtw=dtw,
                 )
             else:  # coordinate_type == "position"

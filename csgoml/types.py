@@ -8,6 +8,10 @@ IDNumberDict = dict[Literal["ct", "t"], dict[str, Literal["1", "2", "3", "4", "5
 
 DictInitialized = dict[Literal["ct", "t"], bool]
 
+SideSelection = Literal["CT", "T", "BOTH"]
+
+CoordinateTypes = Literal["area", "token", "position"]
+
 
 class AllowedForbidden(TypedDict):
     """Holds information about which values are allowed or forbidden."""
@@ -165,10 +169,10 @@ class PositionDatasetJSON(TypedDict):
 class TrajectoryConfig(TypedDict):
     """Holds information about trajectories to analyze."""
 
-    coordinate_type_for_distance: str
+    coordinate_type_for_distance: CoordinateTypes
     n_rounds: int
     time: int
-    side: Literal["CT", "T", "BOTH"]
+    side: SideSelection
     dtw: bool
 
 
@@ -192,10 +196,10 @@ class ClusteringConfig(TypedDict):
 class UserTrajectoryConfig(TypedDict, total=False):
     """Non clustering config."""
 
-    coordinate_type_for_distance: str
+    coordinate_type_for_distance: CoordinateTypes
     n_rounds: int
     time: int
-    side: Literal["CT", "T", "BOTH"]
+    side: SideSelection
     dtw: bool
 
 
@@ -242,8 +246,8 @@ class UserDNNConfig(TypedDict, total=False):
 class DNNTrajectoryConfig(TypedDict):
     """Holds information about trajectories to analyze."""
 
-    coordinate_type: str
-    side: Literal["CT", "T", "BOTH"]
+    coordinate_type: Literal["area", "token", "position"]
+    side: SideSelection
     time: int
     consider_alive: bool
 
@@ -253,6 +257,6 @@ class UserDNNTrajectoryConfig(TypedDict, total=False):
     """Non clustering config."""
 
     coordinate_type: str
-    side: Literal["CT", "T", "BOTH"]
+    side: SideSelection
     time: int
     consider_alive: bool
