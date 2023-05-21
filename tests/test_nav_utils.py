@@ -8,6 +8,7 @@ import os
 import shutil
 import sys
 from cmath import inf
+from unittest.mock import patch
 
 import numpy as np
 from awpy.analytics.nav import (
@@ -39,6 +40,7 @@ class TestNavUtils:
     def setup_class(self):
         """Setup class by creating plot directory."""
         self.outputpath = "plotting_tests"
+        self.map_name = "de_ancient"
         if not os.path.exists(self.outputpath):
             os.makedirs(self.outputpath)
 
@@ -288,12 +290,26 @@ class TestNavUtils:
         target_precomputed[0][1] = target_precomputed[1][0] = 1.0
         target_precomputed[0][2] = target_precomputed[2][0] = 2.0
         target_precomputed[1][2] = target_precomputed[2][1] = 1.0
-        calc_precomputed = get_traj_matrix_area(to_precompute, dist_matrix, dtw=False)
+        with patch("csgoml.utils.nav_utils._prepare_trajectories") as prepare_mock:
+            prepare_mock.return_value = (
+                np.squeeze(to_precompute, axis=-1),
+                dist_matrix,
+            )
+            calc_precomputed = get_traj_matrix_area(
+                to_precompute, self.map_name, dtw=False
+            )
         print(calc_precomputed.shape)
         print(calc_precomputed)
         assert target_precomputed.shape == calc_precomputed.shape
         assert (target_precomputed == calc_precomputed).all()
-        calc_precomputed = get_traj_matrix_area(to_precompute, dist_matrix, dtw=True)
+        with patch("csgoml.utils.nav_utils._prepare_trajectories") as prepare_mock:
+            prepare_mock.return_value = (
+                np.squeeze(to_precompute, axis=-1),
+                dist_matrix,
+            )
+            calc_precomputed = get_traj_matrix_area(
+                to_precompute, self.map_name, dtw=True
+            )
         target_precomputed[0][1] = target_precomputed[1][0] = 2 / 3
         target_precomputed[0][2] = target_precomputed[2][0] = 2.0
         target_precomputed[1][2] = target_precomputed[2][1] = 2 / 3

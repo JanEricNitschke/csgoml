@@ -5,7 +5,6 @@ import json
 import os
 import shutil
 
-import numpy as np
 import pandas as pd
 import requests
 from numba import typed
@@ -59,13 +58,6 @@ class TestTrajectoryClusterer:
         r = requests.get(json_link, timeout=20)
         with open(f"{json_name}.json", "wb") as json_file:
             json_file.write(r.content)
-
-    def test_get_compressed_area_dist_matrix(self):
-        """Tests get_compressed_area_dist_matrix."""
-        dist_matrix, matching = self.clusterer.get_compressed_area_dist_matrix()
-        assert isinstance(dist_matrix, np.ndarray)
-        assert len(dist_matrix.shape) == 2
-        assert isinstance(matching, dict)
 
     def test_get_compressed_place_dist_matrix(self):
         """Tests get_compressed_place_dist_matrix."""

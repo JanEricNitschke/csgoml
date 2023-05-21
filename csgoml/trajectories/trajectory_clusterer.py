@@ -43,14 +43,12 @@ Typical usage example:
 import logging
 import os
 import random
-import sys
 from collections import defaultdict
 from typing import Literal
 
 import matplotlib.pyplot as plt
 import numpy as np
-import numpy.typing as npt
-from awpy.data import AREA_DIST_MATRIX, NAV, PLACE_DIST_MATRIX
+from awpy.data import NAV, PLACE_DIST_MATRIX
 from awpy.types import DistanceType
 from numba import typed, types
 from sklearn.cluster import DBSCAN
@@ -554,29 +552,6 @@ class TrajectoryClusterer:
         )
         plt.close()
 
-    def get_compressed_area_dist_matrix(
-        self,
-    ) -> tuple[npt.NDArray, dict[types.int64, types.float64]]:
-        """Generates a compressed area distance matrix.
-
-        Args:
-            None
-        Returns:
-            typed dict of compressed matrix
-        """
-        old_dist_matrix = AREA_DIST_MATRIX[self.map_name]
-        dist_matrix = np.zeros((len(old_dist_matrix), len(old_dist_matrix)))
-        matching: dict[types.int64, types.float64] = {}
-        for idx1, area1 in enumerate(sorted(old_dist_matrix)):
-            matching[int(area1)] = idx1
-            for idx2, area2 in enumerate(sorted(old_dist_matrix[area1])):
-                dist_matrix[idx1, idx2] = min(
-                    old_dist_matrix[area1][area2]["geodesic"],
-                    old_dist_matrix[area2][area1]["geodesic"],
-                    sys.maxsize / 6,
-                )
-        return dist_matrix, matching
-
     def get_compressed_place_dist_matrix(
         self,
     ) -> dict[types.string, dict[types.string, types.float64]]:
@@ -653,17 +628,9 @@ class TrajectoryClusterer:
                 (len(clustering_array) ** 2) // 2,
             )
             if coordinate_type == "area":
-                dist_matrix, matching = self.get_compressed_area_dist_matrix()
-                logging.info(clustering_array.shape)
-
-                def get_matching(x: str) -> float:
-                    return matching[141] if int(x) not in matching else matching[int(x)]
-
-                clustering_array = np.vectorize(get_matching)(clustering_array)
-                logging.info(clustering_array.shape)
                 precomputed = get_traj_matrix_area(
                     precompute_array=clustering_array,
-                    dist_matrix=dist_matrix,
+                    map_name=self.map_name,
                     dtw=dtw,
                 )
             elif coordinate_type == "token":

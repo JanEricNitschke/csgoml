@@ -67,7 +67,7 @@ from awpy.analytics.nav import (
     position_state_distance,
     token_state_distance,
 )
-from awpy.data import NAV
+from awpy.data import AREA_DIST_MATRIX, NAV
 from awpy.types import Area, DistanceObject, DistanceType
 from awpy.visualization.plot import plot_map, position_transform
 from matplotlib import patches
@@ -480,9 +480,57 @@ def _perform_normal_dtw_position(
     return dtw_matrix[len(trajectory_array_1) - 1, len(trajectory_array_2) - 1]
 
 
+def _get_compressed_area_dist_matrix(
+    map_name: str,
+) -> tuple[npt.NDArray, dict[types.int64, types.int64]]:
+    """Generates a compressed area distance matrix.
+
+    Args:
+        map_name (str): Map under consideration
+
+    Returns:
+        Array of compressed matrix and matching between indices and areas.
+    """
+    old_dist_matrix = AREA_DIST_MATRIX[map_name]
+    dist_matrix = np.zeros((len(old_dist_matrix), len(old_dist_matrix)))
+    matching: dict[types.int64, types.float64] = {}
+    for idx1, area1 in enumerate(sorted(old_dist_matrix)):
+        matching[int(area1)] = idx1
+        for idx2, area2 in enumerate(sorted(old_dist_matrix[area1])):
+            dist_matrix[idx1, idx2] = min(
+                old_dist_matrix[area1][area2]["geodesic"],
+                old_dist_matrix[area2][area1]["geodesic"],
+                sys.maxsize / 6,
+            )
+    return dist_matrix, matching
+
+
+def _apply_matching(
+    precompute_array: npt.NDArray, matching: dict[int, int]
+) -> npt.NDArray:
+    def get_matching(x: str | float | int) -> float:
+        return matching[141] if int(x) not in matching else matching[int(x)]
+
+    return np.vectorize(get_matching)(precompute_array)
+
+
+def _prepare_trajectories(
+    precompute_array: npt.NDArray, map_name: str
+) -> tuple[npt.NDArray, npt.NDArray]:
+    dist_matrix, matching = _get_compressed_area_dist_matrix(map_name)
+    logging.info(precompute_array.shape)
+    precompute_array = _apply_matching(precompute_array, matching)
+
+    logging.info(precompute_array.shape)
+    # Reduce Shape of precompute array is:
+    # N_rounds, N_times, N_teams, N_players, N_features
+    # With N_features always being 1 here. So just squeeze that away at the start.
+    return np.squeeze(precompute_array, axis=-1), dist_matrix
+
+
 def get_traj_matrix_area(
     precompute_array: np.ndarray,
-    dist_matrix: dict,
+    map_name: str,
     *,
     dtw: bool,
 ) -> np.ndarray:
@@ -491,17 +539,14 @@ def get_traj_matrix_area(
     Args:
         precompute_array: Numpy array of trajectories for which to
             compute the distance matrix
-        dist_matrix: Dict as distance matrix between areas
+        map_name: Map under consideration
         dtw: Boolean indicating whether matching should be performed via
             dynamic time warping (true) or euclidean (false)
 
     Returns:
         Numpy array of distances between trajectories
     """
-    # Reduce Shape of precompute array is:
-    # N_rounds, N_times, N_teams, N_players, N_features
-    # With N_features always being 1 here. So just squeeze that away at the start.
-    precompute_array = np.squeeze(precompute_array, axis=-1)
+    precompute_array, dist_matrix = _prepare_trajectories(precompute_array, map_name)
     permutations = np.array(
         list(itertools.permutations(range(precompute_array.shape[-1])))
     )
