@@ -935,8 +935,8 @@ def plot_rounds_different_players_position_image(
                             dist_type=dist_type,
                         )
                     # Now do the actual plotting
-                    for player_index, p in enumerate(frames[i][side]):
-                        pos = p
+                    for index, pos in enumerate(frames[i][side]):
+                        player_index = index
                         player_id = f"{player_index}_{frame_index}_{side}"
 
                         # If the leaders have not been initialized yet, do so
@@ -1101,7 +1101,8 @@ def plot_rounds_different_players_position_gif(
                             dist_type=dist_type,
                         )
                     # Now do the actual plotting
-                    for player_index, pos in enumerate(frames[i][side]):
+                    for index, pos in enumerate(frames[i][side]):
+                        player_index = index
                         player_id = f"{player_index}_{frame_index}_{side}"
 
                         # If the leaders have not been initialized yet, do so

@@ -1,29 +1,32 @@
-"""Tests for plotting_utils.py"""
+"""Tests for plotting_utils.py."""
 # pylint: disable=attribute-defined-outside-init
 
-import os
 import json
+import os
+import re
 import shutil
+
 import numpy as np
-import requests
 import pytest
+import requests
+
 from csgoml.trajectories.trajectory_handler import TrajectoryHandler
 from csgoml.utils.plotting_utils import (
     get_shortest_distances_mapping,
     get_shortest_distances_mapping_trajectory,
-    plot_round_tokens,
     plot_map_areas,
-    plot_mid,
     plot_map_tiles,
+    plot_mid,
+    plot_round_tokens,
     plot_rounds_different_players,
 )
 
 
 class TestPlottingUtils:
-    """Class to test plotting_utils.py"""
+    """Class to test plotting_utils.py."""
 
     def setup_class(self):
-        """Setup class by defining loading dictionary of test json files"""
+        """Setup class by defining loading dictionary of test json files."""
         with open("tests/test_trajectory_json.json", encoding="utf-8") as f:
             self.json_data = json.load(f)
         for file in self.json_data:
@@ -50,29 +53,27 @@ class TestPlottingUtils:
             os.makedirs(self.outputpath)
 
     def teardown_class(self):
-        """Set sorter to none, deletes all demofiles, JSON and directories"""
+        """Set sorter to none, deletes all demofiles, JSON and directories."""
         files_in_directory = os.listdir()
-        filtered_files = [
+        if filtered_files := [
             file
             for file in files_in_directory
-            if (
-                file.endswith(".json") or file.endswith(".png") or file.endswith(".gif")
-            )
-        ]
-        if len(filtered_files) > 0:
+            if (file.endswith((".json", ".png", ".gif")))
+        ]:
             for f in filtered_files:
                 os.remove(f)
         shutil.rmtree(self.outputpath)
         self.handler = None
 
     @staticmethod
-    def _get_jsonfile(json_link, json_name):
-        print("Requesting " + json_link)
+    def _get_jsonfile(json_link: str, json_name: str) -> None:
+        print(f"Requesting {json_link}")
         r = requests.get(json_link, timeout=20)
-        open(json_name + ".json", "wb").write(r.content)
+        with open(f"{json_name}.json", "wb") as json_file:
+            json_file.write(r.content)
 
     def test_get_shortest_distances_mapping(self):
-        """Tests get_shortest_distances_mapping"""
+        """Tests get_shortest_distances_mapping."""
         map_name = "de_inferno"
         dist_type = "euclidean"
         current_positions = [[1, 0, 0], [2, 0, 0], [3, 0, 0]]
@@ -114,7 +115,7 @@ class TestPlottingUtils:
         assert mapping == ["1_0_CT", "0_0_CT"]
 
     def test_get_shortest_distances_mapping_trajectory(self):
-        """Tests get_shortest_distances_mapping_trajectory"""
+        """Tests get_shortest_distances_mapping_trajectory."""
         map_name = "de_inferno"
         leaders = [
             np.array([[[[101, 0, 0]]], [[[201, 0, 0]]], [[[301, 0, 0]]]]),
@@ -127,7 +128,7 @@ class TestPlottingUtils:
         dist_type = "euclidean"
         dtw = False
         mapping = get_shortest_distances_mapping_trajectory(
-            map_name, leaders, current_positions, dist_type, dtw
+            map_name, leaders, current_positions, dist_type, dtw=dtw
         )
         assert mapping == (1, 0)
         leaders = [
@@ -135,12 +136,12 @@ class TestPlottingUtils:
             np.array([[[[101, 0, 0]]], [[[201, 0, 0]]], [[[301, 0, 0]]]]),
         ]
         mapping = get_shortest_distances_mapping_trajectory(
-            map_name, leaders, current_positions, dist_type, dtw
+            map_name, leaders, current_positions, dist_type, dtw=dtw
         )
         assert mapping == (0, 1)
 
     def test_plot_round_tokens(self):
-        """Tests plot_round_tokens"""
+        """Tests plot_round_tokens."""
         assert plot_round_tokens(
             "test_plot_round_token_inferno.gif",
             frames=self.inferno_round["gameRounds"][2]["frames"],
@@ -162,28 +163,28 @@ class TestPlottingUtils:
             )
 
     def test_plot_map_areas(self):
-        """Tests plot_map_areas"""
+        """Tests plot_map_areas."""
         assert plot_map_areas(self.outputpath, map_name="de_mirage", dpi=100) is None
         assert plot_map_areas(self.outputpath, map_name="de_inferno", dpi=100) is None
         with pytest.raises(FileNotFoundError):
             plot_map_areas(self.outputpath, map_name="de_does_not_exist", dpi=100)
 
     def test_plot_mid(self):
-        """Tests plot_mid"""
+        """Tests plot_mid."""
         assert plot_mid(self.outputpath, "de_mirage", dpi=100) is None
         assert plot_mid(self.outputpath, "de_inferno", dpi=100) is None
-        with pytest.raises(ValueError):
+        with pytest.raises(ValueError, match=re.escape("Map not found.")):
             plot_mid(self.outputpath, "de_does_not_exist", dpi=100)
 
     def test_plot_map_tiles(self):
-        """Tests plot_map_tiles"""
+        """Tests plot_map_tiles."""
         assert plot_map_tiles(self.outputpath, map_name="de_mirage", dpi=100) is None
         assert plot_map_tiles(self.outputpath, map_name="de_inferno", dpi=100) is None
         with pytest.raises(FileNotFoundError):
             plot_map_tiles(self.outputpath, map_name="de_does_not_exist", dpi=100)
 
     def test_plot_rounds_different_players(self):
-        """Tests plot_rounds_different_players"""
+        """Tests plot_rounds_different_players."""
         plotting_array, _ = self.handler.get_clustering_input(
             n_rounds=10,
             coordinate_type_for_distance="area",
