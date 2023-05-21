@@ -172,6 +172,7 @@ class TestNavUtils:
         assert round(dist, 2) == 7.10
 
     def test_fast_token_trajectory_distance(self):
+        # sourcery skip: bin-op-identity
         """Tests fast_token_trajectory_distance."""
         token_array1 = np.array(
             [

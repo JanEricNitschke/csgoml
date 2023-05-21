@@ -908,7 +908,7 @@ def transform_to_traj_dimensions(pos_array: np.ndarray) -> np.ndarray:
 
 
 def main(args: list[str]) -> None:
-    """Plots player positions, position tokens and each maps nav mesh and named areas.
+    """Plots paths between a variety of tiles.
 
     Uses awpy and the extension functions defined in this module.
     """
