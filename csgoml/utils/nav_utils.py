@@ -429,7 +429,7 @@ def _get_compressed_area_dist_matrix(
     """
     old_dist_matrix = AREA_DIST_MATRIX[map_name]
     dist_matrix = np.zeros((len(old_dist_matrix), len(old_dist_matrix)))
-    matching: dict[types.int64, types.float64] = {}
+    matching: dict[int, int] = {}
     for idx1, area1 in enumerate(sorted(old_dist_matrix)):
         matching[int(area1)] = idx1
         for idx2, area2 in enumerate(sorted(old_dist_matrix[area1])):
@@ -577,7 +577,7 @@ def get_traj_matrix_area(
 
 def _get_compressed_places_dist_matrix(
     map_name: str,
-) -> tuple[npt.NDArray, dict[types.int64, types.int64]]:
+) -> tuple[npt.NDArray, dict[str, int]]:
     """Generates a compressed place distance matrix for individual places.
 
     Args:
@@ -588,7 +588,7 @@ def _get_compressed_places_dist_matrix(
     """
     old_dist_matrix = PLACE_DIST_MATRIX[map_name]
     dist_matrix = np.zeros((len(old_dist_matrix), len(old_dist_matrix)))
-    matching: dict[types.int64, types.float64] = {}
+    matching: dict[str, int] = {}
     for idx1, place1 in enumerate(sorted(old_dist_matrix)):
         matching[place1] = idx1
         for idx2, place2 in enumerate(sorted(old_dist_matrix[place1])):
@@ -601,15 +601,15 @@ def _get_compressed_places_dist_matrix(
 
 
 def _apply_matching_place(
-    precompute_array: npt.NDArray, matching: dict[int, int], map_name: str
+    precompute_array: npt.NDArray, matching: dict[str, int], map_name: str
 ) -> npt.NDArray:
     map_areas = NAV[map_name]
 
     def get_matching(x: int | float | str) -> int:
         return (
-            matching[map_areas[int(x)]]["areaName"]
-            if int(x) in matching
-            else next(iter(matching.values()))["areaName"]
+            matching[map_areas[int(x)]["areaName"]]
+            if int(x) in map_areas and map_areas[int(x)]["areaName"] in matching
+            else next(iter(matching.values()))
         )
 
     return np.vectorize(get_matching)(precompute_array)

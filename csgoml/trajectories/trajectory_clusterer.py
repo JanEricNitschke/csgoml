@@ -136,8 +136,7 @@ class TrajectoryClusterer:
             "side": "T",
             "dtw": False,
         }
-        for key in trajectory_config:
-            default_trajectory_config[key] = trajectory_config[key]
+        default_trajectory_config.update(trajectory_config)
 
         default_clustering_config: ClusteringConfig = {
             "do_histogram": False,
@@ -151,8 +150,7 @@ class TrajectoryClusterer:
             "do_kmed": False,
             "kmed_n_clusters": 3,
         }
-        for key in clustering_config:
-            default_clustering_config[key] = clustering_config[key]
+        default_clustering_config.update(clustering_config)
 
         return default_trajectory_config, default_clustering_config
 
