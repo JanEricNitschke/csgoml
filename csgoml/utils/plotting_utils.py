@@ -35,6 +35,8 @@ import logging
 import os
 import shutil
 import sys
+from collections.abc import Generator
+from contextlib import contextmanager
 from typing import Literal, TypedDict
 
 import imageio.v3 as imageio
@@ -59,6 +61,8 @@ from matplotlib import patches
 from tqdm import tqdm
 
 from csgoml.utils.nav_utils import trajectory_distance, transform_to_traj_dimensions
+
+_TMP_DIR = "csgo_tmp"
 
 
 def get_areas_hulls_centers(
@@ -106,6 +110,19 @@ def get_areas_hulls_centers(
     return area_points, hulls, centers
 
 
+@contextmanager
+def with_tmp_dir() -> Generator[None, None, None]:
+    """Try to create and finally delete tmp dir."""
+    if os.path.isdir(_TMP_DIR):
+        shutil.rmtree(_TMP_DIR)
+    os.mkdir(_TMP_DIR)
+    try:
+        yield
+    finally:
+        shutil.rmtree(_TMP_DIR)
+
+
+@with_tmp_dir
 def plot_round_tokens(
     filename: str,
     frames: list[GameFrame],
@@ -133,9 +150,6 @@ def plot_round_tokens(
     Returns:
         True (result is directly saved to disk)
     """
-    if os.path.isdir("csgo_tmp"):
-        shutil.rmtree("csgo_tmp/")
-    os.mkdir("csgo_tmp")
     # Colors of borders of each area depending on number of t's/ct's that reside in it
     colors = {
         "t": ["lightsteelblue", "#300000", "#7b0000", "#b10000", "#c80000", "#ff0000"],
@@ -182,12 +196,11 @@ def plot_round_tokens(
                     c="#EB0841",
                     size="x-small",
                 )
-        image_files.append(f"csgo_tmp/{frame_id}.png")
+        image_files.append(os.path.join(_TMP_DIR, f"{frame_id}.png"))
         fig.savefig(image_files[-1], dpi=dpi, bbox_inches="tight")
         plt.close()
     images = [imageio.imread(file) for file in image_files]
     imageio.imwrite(filename, images, duration=1000 / fps)
-    shutil.rmtree("csgo_tmp/")
     return True
 
 
@@ -652,10 +665,10 @@ def get_shortest_distances_mapping_trajectory(
     return best_mapping
 
 
-colors_list = {
-    1: ["cyan", "yellow", "fuchsia", "lime", "orange"],
-    0: ["red", "green", "black", "white", "gold"],
-}
+colors_list = [
+    ["red", "green", "black", "white", "gold"],
+    ["cyan", "yellow", "fuchsia", "lime", "orange"],
+]
 
 
 def plot_rounds_different_players_trajectory_image(
@@ -669,14 +682,14 @@ def plot_rounds_different_players_trajectory_image(
     dtw: bool = False,
     dpi: int = 1000,
 ) -> Literal[True]:
-    """Plots a collection of rounds and saves as a .gif.
+    """Plots a collection of rounds and saves as a .png.
 
     Each player in the first round is assigned a separate color.
     Players in the other rounds are matched by proximity.
     Only use untransformed coordinates.
 
     Args:
-        filename (string): Filename to save the gif
+        filename (string): Filename to save the png
         frames_list (Union[np.ndarray, list[np.ndarray]]):
             (List or higher dimensional array) of np arrays.
             One array for each round.
@@ -692,9 +705,9 @@ def plot_rounds_different_players_trajectory_image(
         dpi (int): DPI of the resulting image
 
     Returns:
-        True, saves .gif
+        True, saves .png
     """
-    f, a = plot_map(map_name=map_name, map_type=map_type, dark=dark)
+    figure, axes = plot_map(map_name=map_name, map_type=map_type, dark=dark)
     reference_traj: dict[int, np.ndarray] = {
         side: transform_to_traj_dimensions(frames_list[0][:, side, :, :])[
             :, :, :, :, (3,)
@@ -714,7 +727,7 @@ def plot_rounds_different_players_trajectory_image(
                 dtw=dtw,
             )
             for player in range(frames.shape[2]):
-                a.plot(
+                axes.plot(
                     [
                         position_transform(map_name, x, "x")
                         for x in frames[:, side, player, 0]
@@ -728,13 +741,14 @@ def plot_rounds_different_players_trajectory_image(
                     linewidth=0.25,
                     alpha=0.6,
                 )
-    a.get_xaxis().set_visible(b=False)
-    a.get_yaxis().set_visible(b=False)
-    f.savefig(filename, dpi=dpi, bbox_inches="tight")
+    axes.get_xaxis().set_visible(b=False)
+    axes.get_yaxis().set_visible(b=False)
+    figure.savefig(filename, dpi=dpi, bbox_inches="tight")
     plt.close()
     return True
 
 
+@with_tmp_dir
 def plot_rounds_different_players_trajectory_gif(
     filename: str,
     frames_list: np.ndarray | list[np.ndarray],
@@ -775,9 +789,6 @@ def plot_rounds_different_players_trajectory_gif(
     Returns:
         True, saves .gif
     """
-    if os.path.isdir("csgo_tmp"):
-        shutil.rmtree("csgo_tmp/")
-    os.mkdir("csgo_tmp")
     image_files = []
     mappings = collections.defaultdict(list)
     reference_traj: dict[int, np.ndarray] = {
@@ -810,23 +821,22 @@ def plot_rounds_different_players_trajectory_gif(
         # all frames with their appropriate colors.
         for frame_index, frames in enumerate(frames_list):
             # Initialize lists used to store values for this round for this frame
-            if i in range(len(frames)):
-                for side in range(frames.shape[1]):
-                    # Now do the actual plotting
-                    for player_index, pos in enumerate(frames[i][side]):
-                        marker = rf"$ {frame_index} $"
-                        color = colors_list[side][
-                            mappings[side][frame_index][player_index]
-                        ]
-                        # If we are an alive leader we get opaque and big markers
-                        if frame_index == 0:
-                            alpha = 1
-                            size = mpl.rcParams["lines.markersize"] ** 2
-                        # If not we get partially transparent and small ones
-                        else:
-                            alpha = 0.5
-                            size = 0.3 * mpl.rcParams["lines.markersize"] ** 2
-                        positions.append(PlotPosition(pos, color, marker, alpha, size))
+            if i >= len(frames):
+                continue
+            for side in range(frames.shape[1]):
+                # Now do the actual plotting
+                for player_index, pos in enumerate(frames[i][side]):
+                    marker = rf"$ {frame_index} $"
+                    color = colors_list[side][mappings[side][frame_index][player_index]]
+                    # If we are an alive leader we get opaque and big markers
+                    if frame_index == 0:
+                        alpha = 1
+                        size = mpl.rcParams["lines.markersize"] ** 2
+                    # If not we get partially transparent and small ones
+                    else:
+                        alpha = 0.5
+                        size = 0.3 * mpl.rcParams["lines.markersize"] ** 2
+                    positions.append(PlotPosition(pos, color, marker, alpha, size))
         f, _ = plot_positions(
             positions=positions,
             map_name=map_name,
@@ -834,12 +844,11 @@ def plot_rounds_different_players_trajectory_gif(
             dark=dark,
             apply_transformation=True,
         )
-        image_files.append(f"csgo_tmp/{i}.png")
+        image_files.append(os.path.join(_TMP_DIR, f"{i}.png"))
         f.savefig(image_files[-1], dpi=dpi, bbox_inches="tight")
         plt.close()
     images = [imageio.imread(file) for file in image_files]
     imageio.imwrite(filename, images, duration=1000 / fps)
-    shutil.rmtree("csgo_tmp/")
     return True
 
 
@@ -1009,6 +1018,7 @@ def plot_rounds_different_players_position_image(
     return True
 
 
+@with_tmp_dir
 def plot_rounds_different_players_position_gif(
     filename: str,
     frames_list: np.ndarray | list[np.ndarray],
@@ -1048,9 +1058,6 @@ def plot_rounds_different_players_position_gif(
     Returns:
         True, saves .gif
     """
-    if os.path.isdir("csgo_tmp"):
-        shutil.rmtree("csgo_tmp/")
-    os.mkdir("csgo_tmp")
     image_files = []
     # Needed to check if leaders have been fully initialized
     dict_initialized = {0: False, 1: False}
@@ -1165,12 +1172,11 @@ def plot_rounds_different_players_position_gif(
             dark=dark,
             apply_transformation=True,
         )
-        image_files.append(f"csgo_tmp/{i}.png")
+        image_files.append(os.path.join(_TMP_DIR, f"{i}.png"))
         f.savefig(image_files[-1], dpi=dpi, bbox_inches="tight")
         plt.close()
     images = [imageio.imread(file) for file in image_files]
     imageio.imwrite(filename, images, duration=1000 / fps)
-    shutil.rmtree("csgo_tmp/")
     return True
 
 
