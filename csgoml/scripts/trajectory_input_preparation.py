@@ -384,11 +384,14 @@ def pad_to_full_length(round_positions: RoundPositions) -> None:
             # If a player wasnt there for the whole round
             # set his name as Nobody and position as 0,0,0.
             if len(round_positions[key]) == 0:
-                round_positions[key] = (
-                    ["Nobody"] * len(round_positions["Tick"])
-                    if "Name" in key
-                    else [0.0] * len(round_positions["Tick"])
-                )
+                if "Name" in key:
+                    round_positions[key] = ["Nobody"] * len(round_positions["Tick"])
+                else:
+                    round_positions[key] = (
+                        [0] * len(round_positions["Tick"])
+                        if "Area" in key
+                        else [0.0] * len(round_positions["Tick"])
+                    )
             # If a player left mid round pad his name and position
             # with the last values from when he was there.
             # Exactly like it would be if he had died "normally"
