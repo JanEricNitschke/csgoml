@@ -232,8 +232,7 @@ class TrajectoryHandler:
         """
         # Throw away all unneeded columns from the dataframe and
         # then convert it into a numpy array
-        # If coordinates is false than it is a 1-D array of the tokens for each timestep
-        # If coordinates is true than it is a 4-D array with the
+        # It is a 4-D array with the
         # first index representing the timestep, the second the team,
         # the third the playernumber in that team and the fourth the feature.
         position_df = position_df.reset_index(drop=True)
@@ -450,7 +449,7 @@ class TrajectoryHandler:
         """
         side_conversion = {"CT": (0,), "T": (1,), "BOTH": (0, 1)}
         array_for_plotting = self.datasets["position"][
-            :n_rounds, :time, side_conversion[side], :, :4
+            -n_rounds:, :time, side_conversion[side], :, :4
         ]
         if coordinate_type_for_distance == "position":
             array_for_plotting = array_for_plotting[:, :, :, :, :3]
@@ -473,7 +472,7 @@ class TrajectoryHandler:
                 "BOTH": (start, end),
             }
             first, last = side_conversion[side]
-            array_for_clustering = self.datasets["token"][:n_rounds, :time, first:last]
+            array_for_clustering = self.datasets["token"][-n_rounds:, :time, first:last]
         return shuffle(
             array_for_plotting, array_for_clustering, random_state=self.random_state
         )
