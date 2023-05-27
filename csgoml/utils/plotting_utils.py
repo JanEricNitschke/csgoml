@@ -52,28 +52,39 @@ from awpy.analytics.nav import (
     stepped_hull,
 )
 from awpy.data import AREA_DIST_MATRIX, MAP_DATA, NAV, NAV_GRAPHS
-from awpy.types import DistanceType, GameFrame, PlotPosition
+from awpy.types import Area, DistanceType, GameFrame, PlotPosition, Token
 from awpy.visualization.plot import (
     plot_map,
     plot_positions,
     position_transform,
 )
 from matplotlib import patches
+from matplotlib.axes import Axes
 from tqdm import tqdm
 
+from csgoml.helpers import setup_logging
 from csgoml.trajectories import trajectory_handler
-from csgoml.utils.nav_utils import trajectory_distance, transform_to_traj_dimensions
+from csgoml.utils.nav_utils import (
+    get_area_dimensions,
+    trajectory_distance,
+    transform_to_traj_dimensions,
+)
 
 _TMP_DIR = "csgo_tmp"
+
+AreaPoints: TypeAlias = dict[str, list[tuple[float, float]]]
+Hulls: TypeAlias = dict[str, npt.NDArray]
+Centers: TypeAlias = dict[str, tuple[float, float]]
+AreasHullsCenters: TypeAlias = tuple[
+    AreaPoints,
+    Hulls,
+    Centers,
+]
 
 
 def get_areas_hulls_centers(
     map_name: str,
-) -> tuple[
-    dict[str, list[tuple[float, float]]],
-    dict[str, npt.NDArray],
-    dict[str, tuple[float, float]],
-]:
+) -> AreasHullsCenters:
     """Gets the sets of points making up the named areas of a map.
 
     Then builds their hull and centroid.
@@ -88,8 +99,7 @@ def get_areas_hulls_centers(
     hulls: dict[str, npt.NDArray] = {}
     centers: dict[str, tuple[float, float]] = {}
     area_points: dict[str, list[tuple[float, float]]] = collections.defaultdict(list)
-    for a in NAV[map_name]:
-        area = NAV[map_name][a]
+    for area in NAV[map_name].values():
         try:
             cur_x = [
                 position_transform(map_name, area["southEastX"], "x"),
@@ -124,6 +134,60 @@ def with_tmp_dir() -> Generator[None, None, None]:
         shutil.rmtree(_TMP_DIR)
 
 
+def _plot_place_from_token(
+    area_id: int,
+    hull: npt.NDArray,
+    center: tuple[float, float],
+    tokens: Token,
+    axis: Axes,
+) -> None:
+    """Plot hull and players for one specific token entry."""
+    text = ""
+    # Colors of borders of each area depending on number of t's/ct's that reside in it
+    colors = {
+        "t": ["lightsteelblue", "#300000", "#7b0000", "#b10000", "#c80000", "#ff0000"],
+        "ct": ["lightsteelblue", "#360CCD", "#302DD9", "#2A4EE5", "#246FF0", "#1E90FC"],
+    }
+    # Plot each area twice. Once for each side.
+    # If both sides have players in one tile the colors get added as
+    # the alphas arent 1.
+    for side in ["t", "ct"]:
+        # Dont plot the "" area as it stretches across
+        # the whole map and messes with clarity
+        # Plot the hull of the area
+        axis.plot(
+            hull[:, 0],
+            hull[:, 1],
+            "-",
+            alpha=0.8 if int(tokens[f"{side}Token"][area_id]) > 0 else 0.2,
+            c=colors[side][int(tokens[f"{side}Token"][area_id])],
+            lw=3,
+        )
+        if tokens[f"{side}Token"][area_id] != "0":
+            text += f'{side}:{tokens[f"{side}Token"][area_id]} '
+    # If there are any players inside the area plot a text
+    if int(tokens["ctToken"][area_id]) + int(tokens["tToken"][area_id]) > 0:
+        axis.text(
+            center[0] - (center[0] - hull[0, 0]) / 1.5,
+            center[1],
+            text,
+            c="#EB0841",
+            size="x-small",
+        )
+
+
+def _plot_token_frame(
+    frame: GameFrame, map_name: str, areas_hulls_centers: AreasHullsCenters, axis: Axes
+) -> None:
+    area_points, hulls, centers = areas_hulls_centers
+    # Grab the position token
+    tokens = generate_position_token(map_name, frame)
+    # Loop over each named area
+    for area_id, area in enumerate(sorted(area_points)):
+        if area:
+            _plot_place_from_token(area_id, hulls[area], centers[area], tokens, axis)
+
+
 @with_tmp_dir()
 def plot_round_tokens(
     filename: str,
@@ -152,58 +216,52 @@ def plot_round_tokens(
     Returns:
         True (result is directly saved to disk)
     """
-    # Colors of borders of each area depending on number of t's/ct's that reside in it
-    colors = {
-        "t": ["lightsteelblue", "#300000", "#7b0000", "#b10000", "#c80000", "#ff0000"],
-        "ct": ["lightsteelblue", "#360CCD", "#302DD9", "#2A4EE5", "#246FF0", "#1E90FC"],
-    }
     image_files = []
     # Grab points, hull and centroid for each named area of the map
-    area_points, hulls, centers = get_areas_hulls_centers(map_name)
+    areas_hulls_centers = get_areas_hulls_centers(map_name)
     # Loop over each frame of the round
     for frame_id, frame in tqdm(enumerate(frames)):
-        fig, axis = plot_map(map_name=map_name, map_type=map_type, dark=dark)
+        fig, axis = plot_map(map_name, map_type, dark=dark)
         axis.get_xaxis().set_visible(b=False)
         axis.get_yaxis().set_visible(b=False)
         # Grab the position token
-        tokens = generate_position_token(map_name, frame)
-        # Loop over each named area
-        for area_id, area in enumerate(sorted(area_points)):
-            text = ""
-            # Plot each area twice. Once for each side.
-            # If both sides have players in one tile the colors get added as
-            # the alphas arent 1.
-            for side in ["t", "ct"]:
-                # Dont plot the "" area as it stretches across
-                # the whole map and messes with clarity
-                if not area:
-                    continue
-                # Plot the hull of the area
-                axis.plot(
-                    hulls[area][:, 0],
-                    hulls[area][:, 1],
-                    "-",
-                    alpha=0.8 if int(tokens[f"{side}Token"][area_id]) > 0 else 0.2,
-                    c=colors[side][int(tokens[f"{side}Token"][area_id])],
-                    lw=3,
-                )
-                if tokens[f"{side}Token"][area_id] != "0":
-                    text += f'{side}:{tokens[f"{side}Token"][area_id]} '
-            # If there are any players inside the area plot a text
-            if int(tokens["ctToken"][area_id]) + int(tokens["tToken"][area_id]) > 0:
-                axis.text(
-                    centers[area][0] - (centers[area][0] - hulls[area][0][0]) / 1.5,
-                    centers[area][1],
-                    text,
-                    c="#EB0841",
-                    size="x-small",
-                )
+        _plot_token_frame(frame, map_name, areas_hulls_centers, axis)
         image_files.append(os.path.join(_TMP_DIR, f"{frame_id}.png"))
         fig.savefig(image_files[-1], dpi=dpi, bbox_inches="tight")
         plt.close()
     images = [imageio.imread(file) for file in image_files]
     imageio.imwrite(filename, images, duration=1000 / fps)
     return True
+
+
+def _plot_area_with_name(
+    area: str,
+    hull: npt.NDArray,
+    center: tuple[float, float],
+    cent_id: int,
+    axis: Axes,
+    map_name: str,
+) -> None:
+    text_y = center[1]
+    if (
+        map_name in MAP_DATA
+        and "z_cutoff" in MAP_DATA[map_name]
+        and (
+            NAV[map_name][cent_id]["southEastZ"] + NAV[map_name][cent_id]["northWestZ"]
+        )
+        / 2
+        < MAP_DATA[map_name]["z_cutoff"]
+    ):
+        hull[:, 1] = np.array([y + 1024 for y in hull[:, 1]])
+        text_y += 1024
+    axis.plot(hull[:, 0], hull[:, 1], "-", lw=3, label=area)
+    # Add name of area into its middle
+    axis.text(
+        center[0] - (center[0] - hull[0, 0]) / 1.5,
+        text_y,
+        area,
+        c="#EB0841",
+    )
 
 
 def plot_map_areas(
@@ -233,34 +291,16 @@ def plot_map_areas(
     cent_ids, _ = generate_centroids(map_name)
     # Grab points, hull and centroid for each named area
     area_points, hulls, centers = get_areas_hulls_centers(map_name)
-    for area in sorted(area_points):
+    for area in area_points:
+        if area:
+            _plot_area_with_name(
+                area, hulls[area], centers[area], cent_ids[area], axis, map_name
+            )
         # Dont plot the "" area as it stretches across
         # the whole map and messes with clarity
         # but add it to the legend
-        if not area:
+        else:
             axis.plot(np.NaN, np.NaN, label="None")
-            continue
-        text_y = centers[area][1]
-        if (
-            map_name in MAP_DATA
-            and "z_cutoff" in MAP_DATA[map_name]
-            and (
-                NAV[map_name][cent_ids[area]]["southEastZ"]
-                + NAV[map_name][cent_ids[area]]["northWestZ"]
-            )
-            / 2
-            < MAP_DATA[map_name]["z_cutoff"]
-        ):
-            hulls[area][:, 1] = np.array([y + 1024 for y in hulls[area][:, 1]])
-            text_y += 1024
-        axis.plot(hulls[area][:, 0], hulls[area][:, 1], "-", lw=3, label=area)
-        # Add name of area into its middle
-        axis.text(
-            centers[area][0] - (centers[area][0] - hulls[area][0][0]) / 1.5,
-            text_y,
-            area,
-            c="#EB0841",
-        )
     # Place legend outside of the plot
     handles, labels = axis.get_legend_handles_labels()
     lgd = axis.legend(handles, labels, loc="upper left", bbox_to_anchor=(1.01, 1.01))
@@ -271,6 +311,123 @@ def plot_map_areas(
         dpi=dpi,
     )
     plt.close()
+
+
+def _plot_area(
+    area: str,
+    hull: npt.NDArray,
+    cent_id: int,
+    axis: Axes,
+    map_name: str,
+) -> None:
+    if (
+        map_name in MAP_DATA
+        and "z_cutoff" in MAP_DATA[map_name]
+        and (
+            NAV[map_name][cent_id]["southEastZ"] + NAV[map_name][cent_id]["northWestZ"]
+        )
+        / 2
+        < MAP_DATA[map_name]["z_cutoff"]
+    ):
+        hull[:, 1] = np.array([y + 1024 for y in hull[:, 1]])
+    axis.plot(hull[:, 0], hull[:, 1], "-", lw=3, label=area)
+
+
+def get_area_avg_z(area: Area) -> float:
+    """Get the average z coordinate for an Area.
+
+    Args:
+        area (Area): Area to get the avg z coordiante for.
+
+    Returns:
+        float: Average z coordinate of the area.
+    """
+    south_east_z = area["southEastZ"]
+    north_west_z = area["northWestZ"]
+    return (south_east_z + north_west_z) / 2
+
+
+def get_z_cutoff_shift(map_name: str, avg_z: float) -> float:
+    """Get the y shift needed to adjsut for potential z cutoff.
+
+    Args:
+        map_name (str): Map to consider
+        avg_z (float): z value to consider
+
+    Returns:
+        float: Modifier for y values depending on z cutoff
+    """
+    if (
+        map_name in MAP_DATA
+        and "z_cutoff" in MAP_DATA[map_name]
+        and avg_z < MAP_DATA[map_name]["z_cutoff"]
+    ):
+        return 1024
+    return 0
+
+
+def get_adjusted_area_dimension(
+    map_name: str, area: Area
+) -> tuple[float, float, float, float]:
+    """Get the dimensions and corner of an area adjusted for multi level maps.
+
+    Args:
+        map_name (str): Map to consider
+        area (Area): Area to get values for
+
+    Returns:
+        tuple[float, float, float, float]: width, height, southwest_x, southwest_y
+    """
+    width, height, southwest_x, southwest_y = get_area_dimensions(map_name, area)
+    avg_z = get_area_avg_z(area)
+    southwest_y += get_z_cutoff_shift(map_name, avg_z)
+    return width, height, southwest_x, southwest_y
+
+
+def _get_area_mid_color(area_id: int, cent_ids: set[int], rep_ids: set[int]) -> str:
+    color = "yellow"
+    if area_id in cent_ids and area_id in rep_ids:
+        color = "green"
+    elif area_id in cent_ids:
+        color = "red"
+    elif area_id in rep_ids:
+        color = "blue"
+    return color
+
+
+def _plot_areas(cent_ids: dict[str, int], axis: Axes, map_name: str) -> None:
+    area_points, hulls, _ = get_areas_hulls_centers(map_name)
+    for area_name in area_points:
+        if area_name:
+            _plot_area(area_name, hulls[area_name], cent_ids[area_name], axis, map_name)
+        # Dont plot the "" area as it stretches across
+        # the whole map and messes with clarity
+        # but add it to the legend
+        else:
+            axis.plot(np.NaN, np.NaN, label="None")
+
+
+def _plot_mids(
+    map_name: str, cent_ids: dict[str, int], rep_ids: dict[str, int], axis: Axes
+) -> None:
+    for area_id, area in NAV[map_name].items():
+        if area_id not in cent_ids.values() and area_id not in rep_ids.values():
+            continue
+        width, height, southwest_x, southwest_y = get_adjusted_area_dimension(
+            map_name, area
+        )
+        color = _get_area_mid_color(
+            area_id, set(cent_ids.values()), set(rep_ids.values())
+        )
+        rect = patches.Rectangle(
+            (southwest_x, southwest_y),
+            width,
+            height,
+            linewidth=1,
+            edgecolor=color,
+            facecolor="None",
+        )
+        axis.add_patch(rect)
 
 
 def plot_mid(
@@ -293,76 +450,11 @@ def plot_mid(
     fig, axis = plot_map(map_name=map_name, map_type="simpleradar", dark=True)
     fig.set_size_inches(19.2, 10.8)
     # Grab points, hull and centroid for each named area
-    area_points, hulls, _ = get_areas_hulls_centers(map_name)
-    for area_name in area_points:
-        # Dont plot the "" area as it stretches across
-        # the whole map and messes with clarity
-        # but add it to the legend
-        if not area_name:
-            axis.plot(np.NaN, np.NaN, label="None")
-            continue
-        if (
-            map_name in MAP_DATA
-            and "z_cutoff" in MAP_DATA[map_name]
-            and (
-                NAV[map_name][cent_ids[area_name]]["southEastZ"]
-                + NAV[map_name][cent_ids[area_name]]["northWestZ"]
-            )
-            / 2
-            < MAP_DATA[map_name]["z_cutoff"]
-        ):
-            hulls[area_name][:, 1] = np.array(
-                [y + 1024 for y in hulls[area_name][:, 1]]
-            )
-        axis.plot(
-            hulls[area_name][:, 0], hulls[area_name][:, 1], "-", lw=3, label=area_name
-        )
-    handles, labels = axis.get_legend_handles_labels()
-    lgd = axis.legend(handles, labels, loc="upper left", bbox_to_anchor=(1.01, 1.01))
-    for area_id in NAV[map_name]:
-        area = NAV[map_name][area_id]
-        if area_id not in cent_ids.values() and area_id not in rep_ids.values():
-            continue
-        try:
-            south_east_x = position_transform(map_name, area["southEastX"], "x")
-            north_west_x = position_transform(map_name, area["northWestX"], "x")
-            south_east_y = position_transform(map_name, area["southEastY"], "y")
-            north_west_y = position_transform(map_name, area["northWestY"], "y")
-        except KeyError:
-            south_east_x = area["southEastX"]
-            north_west_x = area["northWestX"]
-            south_east_y = area["southEastY"]
-            north_west_y = area["northWestY"]
-        # Get its lower left points, height and width
-        width = south_east_x - north_west_x
-        height = north_west_y - south_east_y
-        southwest_x = north_west_x
-        southwest_y = south_east_y
-        south_east_z = area["southEastZ"]
-        north_west_z = area["northWestZ"]
-        avg_z = (south_east_z + north_west_z) / 2
-        if (
-            map_name in MAP_DATA
-            and "z_cutoff" in MAP_DATA[map_name]
-            and avg_z < MAP_DATA[map_name]["z_cutoff"]
-        ):
-            southwest_y += 1024
-        color = "yellow"
-        if area_id in cent_ids.values() and area_id in rep_ids.values():
-            color = "green"
-        elif area_id in cent_ids.values():
-            color = "red"
-        elif area_id in rep_ids.values():
-            color = "blue"
-        rect = patches.Rectangle(
-            (southwest_x, southwest_y),
-            width,
-            height,
-            linewidth=1,
-            edgecolor=color,
-            facecolor="None",
-        )
-        axis.add_patch(rect)
+    _plot_areas(cent_ids, axis, map_name)
+    lgd = axis.legend(
+        *axis.get_legend_handles_labels(), loc="upper left", bbox_to_anchor=(1.01, 1.01)
+    )
+    _plot_mids(map_name, cent_ids, rep_ids, axis)
     plt.savefig(
         os.path.join(output_path, f"midpoints_{map_name}.png"),
         bbox_inches="tight",
@@ -371,6 +463,22 @@ def plot_mid(
     )
     fig.clear()
     plt.close(fig)
+
+
+def _plot_tiles(map_name: str, axis: Axes) -> None:
+    for area in NAV[map_name].values():
+        width, height, southwest_x, southwest_y = get_adjusted_area_dimension(
+            map_name, area
+        )
+        rect = patches.Rectangle(
+            (southwest_x, southwest_y),
+            width,
+            height,
+            linewidth=1,
+            edgecolor="yellow",
+            facecolor="None",
+        )
+        axis.add_patch(rect)
 
 
 def plot_map_tiles(
@@ -398,35 +506,7 @@ def plot_map_tiles(
     fig, axis = plot_map(map_name=map_name, map_type=map_type, dark=dark)
     fig.set_size_inches(19.2, 21.6)
     # Loop over each nav mesh tile
-    for a in NAV[map_name]:
-        area = NAV[map_name][a]
-        south_east_x = position_transform(map_name, area["southEastX"], "x")
-        north_west_x = position_transform(map_name, area["northWestX"], "x")
-        south_east_y = position_transform(map_name, area["southEastY"], "y")
-        north_west_y = position_transform(map_name, area["northWestY"], "y")
-        south_east_z = area["southEastZ"]
-        north_west_z = area["northWestZ"]
-        avg_z = (south_east_z + north_west_z) / 2
-        # Get its lower left points, height and width
-        width = south_east_x - north_west_x
-        height = north_west_y - south_east_y
-        southwest_x = north_west_x
-        southwest_y = south_east_y
-        if (
-            map_name in MAP_DATA
-            and "z_cutoff" in MAP_DATA[map_name]
-            and avg_z < MAP_DATA[map_name]["z_cutoff"]
-        ):
-            southwest_y += 1024
-        rect = patches.Rectangle(
-            (southwest_x, southwest_y),
-            width,
-            height,
-            linewidth=1,
-            edgecolor="yellow",
-            facecolor="None",
-        )
-        axis.add_patch(rect)
+    _plot_tiles(map_name, axis)
     plt.savefig(
         os.path.join(output_path, f"tiles_{map_name}.png"),
         bbox_inches="tight",
@@ -460,36 +540,7 @@ def plot_map_connections(
     logging.info("Plotting connections for %s", map_name)
     fig, axis = plot_map(map_name=map_name, map_type=map_type, dark=dark)
     fig.set_size_inches(19.2, 21.6)
-    # Loop over each nav mesh tile
-    for a in NAV[map_name]:
-        area = NAV[map_name][a]
-        south_east_x = position_transform(map_name, area["southEastX"], "x")
-        north_west_x = position_transform(map_name, area["northWestX"], "x")
-        south_east_y = position_transform(map_name, area["southEastY"], "y")
-        north_west_y = position_transform(map_name, area["northWestY"], "y")
-        south_east_z = area["southEastZ"]
-        north_west_z = area["northWestZ"]
-        avg_z = (south_east_z + north_west_z) / 2
-        # Get its lower left points, height and width
-        width = south_east_x - north_west_x
-        height = north_west_y - south_east_y
-        southwest_x = north_west_x
-        southwest_y = south_east_y
-        if (
-            map_name in MAP_DATA
-            and "z_cutoff" in MAP_DATA[map_name]
-            and avg_z < MAP_DATA[map_name]["z_cutoff"]
-        ):
-            southwest_y += 1024
-        rect = patches.Rectangle(
-            (southwest_x, southwest_y),
-            width,
-            height,
-            linewidth=1,
-            edgecolor="yellow",
-            facecolor="None",
-        )
-        axis.add_patch(rect)
+    _plot_tiles(map_name, axis)
     for source, dest in NAV_GRAPHS[map_name].edges():
         source_node = NAV_GRAPHS[map_name].nodes()[source]
         dest_node = NAV_GRAPHS[map_name].nodes()[dest]
@@ -870,9 +921,34 @@ def plot_rounds_different_players_trajectory_gif(
         image_files.append(os.path.join(_TMP_DIR, f"{i}.png"))
         figure.savefig(image_files[-1], dpi=dpi, bbox_inches="tight")
         plt.close()
-    images = [imageio.imread(file) for file in image_files]
-    imageio.imwrite(filename, images, duration=1000 / fps)
+    imageio.imwrite(
+        filename, [imageio.imread(file) for file in image_files], duration=1000 / fps
+    )
     return True
+
+
+def _map_leaders_over_frames_list(
+    frames_list: npt.NDArray, map_name: str, dist_type: DistanceType, n_frames: int
+) -> npt.NDArray:
+    plotting_frames = np.copy(frames_list)
+    reference_players = plotting_frames[0]
+    for i in tqdm(range(min(plotting_frames.shape[1], n_frames))):
+        # Now do another loop to add all players in
+        # all frames with their appropriate colors.
+        for frame_index, frames in enumerate(plotting_frames):
+            # Initialize lists used to store values for this round for this frame
+            for side in range(frames.shape[1]):
+                # If we have already initialized leaders
+                mapping = get_shortest_distances_mapping(
+                    map_name,
+                    reference_players[i, side],
+                    plotting_frames[frame_index, i, side],
+                    dist_type=dist_type,
+                )
+                plotting_frames[frame_index, i, side, [mapping], :] = plotting_frames[
+                    frame_index, i, side, range(len(mapping)), :
+                ]
+    return plotting_frames
 
 
 # Currently there is no way to judge if someone has died or their round
@@ -916,26 +992,9 @@ def plot_rounds_different_players_position_image(
     Returns:
         True, saves .gif
     """
-    plotting_frames = np.copy(frames_list)
-    # Needed to check if leaders have been fully initialized
-    reference_players = plotting_frames[0]
-    for i in tqdm(range(min(plotting_frames.shape[1], n_frames))):
-        # Now do another loop to add all players in
-        # all frames with their appropriate colors.
-        for frame_index, frames in enumerate(plotting_frames):
-            # Initialize lists used to store values for this round for this frame
-            for side in range(frames.shape[1]):
-                # If we have already initialized leaders
-                mapping = get_shortest_distances_mapping(
-                    map_name,
-                    reference_players[i, side],
-                    plotting_frames[frame_index, i, side],
-                    dist_type=dist_type,
-                )
-                plotting_frames[frame_index, i, side, [mapping], :] = plotting_frames[
-                    frame_index, i, side, range(len(mapping)), :
-                ]
-
+    plotting_frames = _map_leaders_over_frames_list(
+        frames_list, map_name, dist_type, n_frames
+    )
     figure, axes = plot_map(map_name=map_name, map_type=map_type, dark=dark)
     for round_num, side, player in np.ndindex(
         tuple(np.array(plotting_frames.shape)[[0, 2, 3]])
@@ -967,7 +1026,6 @@ def _fill_plot_positions_pos_gif(
     dist_type: DistanceType,
     time_step: int,
 ) -> list[PlotPosition]:
-    reference_players = frames_list[0]
     # Initialize list used to store things from all rounds to plot for each frame
     # at the given timestep
     positions: list[PlotPosition] = []
@@ -979,7 +1037,7 @@ def _fill_plot_positions_pos_gif(
             # Now do the actual plotting
             mapping = get_shortest_distances_mapping(
                 map_name,
-                reference_players[time_step, side],
+                frames_list[0, time_step, side],
                 frames_list[frame_index, time_step, side],
                 dist_type=dist_type,
             )
@@ -1182,24 +1240,7 @@ def main(args: list[str]) -> None:
 
     if options.log == "None":
         options.log = None
-    if options.debug:
-        logging.basicConfig(
-            filename=options.log,
-            encoding="utf-8",
-            level=logging.DEBUG,
-            filemode="w",
-            format="%(asctime)s %(levelname)-8s %(message)s",
-            datefmt="%Y-%m-%d %H:%M:%S",
-        )
-    else:
-        logging.basicConfig(
-            filename=options.log,
-            encoding="utf-8",
-            level=logging.INFO,
-            filemode="w",
-            format="%(asctime)s %(levelname)-8s %(message)s",
-            datefmt="%Y-%m-%d %H:%M:%S",
-        )
+    setup_logging(options)
 
     logging.info("Generating tile and area files for all maps.")
     before_nuke = True
@@ -1232,7 +1273,8 @@ def main(args: list[str]) -> None:
         )
 
     handler = trajectory_handler.TrajectoryHandler(
-        json_path=r"D:\CSGO\Demos\Maps\mirage\Analysis\Prepared_Input_Tensorflow_mirage.json",
+        json_path=r"D:\CSGO\Demos\Maps\mirage"
+        r"\Analysis\Prepared_Input_Tensorflow_mirage.json",
         random_state=16,
         map_name="de_mirage",
     )

@@ -74,10 +74,10 @@ from matplotlib import patches
 from numba import njit, typed, types
 from sympy.utilities.iterables import multiset_permutations
 
+from csgoml.helpers import setup_logging
 
-def _get_area_dimensions(
-    map_name: str, area: Area
-) -> tuple[float, float, float, float]:
+
+def get_area_dimensions(map_name: str, area: Area) -> tuple[float, float, float, float]:
     """Get dimensions and corners for an area on a map.
 
     Args:
@@ -128,7 +128,7 @@ def mark_areas(
     for a, area in NAV[map_name].items():
         if a not in areas:
             continue
-        width, height, southwest_x, southwest_y = _get_area_dimensions(map_name, area)
+        width, height, southwest_x, southwest_y = get_area_dimensions(map_name, area)
         rect = patches.Rectangle(
             (southwest_x, southwest_y),
             width,
@@ -194,7 +194,7 @@ def plot_path(
     for a, area in NAV[map_name].items():
         if a not in graph["areas"] and a not in geodesic["areas"]:
             continue
-        width, height, southwest_x, southwest_y = _get_area_dimensions(map_name, area)
+        width, height, southwest_x, southwest_y = get_area_dimensions(map_name, area)
         color = _get_color_for_area(area, graph["areas"], geodesic["areas"])
         rect = patches.Rectangle(
             (southwest_x, southwest_y),
@@ -926,24 +926,8 @@ def main(args: list[str]) -> None:
 
     if options.log == "None":
         options.log = None
-    if options.debug:
-        logging.basicConfig(
-            filename=options.log,
-            encoding="utf-8",
-            level=logging.DEBUG,
-            filemode="w",
-            format="%(asctime)s %(levelname)-8s %(message)s",
-            datefmt="%Y-%m-%d %H:%M:%S",
-        )
-    else:
-        logging.basicConfig(
-            filename=options.log,
-            encoding="utf-8",
-            level=logging.INFO,
-            filemode="w",
-            format="%(asctime)s %(levelname)-8s %(message)s",
-            datefmt="%Y-%m-%d %H:%M:%S",
-        )
+    setup_logging(options)
+
     centroids, reps = generate_centroids("de_dust2")
     graph = area_distance(
         "de_dust2", centroids["ExtendedA"], centroids["CTSpawn"], dist_type="graph"

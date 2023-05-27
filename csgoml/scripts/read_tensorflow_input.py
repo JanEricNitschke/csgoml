@@ -77,16 +77,16 @@ def main(args: list[str]) -> None:
     traj_config: UserTrajectoryConfig = {
         "coordinate_type_for_distance": "area",
         "n_rounds": 1000,
-        "time": 10,
         "side": "T",
+        "time": 10,
         "dtw": False,
     }
     clust_config: UserClusteringConfig = {
         "do_histogram": False,
         "n_bins": 50,
         "do_knn": False,
-        "knn_ks": [2, 3, 4, 5, 10, 20, 50, 100, 200, 400, 500, 600],
         "plot_all_trajectories": False,
+        "knn_ks": [2, 3, 4, 5, 10, 20, 50, 100, 200, 400, 500, 600],
         "do_dbscan": False,
         "dbscan_eps": 500,
         "dbscan_minpt": 2,

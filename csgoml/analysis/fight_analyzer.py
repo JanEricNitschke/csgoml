@@ -35,6 +35,7 @@ from awpy.data import NAV
 from awpy.types import Game, GameFrame, GameRound, KillAction, PlayerInfo
 from pymysql.cursors import Cursor
 
+from csgoml.helpers import setup_logging
 from csgoml.types import (
     FightSpecification,
     PositionSpecification,
@@ -678,24 +679,7 @@ def main(args: list[str]) -> None:
         help="Path to output log.",
     )
     options = parser.parse_args(args)
-    if options.debug:
-        logging.basicConfig(
-            filename=options.log,
-            encoding="utf-8",
-            level=logging.DEBUG,
-            filemode="w",
-            format="%(asctime)s %(levelname)-8s %(message)s",
-            datefmt="%Y-%m-%d %H:%M:%S",
-        )
-    else:
-        logging.basicConfig(
-            filename=options.log,
-            encoding="utf-8",
-            level=logging.INFO,
-            filemode="w",
-            format="%(asctime)s %(levelname)-8s %(message)s",
-            datefmt="%Y-%m-%d %H:%M:%S",
-        )
+    setup_logging(options)
 
     event: FightSpecification = {
         "map_name": "de_inferno",

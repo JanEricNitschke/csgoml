@@ -51,7 +51,7 @@ jobs:
         with:
           version: 1.1.310
       - name: Thorough check with pylint
-        run: pylint awpy
+        run: pylint csgoml
       - name: Test with pytest
         run: |
           coverage run -m pytest --durations=10
