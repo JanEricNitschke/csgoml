@@ -1,10 +1,11 @@
-"""AWS Lambda function to call to query database for fight scenarios"""
+"""AWS Lambda function to call to query database for fight scenarios."""
 
 # pylint: disable=invalid-name
 
-import logging
 import json
+import logging
 import math
+
 import pymysql
 import rds_config
 
@@ -20,48 +21,53 @@ try:
     conn = pymysql.connect(
         host=rds_host, user=name, passwd=password, db=db_name, connect_timeout=5
     )
-except pymysql.MySQLError as e:
-    logger.error("ERROR: Unexpected error: Could not connect to MySQL instance.")
-    logger.error(e)
+except pymysql.MySQLError:
+    logger.exception("ERROR: Unexpected error: Could not connect to MySQL instance.")
 
 logger.info("SUCCESS: Connection to RDS MySQL instance succeeded")
 
 
-def get_wilson_interval(success_percent, total_n, z):
-    """Calculates the Wilson score interval for a series of success–failure experiments
+def get_wilson_interval(
+    success_percent: float, total_n: int, z: float
+) -> tuple[float, float, float]:
+    """Calculates the Wilson score interval for a series of success-failure experiments.
 
-    Calcualtes the Wilson score interval as an approximation of the binomial proportion confidence interval.
+    Calcualtes the Wilson score interval as anapproximation of
+    the binomial proportion confidence interval.
 
     Args:
         success_percent (float): Percentage of experiments that ended in success
         total_n (int): Total number of experiments
         z (float): Number of standard deviations that the interval should cover
     Returns:
-        A list of floats of the form [lower_bound_of_interval, success_percent, upper_bound_of_interval]
+        A list of floats of the form:
+        [lower_bound_of_interval, success_percent, upper_bound_of_interval]
     """
     lower = (
-        success_percent
-        + z * z / (2 * total_n)
-        - z
-        * math.sqrt(
-            (success_percent * (1 - success_percent) + z * z / (4 * total_n)) / total_n
+        (success_percent + z**2 / (2 * total_n))
+        - (
+            z
+            * math.sqrt(
+                (success_percent * (1 - success_percent) + z**2 / (4 * total_n))
+                / total_n
+            )
         )
-    ) / (1 + z * z / total_n)
+    ) / (1 + z**2 / total_n)
     upper = (
-        success_percent
-        + z * z / (2 * total_n)
-        + z
-        * math.sqrt(
-            (success_percent * (1 - success_percent) + z * z / (4 * total_n)) / total_n
+        (success_percent + z**2 / (2 * total_n))
+        + (
+            z
+            * math.sqrt(
+                (success_percent * (1 - success_percent) + z**2 / (4 * total_n))
+                / total_n
+            )
         )
-    ) / (1 + z * z / total_n)
+    ) / (1 + z**2 / total_n)
     return [lower, success_percent, upper]
 
 
-def lambda_handler(event, context):
-    """
-    This function fetches content from MySQL RDS instance
-    """
+def lambda_handler(event: dict, context) -> dict:
+    """This function fetches content from MySQL RDS instance."""
     try:
         sql = (
             """SELECT AVG(t.CTWon), COUNT(t.CTWon) """
@@ -122,7 +128,7 @@ def lambda_handler(event, context):
             if event["weapons"]["Kill"]:
                 sql += """AND e.KillWeapon in %s """
                 param.append(event["weapons"]["Kill"])
-        elif event["use_weapons_classes"]["Kill"] == "classes":
+        elif event["use_weapons_classes"]["Kill"] == "classes":  # noqa: SIM102
             if event["classes"]["Kill"]:
                 sql += """AND wck.Class in %s """
                 param.append(event["classes"]["Kill"])

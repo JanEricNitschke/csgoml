@@ -1,10 +1,11 @@
-"""DB testing
-"""
 #!/usr/bin/env python
+"""DB testing."""
+
 # pylint: disable=invalid-name
 
-import os
 import logging
+import os
+
 import boto3
 
 # import json
@@ -109,19 +110,19 @@ connection = pymysql.connect(
 # )
 # logging.info(weapon_df)
 # connection = engine.connect()
-# weapon_df.to_sql(con=connection, name="WeaponClasses", index=False, if_exists="replace")
+# weapon_df.to_sql(con=connection, name="WeaponClasses", index=False, if_exists="replace")  # noqa: E501
 # connection.close()
 # engine.dispose()
 with connection:
     cursor = connection.cursor()
     # cursor.execute(
-    #     "CREATE TABLE Events (EventID int NOT NULL AUTO_INCREMENT, MatchID  TEXT, Round BIGINT, Pro  TINYINT(1), MapName VARCHAR(20), Time double, CTWon tinyint(1), CTArea VARCHAR(30), TArea VARCHAR(30), KillWeapon VARCHAR(30), PRIMARY KEY (EventID), INDEX (MapName, Time, CTArea, TArea, KillWeapon, Pro))"
+    #     "CREATE TABLE Events (EventID int NOT NULL AUTO_INCREMENT, MatchID  TEXT, Round BIGINT, Pro  TINYINT(1), MapName VARCHAR(20), Time double, CTWon tinyint(1), CTArea VARCHAR(30), TArea VARCHAR(30), KillWeapon VARCHAR(30), PRIMARY KEY (EventID), INDEX (MapName, Time, CTArea, TArea, KillWeapon, Pro))"  # noqa: E501
     # )
     # cursor.execute(
-    #     "CREATE TABLE CTWeapons (EventID int, CTWeapon VARCHAR(30), FOREIGN KEY (EventID) REFERENCES Events(EventID), INDEX (EventID, CTWeapon))"
+    #     "CREATE TABLE CTWeapons (EventID int, CTWeapon VARCHAR(30), FOREIGN KEY (EventID) REFERENCES Events(EventID), INDEX (EventID, CTWeapon))"  # noqa: E501
     # )
     # cursor.execute(
-    #     "CREATE TABLE TWeapons (EventID int, TWeapon VARCHAR(30), FOREIGN KEY (EventID) REFERENCES Events(EventID), INDEX (EventID, TWeapon))"
+    #     "CREATE TABLE TWeapons (EventID int, TWeapon VARCHAR(30), FOREIGN KEY (EventID) REFERENCES Events(EventID), INDEX (EventID, TWeapon))"  # noqa: E501
     # )
     # myresult = cursor.fetchall()
     # for x in myresult:

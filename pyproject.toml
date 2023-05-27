@@ -115,6 +115,7 @@ exclude = [
     "node_modules",
     "venv",
     "docs",
+    "auxiliary"
 ]
 
 # Same as Black.
@@ -131,6 +132,7 @@ target-version = "py311"
 "csgoml/types.py" = ["N815"]
 "setup.py"        = ["D100"]
 "tests/test_*.py" = ["ANN201", "S101", "SLF001", "PLR2004"]
+"auxiliary/db_testing.py" = ["ERA001"]
 
 [tool.ruff.pydocstyle]
 convention = "google" # Accepts: "google", "numpy", or "pep257".
