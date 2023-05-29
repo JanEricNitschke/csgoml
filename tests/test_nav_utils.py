@@ -15,6 +15,7 @@ from awpy.analytics.nav import (
 from numba import typed, types
 
 from csgoml.utils.nav_utils import (
+    _get_map_area_names,
     fast_token_state_distance,
     fast_token_trajectory_distance,
     get_traj_matrix_area,
@@ -335,6 +336,35 @@ class TestNavUtils:
         target_precomputed[1][2] = target_precomputed[2][1] = 2 / 3
         assert target_precomputed.shape == calc_precomputed.shape
         assert (target_precomputed == calc_precomputed).all()
+
+    def test_get_map_area_names(self):
+        """Tests get_map_area_names."""
+        map_area_names = _get_map_area_names("de_ancient")
+        assert len(map_area_names) == 20
+        assert map_area_names == typed.List(
+            [
+                "",
+                "Alley",
+                "BackHall",
+                "BombsiteA",
+                "BombsiteB",
+                "CTSpawn",
+                "House",
+                "MainHall",
+                "Middle",
+                "Outside",
+                "Ramp",
+                "Ruins",
+                "SideEntrance",
+                "SideHall",
+                "TSideLower",
+                "TSideUpper",
+                "TSpawn",
+                "TopofMid",
+                "Tunnel",
+                "Water",
+            ]
+        )
 
     def test_get_traj_matrix_token(self):
         """Tests get_traj_matrix_token."""

@@ -5,9 +5,8 @@ import json
 import os
 import shutil
 
-import pandas as pd
+import polars as pl
 import requests
-from numba import typed
 
 from csgoml.trajectories.trajectory_clusterer import TrajectoryClusterer
 from csgoml.trajectories.trajectory_handler import TrajectoryHandler
@@ -22,8 +21,7 @@ class TestTrajectoryClusterer:
             self.json_data = json.load(f)
         for file in self.json_data:
             self._get_jsonfile(json_link=self.json_data[file]["url"], json_name=file)
-        with open("ancient_trajectory_json.json", encoding="utf-8") as pre_analyzed:
-            self.complete_dataframe = pd.read_json(pre_analyzed)
+        self.complete_dataframe = pl.read_ndjson("ancient_trajectory_json.json")
         self.random_state = 123
         self.map_name = "de_ancient"
         self.json_path = "ancient_trajectory_json.json"
@@ -58,44 +56,6 @@ class TestTrajectoryClusterer:
         r = requests.get(json_link, timeout=20)
         with open(f"{json_name}.json", "wb") as json_file:
             json_file.write(r.content)
-
-    def test_get_compressed_place_dist_matrix(self):
-        """Tests get_compressed_place_dist_matrix."""
-        compressed_matrix = self.clusterer.get_compressed_place_dist_matrix()
-        keys = list(compressed_matrix.keys())
-        assert isinstance(compressed_matrix, typed.typeddict.Dict)
-        assert isinstance(compressed_matrix[keys[0]], typed.typeddict.Dict)
-        assert isinstance(compressed_matrix[keys[0]][keys[1]], float)
-        assert compressed_matrix[keys[0]][keys[0]] == 0
-
-    def test_get_map_area_names(self):
-        """Tests get_map_area_names."""
-        map_area_names = self.clusterer.get_map_area_names()
-        assert len(map_area_names) == 20
-        assert map_area_names == typed.List(
-            [
-                "",
-                "Alley",
-                "BackHall",
-                "BombsiteA",
-                "BombsiteB",
-                "CTSpawn",
-                "House",
-                "MainHall",
-                "Middle",
-                "Outside",
-                "Ramp",
-                "Ruins",
-                "SideEntrance",
-                "SideHall",
-                "TSideLower",
-                "TSideUpper",
-                "TSpawn",
-                "TopofMid",
-                "Tunnel",
-                "Water",
-            ]
-        )
 
     def test_get_trajectory_distance_matrix(self):
         """Tests get_trajectory_distance_matrix."""
