@@ -1,6 +1,5 @@
 """Tests for trajectory_input_preparation.py."""
 
-import pandas as pd
 import pytest
 
 from csgoml.scripts.trajectory_input_preparation import (
@@ -16,7 +15,6 @@ from csgoml.scripts.trajectory_input_preparation import (
     get_player_id,
     get_postion_token,
     get_token_length,
-    initialize_position_dataset_dict,
     initialize_round,
     initialize_round_positions,
     pad_to_full_length,
@@ -30,6 +28,10 @@ class TestTrajectoryInputPreparation:
     def test_initialize_round_positions(self):
         """Tests initialize_round_positions."""
         round_positions = {
+            "MatchID": "Test",
+            "MapName": "de_test",
+            "Round": 2,
+            "Winner": 1,
             "Tick": [],
             "token": [],
             "interpolated": [],
@@ -96,7 +98,7 @@ class TestTrajectoryInputPreparation:
             "TPlayer5z": [],
             "TPlayer5Area": [],
         }
-        assert initialize_round_positions() == round_positions
+        assert initialize_round_positions("Test", "de_test", 2, 1) == round_positions
 
     def test_build_intermediate_frames(self):
         """Tests build_intermediate_frames."""
@@ -310,20 +312,9 @@ class TestTrajectoryInputPreparation:
             "token": "00000000000000000000000000000000000000000000000000",
         }
 
-    def test_initialize_position_dataset_dict(self):
-        """Tests initialize_position_dataset_dict."""
-        position_dataset_dict = {
-            "MatchID": [],
-            "MapName": [],
-            "Round": [],
-            "Winner": [],
-            "position_df": [],
-        }
-        assert initialize_position_dataset_dict() == position_dataset_dict
-
     def test_check_size(self):
         """Tests check_size."""
-        my_dict = {"entry1": ["0"] * 10, "entry2": ["o"] * 10}
+        my_dict = {"entry1": ["0"] * 10, "entry2": ["o"] * 10, "entry3": 5}
         assert check_size(my_dict) == 10
         my_dict["entry2"].append("o")
         with pytest.raises(AssertionError):
@@ -451,8 +442,8 @@ class TestTrajectoryInputPreparation:
 
     def test_append_to_round_positions(self):
         """Tests append_to_round_positions."""
-        round_positions = initialize_round_positions()
-        exp_round_positions = initialize_round_positions()
+        round_positions = initialize_round_positions("Test", "de_test", 2, 1)
+        exp_round_positions = initialize_round_positions("Test", "de_test", 2, 1)
         side = "t"
         id_number_dict = {"t": {"5": "3"}}
         player_id = 5
@@ -497,31 +488,46 @@ class TestTrajectoryInputPreparation:
 
     def test_initialize_round(self):
         """Tests initialize_round."""
-        round_dict = {"winningSide": "CT", "roundNum": 17}
-        assert initialize_round(round_dict) == (
+        round_dict = {
+            "winningSide": "CT",
+            "roundNum": 17,
+            "endTScore": 1,
+            "endCTScore": 1,
+        }
+        assert initialize_round(round_dict, "Test", "de_test", 1) == (
             False,
             1,
             {"t": {}, "ct": {}},
             {"t": False, "ct": False},
-            initialize_round_positions(),
+            initialize_round_positions("Test", "de_test", 2, 1),
             [0, 0],
         )
-        round_dict = {"winningSide": "T", "roundNum": 17}
-        assert initialize_round(round_dict) == (
+        round_dict = {
+            "winningSide": "T",
+            "roundNum": 17,
+            "endTScore": 2,
+            "endCTScore": 1,
+        }
+        assert initialize_round(round_dict, "Test", "de_test", 1) == (
             False,
             1,
             {"t": {}, "ct": {}},
             {"t": False, "ct": False},
-            initialize_round_positions(),
+            initialize_round_positions("Test", "de_test", 3, 1),
             [0, 0],
         )
-        round_dict = {"winningSide": "Nope", "roundNum": 17}
-        assert initialize_round(round_dict) == (
+        round_dict = {
+            "winningSide": "Nope",
+            "roundNum": 17,
+            "endTScore": 1,
+            "endCTScore": 1,
+        }
+        assert initialize_round(round_dict, "Test", "de_test", 1) == (
             False,
             1,
             {"t": {}, "ct": {}},
             {"t": False, "ct": False},
-            initialize_round_positions(),
+            initialize_round_positions("Test", "de_test", 2, 1),
             [0, 0],
         )
 
@@ -529,7 +535,7 @@ class TestTrajectoryInputPreparation:
         """Tests analyze_players."""
         id_number_dict = {"t": {}, "ct": {}}
         dict_initialized = {"t": False, "ct": False}
-        round_positions = initialize_round_positions()
+        round_positions = initialize_round_positions("Test", "de_test", 2, 1)
         second_difference = 1
         map_name = "de_inferno"
         side = "ct"
@@ -649,10 +655,12 @@ class TestTrajectoryInputPreparation:
         last_good_frame = 1
         token_length = 25
         map_name = "de_inferno"
-        round_positions = initialize_round_positions()
+        round_positions = initialize_round_positions("Test", "de_test", 2, 1)
         ticks = [128, 256, 128]
         index = 0
-        for value in round_positions.values():
+        for key, value in round_positions.items():
+            if key in ("MatchID", "MapName", "Round", "Winner"):
+                continue
             assert isinstance(value, list)
             assert len(value) == 0
         add_general_information(
@@ -667,6 +675,8 @@ class TestTrajectoryInputPreparation:
             last_good_frame,
         )
         for key, value in round_positions.items():
+            if key in ("MatchID", "MapName", "Round", "Winner"):
+                continue
             assert isinstance(value, list)
             if key in ["token", "Ttoken", "CTtoken", "interpolated", "Tick"]:
                 assert len(value) == 1
@@ -681,6 +691,8 @@ class TestTrajectoryInputPreparation:
         """Tests analyze_frames."""
         current_round = {
             "roundNum": 10,
+            "endTScore": 5,
+            "endCTScore": 5,
             "frames": [
                 {
                     "tick": 128,
@@ -778,13 +790,15 @@ class TestTrajectoryInputPreparation:
         token_length = 25
         tick_rate = 128
         skip_round, round_positions = analyze_frames(
-            current_round, map_name, token_length, tick_rate
+            current_round, map_name, token_length, tick_rate, ("Test", 1)
         )
         assert not skip_round
         assert len(round_positions["Tick"]) == 2
         assert round_positions["Tick"] == [128.0, 256.0]
         current_round = {
             "roundNum": 10,
+            "endTScore": 5,
+            "endCTScore": 5,
             "frames": [
                 {
                     "tick": 128,
@@ -880,13 +894,15 @@ class TestTrajectoryInputPreparation:
         }
 
         skip_round, round_positions = analyze_frames(
-            current_round, map_name, token_length, tick_rate
+            current_round, map_name, token_length, tick_rate, ("Test", 1)
         )
         assert skip_round
         assert len(round_positions["Tick"]) == 1
         assert round_positions["Tick"] == [128.0]
         current_round = {
             "roundNum": 10,
+            "endTScore": 5,
+            "endCTScore": 5,
             "frames": [
                 {
                     "tick": 128,
@@ -964,7 +980,7 @@ class TestTrajectoryInputPreparation:
             ],
         }
         skip_round, round_positions = analyze_frames(
-            current_round, map_name, token_length, tick_rate
+            current_round, map_name, token_length, tick_rate, ("Test", 1)
         )
         assert not skip_round
         assert len(round_positions["Tick"]) == 1
@@ -1252,12 +1268,16 @@ class TestTrajectoryInputPreparation:
                 },
             ],
         }
-        position_dataset_dict = initialize_position_dataset_dict()
+        position_dataset = []
         match_id = "Test_id"
-        analyze_rounds(data, position_dataset_dict, match_id)
-        for value in position_dataset_dict.values():
-            assert isinstance(value, list)
-            assert len(value) == 2
-        assert position_dataset_dict["MatchID"] == ["Test_id", "Test_id"]
-        assert position_dataset_dict["Winner"] == [1, 0]
-        assert isinstance(position_dataset_dict["position_df"][0], pd.DataFrame)
+        analyze_rounds(data, position_dataset, match_id)
+        assert len(position_dataset) == 2
+        match_ids = ["Test_id", "Test_id"]
+        winners = [1, 0]
+        for index, round_values in enumerate(position_dataset):
+            assert isinstance(round_values, dict)
+            assert round_values["MatchID"] == match_ids[index]
+            assert round_values["Winner"] == winners[index]
+            for key, value in round_values.items():
+                if key not in ("MatchID", "MapName", "Round", "Winner"):
+                    assert isinstance(value, list)

@@ -31,9 +31,9 @@ import os
 import sys
 from collections.abc import Iterator, Mapping
 from pathlib import Path
-from typing import Any, Literal, cast, overload
+from typing import Any, Literal, overload
 
-import pandas as pd
+import polars as pl
 from awpy.analytics.nav import find_closest_area, generate_position_token
 from awpy.data import NAV
 from awpy.types import (
@@ -48,12 +48,14 @@ from awpy.types import (
 )
 
 from csgoml.helpers import setup_logging
-from csgoml.types import DictInitialized, IDNumberDict, PositionDataset, RoundPositions
+from csgoml.types import DictInitialized, IDNumberDict, RoundPositions
 
 N_PLAYERS = 5
 
 
-def initialize_round_positions() -> RoundPositions:
+def initialize_round_positions(
+    match_id: str, map_name: str, round_number: int, winner: Literal[0, 1]
+) -> RoundPositions:
     """Initializes dictionary of lists for one rounds positions.
 
     The positions dictinary contains the following keys:
@@ -62,12 +64,19 @@ def initialize_round_positions() -> RoundPositions:
     number in range(1,6) and feature in ["Alive", "Name", "x", "y", "z"]
 
     Args:
-        None
+        match_id (str): Name of the match containing the round
+        map_name (str): Map that the round was played on
+        round_number (int): Number of the round in the game
+        winner (Literal[0, 1]): Winner of the round (1 for CT 0 for T)
 
     Returns:
-        Empty round_positions dictionary
+        Partially initialized round_positions dictionary
     """
     return {
+        "MatchID": match_id,
+        "MapName": map_name,
+        "Round": round_number,
+        "Winner": winner,
         "Tick": [],
         "token": [],
         "interpolated": [],
@@ -238,28 +247,6 @@ def get_postion_token(frame: GameFrame, map_name: str, token_length: int) -> Tok
     return tokens
 
 
-def initialize_position_dataset_dict() -> PositionDataset:
-    """Initializes the dictionary of lists containing one entry per round.
-
-    The dictinary contains the following keys:
-    MatchID, MapName, Round, Winner, position_df
-
-    Args:
-        None
-
-    Returns:
-        Empty position_dataset_dict dictionary
-    """
-    position_dataset_dict: PositionDataset = {
-        "MatchID": [],
-        "MapName": [],
-        "Round": [],
-        "Winner": [],
-        "position_df": [],
-    }
-    return position_dataset_dict
-
-
 # Tighten this to Mapping[str, list] if that ever properly type checks
 # with @final TypedDicts. -> Make them final if that is the case.
 def check_size(dictionary: Mapping[str, Any]) -> int:
@@ -280,17 +267,19 @@ def check_size(dictionary: Mapping[str, Any]) -> int:
     """
     length = 0
     same_size = True
-    for key in dictionary:
-        logging.debug("Length of key %s is %s", key, len(dictionary[key]))
+    for key, value in dictionary.items():
+        if not isinstance(value, list):
+            continue
+        logging.debug("Length of key %s is %s", key, len(value))
         if length == 0:
-            length = len(dictionary[key])
+            length = len(value)
         else:
-            same_size = length == len(dictionary[key])
+            same_size = length == len(value)
             if not same_size:
                 logging.error(
                     "Key %s has size %s while %s is expected!",
                     key,
-                    len(dictionary[key]),
+                    len(value),
                     length,
                 )
                 logging.error(dictionary)
@@ -480,7 +469,7 @@ def append_step_to_round_positions(
     second_difference: int,
     map_name: str,
     step: int,
-) -> None:
+) -> None:  # sourcery skip: use-fstring-for-concatenation
     """Append a players information from the most recent frame to round_position dict..
 
     If the time difference between the most recent and the previous frame is larger
@@ -635,13 +624,16 @@ def get_token_length(map_name: str) -> int:
 
 
 def initialize_round(
-    current_round: GameRound,
+    current_round: GameRound, match_id: str, map_name: str, winner_id: Literal[0, 1]
 ) -> tuple[bool, int, IDNumberDict, DictInitialized, RoundPositions, list[int],]:
     """Initializes the variables for the current round.
 
     Args:
         current_round (GameRound): Dict containing all the
             information about a single CS:GO round.
+        match_id (str): Name of the match the round is played in
+        map_name (str): Name of the map the round is being played on
+        winner_id (Literal[0,1]): Winner of the current round
 
     Returns:
         A tuple of:
@@ -664,7 +656,12 @@ def initialize_round(
     # Dict to check if mapping has already been initialized this round
     dict_initialized: DictInitialized = {"t": False, "ct": False}
     # Initialize the dict that tracks player position, status and name for each round
-    round_positions = initialize_round_positions()
+    round_positions = initialize_round_positions(
+        match_id,
+        map_name,
+        current_round["endTScore"] + current_round["endCTScore"],
+        winner_id,
+    )
     logging.debug("Round number %s", current_round["roundNum"])
     # Iterate over each frame in the round
     # current_tick, last_tick
@@ -801,7 +798,11 @@ def add_general_information(
 
 
 def analyze_frames(
-    current_round: GameRound, map_name: str, token_length: int, tick_rate: int
+    current_round: GameRound,
+    map_name: str,
+    token_length: int,
+    tick_rate: int,
+    general_information: tuple[str, Literal[0, 1]],
 ) -> tuple[bool, RoundPositions]:
     """Analyzes the frames in a given round.
 
@@ -811,6 +812,9 @@ def analyze_frames(
         map_name (str): Name of the map under consideration
         token_length: (int): Length of the position token for the current map
         tick_rate (int): Tickrate of the current game
+        general_information (tuple): Tuple of
+            match_id (str): Name of the match the round is played in
+            winner_id (Literal[0,1]): Winner of the current round
 
     Returns:
         A tuple of:
@@ -825,7 +829,9 @@ def analyze_frames(
         dict_initialized,
         round_positions,
         ticks,
-    ) = initialize_round(current_round)
+    ) = initialize_round(
+        current_round, general_information[0], map_name, general_information[1]
+    )
     for index, frame in enumerate(current_round["frames"] or []):
         # There should never be more than 5 players alive in a team.
         # If that does happen completely skip the round.
@@ -854,8 +860,7 @@ def analyze_frames(
             second_difference = 1
         else:
             second_difference = int((ticks[0] - ticks[1]) / tick_rate)
-        for side in ["ct", "t"]:
-            side = cast(Literal["ct", "t"], side)
+        for side in ("ct", "t"):
             analyze_players(
                 frame,
                 dict_initialized,
@@ -888,7 +893,7 @@ def analyze_frames(
 
 
 def analyze_rounds(
-    data: Game, position_dataset_dict: PositionDataset, match_id: str
+    data: Game, position_dataset: list[RoundPositions], match_id: str
 ) -> None:
     """Analyzes all rounds in a game and adds their relevant data.
 
@@ -900,7 +905,7 @@ def analyze_rounds(
 
     Args:
         data (dict): Dictionary containing all information about a CS:GO game
-        position_dataset_dict (dict[str, list]): Dictionary containing trajectory
+        position_dataset (list): List containing trajectory
             information about rounds on a given map
         match_id (str): String representing the name of an input demo file
 
@@ -919,33 +924,19 @@ def analyze_rounds(
         if winner_id is None:
             continue
         skip_round, round_positions = analyze_frames(
-            current_round, map_name, token_length, tick_rate
+            current_round, map_name, token_length, tick_rate, (match_id, winner_id)
         )
         # Skip the rest of the loop if the whole round should be skipped.
         # Pad to full length in case a player left
         pad_to_full_length(round_positions)
         if skip_round or len(round_positions["Tick"]) == 0:
             continue
-        # Append demo id, map name and round number to the final dataset dict.)
-        position_dataset_dict["MatchID"].append(match_id)
-        position_dataset_dict["MapName"].append(map_name)
-        position_dataset_dict["Round"].append(
-            current_round["endTScore"] + current_round["endCTScore"]
-        )
-        position_dataset_dict["Winner"].append(winner_id)
-
-        # Make sure each entry in the round_positions has the same size now.
-        # Especially that nothing is longer than the Tick entry which
-        # would indicate multiple players filling on player number
-        # Transform to dataframe
-        round_positions_df = pd.DataFrame(round_positions)
-        # Add the rounds trajectory information to the overall dataset.
-        position_dataset_dict["position_df"].append(round_positions_df)
+        position_dataset.append(round_positions)
         # Check that each entry in the dataset has the same length.
         # Especially that for each round there is a trajectory dataframe.
         logging.debug(
             "Finished another round and appended to dataset. Now at size %s",
-            check_size(position_dataset_dict),
+            len(position_dataset),
         )
 
 
@@ -1015,22 +1006,21 @@ def main(args: list[str]) -> None:
             str(directory)
             + r"\Analysis\Prepared_Input_Tensorflow_"
             + directory.name
-            + ".json"
+            + "_polars.json"
         )
         seen_match_ids: set[str] = set()
         if not options.reanalyze and os.path.exists(output_json_path):
-            with open(output_json_path, encoding="utf-8") as pre_analyzed:
-                prev_dataframe = pd.read_json(pre_analyzed, dtype={"MatchID": str})
-            seen_match_ids = set(prev_dataframe["MatchID"].unique())
+            prev_dataframe = pl.read_json(output_json_path)
+            seen_match_ids = set(prev_dataframe.get_column("MatchID").unique())
         else:
-            prev_dataframe = pd.DataFrame()
+            prev_dataframe = pl.DataFrame()
         logging.info(
             "The following %s MatchIDs are already included "
             "in the existing json file and will be skipped: %s",
             len(seen_match_ids),
             seen_match_ids,
         )
-        position_dataset_dict = initialize_position_dataset_dict()
+        position_dataset: list[RoundPositions] = []
         for files_done, file_path in enumerate(directory.iterdir()):
             match_id = file_path.stem
             # checking if it is a file
@@ -1042,22 +1032,26 @@ def main(args: list[str]) -> None:
                 logging.info("Analyzing file %s", file_path.name)
                 with open(file_path, encoding="utf-8") as demo_json:
                     data = json.load(demo_json)
-                analyze_rounds(data, position_dataset_dict, match_id)
+                analyze_rounds(data, position_dataset, match_id)
                 if files_done > 0 and files_done % 50 == 0:
-                    position_dataset_df = pd.DataFrame(position_dataset_dict)
-                    position_dataset_df = pd.concat(
-                        [prev_dataframe, position_dataset_df], ignore_index=True
+                    position_dataset_df = pl.from_dicts(
+                        position_dataset  # pyright: ignore [reportGeneralTypeIssues]
                     )
-                    position_dataset_df.to_json(output_json_path)  # , indent=2)
+                    position_dataset_df = pl.concat(
+                        [prev_dataframe, position_dataset_df], how="vertical"
+                    )
+                    position_dataset_df.write_ndjson(output_json_path)
                     logging.info("Wrote output json to: %s", output_json_path)
-                    position_dataset_dict = initialize_position_dataset_dict()
-                    prev_dataframe = position_dataset_df.copy()
+                    position_dataset = []
+                    prev_dataframe = position_dataset_df
         # Transform to dataset and write it to file as json
-        position_dataset_df = pd.DataFrame(position_dataset_dict)
-        position_dataset_df = pd.concat(
-            [prev_dataframe, position_dataset_df], ignore_index=True
+        position_dataset_df = pl.from_dicts(
+            position_dataset  # pyright: ignore [reportGeneralTypeIssues]
         )
-        position_dataset_df.to_json(output_json_path)  # , indent=2)
+        position_dataset_df = pl.concat(
+            [prev_dataframe, position_dataset_df], how="vertical"
+        )
+        position_dataset_df.write_ndjson(output_json_path)
         logging.info("Wrote output json to: %s", output_json_path)
 
 

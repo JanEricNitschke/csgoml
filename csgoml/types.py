@@ -2,8 +2,6 @@
 
 from typing import Literal, TypedDict, final
 
-import pandas as pd
-
 IDNumberDict = dict[Literal["ct", "t"], dict[str, Literal["1", "2", "3", "4", "5"]]]
 
 DictInitialized = dict[Literal["ct", "t"], bool]
@@ -78,6 +76,10 @@ class TickInformation(TypedDict):
 class RoundPositions(TypedDict):
     """Holds information about player positions during a round."""
 
+    MatchID: str
+    MapName: str
+    Round: int
+    Winner: Literal[0, 1]
     Tick: list[int]
     token: list[str]
     interpolated: list[Literal[0, 1]]
@@ -143,16 +145,6 @@ class RoundPositions(TypedDict):
     TPlayer5y: list[float]
     TPlayer5z: list[float]
     TPlayer5Area: list[int]
-
-
-class PositionDataset(TypedDict):
-    """Holds information about the rounds of a game."""
-
-    MatchID: list[str]
-    MapName: list[str]
-    Round: list[int]
-    Winner: list[Literal[0, 1]]
-    position_df: list[pd.DataFrame]
 
 
 class PositionDatasetJSON(TypedDict):

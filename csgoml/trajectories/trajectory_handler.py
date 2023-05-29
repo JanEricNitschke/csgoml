@@ -17,11 +17,9 @@ import random
 
 import numpy as np
 import numpy.typing as npt
-import pandas as pd
+import polars as pl
 from sklearn.model_selection import train_test_split
 from sklearn.utils import shuffle
-
-from csgoml.types import PositionDatasetJSON
 
 
 class TrajectoryHandler:
@@ -72,8 +70,7 @@ class TrajectoryHandler:
             self.random_state = random_state
         self.input: str = json_path
         if os.path.isfile(self.input):
-            with open(self.input, encoding="utf-8") as pre_analyzed:
-                complete_dataframe = pd.read_json(pre_analyzed)
+            complete_dataframe = pl.scan_ndjson(self.input).collect()
         else:
             logging.error("File %s does not exist!", self.input)
             msg = "File does not exist!"
@@ -85,183 +82,84 @@ class TrajectoryHandler:
 
         self.datasets: dict[str, npt.NDArray] = {}
         self.aux: dict[str, npt.NDArray] = {}
-        for column in complete_dataframe:
-            if column != "position_df":
-                self.aux[str(column)] = complete_dataframe[column].to_numpy()
-        # Transform the position_df from a json dict
-        # to df and also transform ticks to seconds
-        dataframe = complete_dataframe[["position_df"]]
-        dataframe["position_df"] = dataframe["position_df"].apply(
-            self.__transform_to_data_frame
-        )
 
-        logging.debug("Example for position_df dataframe entry before cleaning.")
-        logging.debug(dataframe.iloc[6]["position_df"])
+        self._fill_aux(complete_dataframe)
+        complete_dataframe = self._apply_transformations(complete_dataframe)
+        logging.info(complete_dataframe)
+        self.datasets["token"] = self._get_token_dataset(complete_dataframe)
+        self.datasets["position"] = self._get_position_dataset(complete_dataframe)
+        logging.info(self.aux)
+        logging.info(self.datasets)
 
-        dataframe["token_array"] = dataframe["position_df"].apply(
-            self.__get_token_array
-        )
-        dataframe["position_array"] = dataframe["position_df"].apply(
-            self.__get_position_array
-        )
-        # Shape of the numpy array is #Round,self.time,len(token(self.map_name))
-        # First half of the token length is CT second is T
-        self.datasets["token"] = np.stack(dataframe["token_array"].to_numpy())
-        # Shape of the numpy array
-        # is: Rounds, self.time, side(2), player(5), feature(5[x,y,z,area,alive])
-        self.datasets["position"] = np.stack(dataframe["position_array"].to_numpy())
-        logging.info("Finished init")
+    def _fill_aux(self, trajectories: pl.DataFrame) -> None:
+        """Fill the auxiliary information dictionary."""
+        for column in trajectories.select(
+            pl.exclude([pl.List(pl.Int64), pl.List(pl.Utf8), pl.List(pl.Float64)])
+        ):
+            self.aux[column.name] = column.to_numpy(use_pyarrow=False)
 
-    # Any type Currently needed because pandas-stubs only supports a limited number
-    # of final arguments even though Any - Series would work here but there is no
-    # '-' for type hinting.
-    def __transform_to_data_frame(
-        self, json_format_dict: PositionDatasetJSON
-    ) -> pd.DataFrame:
-        """Transforms a json dictionary to a pd dataframe and converts ticks to seconds.
+    def _apply_transformations(self, trajectories: pl.DataFrame) -> pl.DataFrame:
+        """Apply transformations to trajectories dataframe.
 
-        Args:
-            json_format_dict: A dictionary in json format holding information
-                about player positions during a CS:GO round
+        Go from ticks to seconds by substracting the first tick value and
+        dividing by 128.
 
-        Returns:
-            A pandas dataframe corresponding to the input json with
-            the tick values transformed to seconds.
+        Transform tokens from string to list of integers.
+
+        Pad all time series data to the specified length.
         """
-        return_dataframe = pd.DataFrame(json_format_dict)
-        first_tick = int(return_dataframe.iloc[0]["Tick"])
-        return_dataframe["Tick"] = return_dataframe["Tick"].apply(
-            self.__transform_ticks_to_seconds, args=(first_tick,)
+        trajectories = trajectories.with_columns(
+            [
+                (
+                    pl.col("Tick")
+                    .cast(pl.List(pl.Float64))
+                    .arr.eval((pl.element() - pl.element().first()) / 128)
+                ),
+                pl.col(["token", "CTtoken", "Ttoken"]).arr.eval(
+                    pl.element().str.extract_all(r"\d").cast(pl.List(pl.Int64))
+                ),
+            ]
         )
-        return return_dataframe
-
-    def __transform_ticks_to_seconds(self, tick: int, first_tick: int) -> int:
-        """Transforms a tick value to a corresponding second value given a start_tick.
-
-        There is a tick every 128 seconds.
-        Given the start tick the second value of the current tick is calculated as
-        (tick-first_tick)/128
-
-        Args:
-            tick: An integer corresponding to the current tick
-            first_tick: An integer corresponding to the reference tick
-                from which the time in seconds should be calculated
-
-        Returns:
-            An integer corresponding to the seconds passed between first_tick and tick
-        """
-        return int((tick - first_tick) / 128)
-
-    def __get_token_array(self, position_df: pd.DataFrame) -> npt.NDArray:
-        """Transforms a dataframe of player positions and tokens into an array corresponding to the token through the time steps.
-
-                Input dataframe is of the shape:
-                DEBUG:root:    Tick                                     token               CTtoken  CTPlayer1Alive      CTPlayer1Name  CTPlayer1x  CTPlayer1y  CTPlayer1z  CTPlayer2Alive  ... TPlayer4Name  TPlayer4x  TPlayer4y
-        0      0  0000050000000000000000000000000000005000  00000500000000000000               1  EIQ-nickelback666    0.067664    0.924986    0.089216               1  ...    1WIN.Polt  -0.080275  -0.849314  -0.923190
-        1      1  0000050000000000000000000000000000005000  00000500000000000000               1  EIQ-nickelback666    0.094994    0.811096    0.247608               1  ...    1WIN.Polt  -0.093063  -0.810903  -0.878734
-        2      2  1000004000000000000000000000010000004000  10000040000000000000               1  EIQ-nickelback666    0.122323    0.697205    0.406001               1  ...    1WIN.Polt  -0.105850  -0.772492  -0.834277
-        3      3  1000004000000000000000000000010000004000  10000040000000000000               1  EIQ-nickelback666    0.225975    0.684219    0.430871               1  ...    1WIN.Polt  -0.116979  -0.745519  -0.905904
-        4      4  1310000000000000000000000000030000002000  13100000000000000000               1  EIQ-nickelback666    0.329626    0.671234    0.455740               1  ...    1WIN.Polt  -0.128107  -0.718546  -0.977531
-        ..   ...                                       ...                   ...             ...                ...         ...         ...         ...             ...  ...          ...        ...        ...        ...
-        84    84  0001000000000000000000000000000000000000  00010000000000000000               0  EIQ-nickelback666   -0.025643    0.032743    0.189914               0  ...    1WIN.Polt  -0.918829   0.537522   0.252183
-        85    85  0001000000000000000000000000000000000000  00010000000000000000               0  EIQ-nickelback666   -0.025643    0.032743    0.189914               0  ...    1WIN.Polt  -0.918829   0.537522   0.252183
-        86    86  0001000000000000000000000000000000000000  00010000000000000000               0  EIQ-nickelback666   -0.025643    0.032743    0.189914               0  ...    1WIN.Polt  -0.918829   0.537522   0.252183
-        87    87  0001000000000000000000000000000000000000  00010000000000000000               0  EIQ-nickelback666   -0.025643    0.032743    0.189914               0  ...    1WIN.Polt  -0.918829   0.537522   0.252183
-        88    88  0000000100000000000000000000000000000000  00000001000000000000               0  EIQ-nickelback666   -0.025643    0.032743    0.189914               0  ...    1WIN.Polt  -0.918829   0.537522   0.252183
-
-                The dataframe is reduced the the column of the given token (token,CTtoken,Ttoken)
-                DEBUG:root:      token
-        0      0000050000000000000000000000000000005000
-        1      0000050000000000000000000000000000005000
-        2      1000004000000000000000000000010000004000
-        3      1000004000000000000000000000010000004000
-        4      1310000000000000000000000000030000002000
-        ..   ...                                       ...
-        84     0001000000000000000000000000000000000000
-        85     0001000000000000000000000000000000000000
-        86     0001000000000000000000000000000000000000
-        87     0001000000000000000000000000000000000000
-        88     0000000100000000000000000000000000000000
-
-                Each row is then transformed into a id array of integers:
-        0    [0,0,0,0,0,5,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,5,0,0,0]
-                Then each value is divided by 5, the df padded to a given length and returned back into a multy dimensional array.
-
-        Args:
-            position_df: A dataframe of player positions during a round.
-
-        Returns:
-            A two dimensional numpy array containing the transformed token at each timestep
-        """  # noqa: E501 # pylint: disable=line-too-long
-        position_df = position_df.reset_index(drop=True)
-        # Split the token strings into a columns so that
-        # there is one column for each integer in the token string
-        # Only work with the token entry of the df
-        position_df = position_df[["token"]]
-        # Initialize the numpy array
-        # First value is number of rows, second number of columns
-        return_array = np.zeros(
-            (self.time, len(position_df.iloc[0]["token"])), dtype=np.int64
+        cols = pl.col(
+            pl.List(pl.Int64), pl.List(pl.Float64), pl.List(pl.List(pl.Int64))
         )
-        # Transform the string into a list of the individual letters(ints) in the string
-        # Convert the dataframe to a list and back into a df to
-        # have one column for each entry of the string
-        position_df = pd.DataFrame(position_df["token"].apply(list).tolist())
-        # Convert the individual string into the respective integers
-        # Pad the df to the specified length
-        position_df = position_df.reindex(range(self.time), fill_value=0, method="pad")
-        # Convert to numpy array
-        for ind, column in enumerate(position_df.columns):
-            return_array[:, ind] = position_df[column].to_numpy()
-        return return_array
+        trajectories = trajectories.with_columns(
+            cols.arr.take(pl.arange(0, self.time), null_on_oob=True).arr.eval(
+                pl.element().forward_fill()
+            )
+        )
+        return trajectories
 
-    def __get_position_array(self, position_df: pd.DataFrame) -> npt.NDArray:
-        """Transforms data frame by throwing away all unnecessary features.
+    def _get_token_dataset(self, trajectories: pl.DataFrame) -> npt.NDArray:
+        """Get the token dataset by transforming the dataframe column to a np array."""
+        return np.stack(trajectories.get_column("token").to_list())
 
-        And then turning it into a (multidimensional) array.
+    def _get_position_dataset(self, trajectories: pl.DataFrame) -> npt.NDArray:
+        """Get position dataset from trajectory dataframe.
 
-        The result is a 4d array where for each timestep there is a
-        3d array representing team, player number and the feature.
-
-        Args:
-            position_df: A dataframe of player positions during a round.
-
-        Returns:
-            A multi-dimensional numpy array containing split tokens or player positions
-            (organized by team, playnumber, coordinate)
+        Transform each feature column into a 2D numpy array and fill
+        the respective entries of the total position array with them.
         """
-        # Throw away all unneeded columns from the dataframe and
-        # then convert it into a numpy array
-        # It is a 4-D array with the
-        # first index representing the timestep, the second the team,
-        # the third the playernumber in that team and the fourth the feature.
-        position_df = position_df.reset_index(drop=True)
-        # Set length of dataframe to make sure all have the same size
-        # Pad each column if set size is larger than dataframe size
-        # If the full coordinates should be used then for each player their
-        # alive status as well as their x,y,z coordinates are kept,
-        # everything else (player names and tokens) is discarded.
         featurelist = ["x", "y", "z", "Area", "Alive"]
-        position_df = position_df.reindex(
-            range(self.time), fill_value=0.0, method="pad"
-        )
         sides = ["CT", "T"]
-        # Dimension with size 2 for teams
         dimensions = [
+            len(trajectories),
             self.time,
             2,
             5,
             len(featurelist),
-        ]  # time for timesteps, 5 for players, len(featurelist) for features
-
-        # Only keep the information for the side(s) that should be used.
+        ]
         return_array = np.zeros(tuple(dimensions))
         for side_index, side in enumerate(sides):
             for number in range(1, 6):
                 for feature_index, feature in enumerate(featurelist):
                     return_array[
-                        :, side_index, number - 1, feature_index
-                    ] = position_df[side + "Player" + str(number) + feature].to_numpy()
+                        :, :, side_index, number - 1, feature_index
+                    ] = np.stack(
+                        trajectories.get_column(
+                            side + "Player" + str(number) + feature
+                        ).to_list()
+                    )
         return return_array
 
     def _get_position_predictor_input(

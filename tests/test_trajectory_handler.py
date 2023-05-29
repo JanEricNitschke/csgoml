@@ -6,7 +6,7 @@ import os
 from typing import Literal
 
 import numpy as np
-import pandas as pd
+import polars as pl
 import pytest
 import requests
 
@@ -22,8 +22,7 @@ class TestTrajectoryHandler:
             self.json_data = json.load(f)
         for file in self.json_data:
             self._get_jsonfile(json_link=self.json_data[file]["url"], json_name=file)
-        with open("ancient_trajectory_json.json", encoding="utf-8") as pre_analyzed:
-            self.complete_dataframe = pd.read_json(pre_analyzed)
+        self.complete_dataframe = pl.read_ndjson("ancient_trajectory_json.json")
         self.random_state = 123
         self.map_name = "de_ancient"
         self.json_path = "ancient_trajectory_json.json"
@@ -70,8 +69,8 @@ class TestTrajectoryHandler:
         shape = self.handler.datasets["token"].shape
         assert len(shape) == 3
         assert shape[1] == self.handler.time
-        assert shape[0] == len(self.complete_dataframe.index)
-        assert self.handler.datasets["token"].dtype == np.int64
+        assert shape[0] == len(self.complete_dataframe)
+        assert self.handler.datasets["token"].dtype == np.int32
         assert "position" in self.handler.datasets
         assert isinstance(self.handler.datasets["position"], np.ndarray)
         shape = self.handler.datasets["position"].shape
@@ -79,39 +78,8 @@ class TestTrajectoryHandler:
         assert shape[4] == 5
         assert shape[2] == 2
         assert shape[1] == self.handler.time
-        assert shape[0] == len(self.complete_dataframe.index)
+        assert shape[0] == len(self.complete_dataframe)
         assert self.handler.datasets["position"].dtype == np.float64
-
-    def test_transform_to_data_frame(self):
-        """Tests __transform_to_data_frame."""
-        test_df = self.complete_dataframe.copy()
-        assert isinstance(test_df["position_df"].iloc[0], dict)
-        test_df["position_df"] = test_df["position_df"].apply(
-            self.handler._TrajectoryHandler__transform_to_data_frame
-        )
-        assert isinstance(test_df["position_df"].iloc[0], pd.DataFrame)
-
-    def test_transform_ticks_to_seconds(self):
-        """Tests __transform_ticks_to_seconds."""
-        tick = 128
-        start_tick = 0
-        second = self.handler._TrajectoryHandler__transform_ticks_to_seconds(
-            tick, start_tick
-        )
-        assert isinstance(second, int)
-        assert second == 1
-        tick = 1280
-        second = self.handler._TrajectoryHandler__transform_ticks_to_seconds(
-            tick, start_tick
-        )
-        assert isinstance(second, int)
-        assert second == 10
-        start_tick = 640
-        second = self.handler._TrajectoryHandler__transform_ticks_to_seconds(
-            tick, start_tick
-        )
-        assert isinstance(second, int)
-        assert second == 5
 
     def test_get_predictor_input(self):
         """Tests get_predictor_input."""
