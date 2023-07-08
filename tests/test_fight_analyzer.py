@@ -144,10 +144,7 @@ class TestFightAnalyzer:
     def test_get_area_from_pos(self):
         """Tests get_area_from_pos."""
         assert self.analyzer.get_area_from_pos("de_dust2", [None, 1000.0, -100]) is None
-        assert (
-            self.analyzer.get_area_from_pos("de_dust2", [750.0, -150.0, 73.0])
-            == ""  # noqa: PLC1901
-        )
+        assert self.analyzer.get_area_from_pos("de_dust2", [750.0, -150.0, 73.0]) == ""
         assert (
             self.analyzer.get_area_from_pos("de_dust2", [-464.0, 2010.0, -60.0])
             == "MidDoors"

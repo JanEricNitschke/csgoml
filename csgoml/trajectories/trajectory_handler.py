@@ -113,9 +113,9 @@ class TrajectoryHandler:
                 (
                     pl.col("Tick")
                     .cast(pl.List(pl.Float64))
-                    .arr.eval((pl.element() - pl.element().first()) / 128)
+                    .list.eval((pl.element() - pl.element().first()) / 128)
                 ),
-                pl.col(["token", "CTtoken", "Ttoken"]).arr.eval(
+                pl.col(["token", "CTtoken", "Ttoken"]).list.eval(
                     pl.element().str.extract_all(r"\d").cast(pl.List(pl.Int64))
                 ),
             ]
@@ -123,12 +123,11 @@ class TrajectoryHandler:
         cols = pl.col(
             pl.List(pl.Int64), pl.List(pl.Float64), pl.List(pl.List(pl.Int64))
         )
-        trajectories = trajectories.with_columns(
-            cols.arr.take(pl.arange(0, self.time), null_on_oob=True).arr.eval(
+        return trajectories.with_columns(
+            cols.list.take(pl.arange(0, self.time), null_on_oob=True).list.eval(
                 pl.element().forward_fill()
             )
         )
-        return trajectories
 
     def _get_token_dataset(self, trajectories: pl.DataFrame) -> npt.NDArray:
         """Get the token dataset by transforming the dataframe column to a np array."""
