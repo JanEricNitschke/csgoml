@@ -25,7 +25,7 @@ import os
 import sys
 from collections.abc import Iterator
 from pathlib import Path
-from typing import Any
+from typing import Any, TypeGuard
 
 import boto3
 import pymysql
@@ -83,7 +83,14 @@ class FightAnalyzer:
         self.cursor: Cursor = cursor
         self.connection: pymysql.connections.Connection = connection
 
-    def get_area_from_pos(self, map_name: str, pos: list[float | None]) -> str | None:
+    def _no_nones(
+        self, pos: tuple[float | None, float | None, float | None]
+    ) -> TypeGuard[tuple[float, float, float]]:
+        return None not in pos
+
+    def get_area_from_pos(
+        self, map_name: str, pos: tuple[float | None, float | None, float | None]
+    ) -> str | None:
         """Determine the area name for a given position.
 
         Args:
@@ -94,7 +101,7 @@ class FightAnalyzer:
             A string of the name of the area that contains pos on map "map"
             If None can be found returns None
         """
-        if None in pos:
+        if not self._no_nones(pos):
             logging.debug("No area found for pos:")
             logging.debug(pos)
             return None
@@ -113,14 +120,14 @@ class FightAnalyzer:
 
         Return:
             A tuple of strings containing the area that the
-            CT and T player were in when the event occured
+            CT and T player were in when the event occurred
         """
         logging.debug("Checking Position")
         attacker_area = self.get_area_from_pos(
-            map_name, [event["attackerX"], event["attackerY"], event["attackerZ"]]
+            map_name, (event["attackerX"], event["attackerY"], event["attackerZ"])
         )
         victim_area = self.get_area_from_pos(
-            map_name, [event["victimX"], event["victimY"], event["victimZ"]]
+            map_name, (event["victimX"], event["victimY"], event["victimZ"])
         )
         if event["attackerSide"] == "CT" and event["victimSide"] == "T":
             return attacker_area, victim_area
@@ -145,7 +152,7 @@ class FightAnalyzer:
         Return:
             An integer of the number of seconds since the round started
         """
-        return (event["tick"] - ticks["freezeTimeEndTick"]) / ticks["tickRate"]
+        return (event["tick"] - ticks["freezeTimeEndTick"]) // ticks["tickRate"]
 
     def _update_player_weapons(
         self, players: list[PlayerInfo], player_steamid: int | None
@@ -183,8 +190,8 @@ class FightAnalyzer:
 
         Args:
             round_frames (list[GameFrame]): A dictionary containing all the information
-                about the round the event occured in.
-            event (KillAction): A dictionary containg all the information about
+                about the round the event occurred in.
+            event (KillAction): A dictionary containing all the information about
                 the kill/damage event in question.
 
         Returns:
@@ -270,7 +277,7 @@ class FightAnalyzer:
                 of the event had in their inventory
             ct_position (str): A string of the position of the CT in the event
             t_position (str): A string of the position of the T in the event
-            current_round (dict):Information about the round the event occured in.
+            current_round (dict):Information about the round the event occurred in.
             match_id (str): Name of the demo file
             map_name (str): Name of the map that the current game was played on
             is_pro_game (bool): Whether the current round is from a pro game or not
@@ -429,7 +436,7 @@ class FightAnalyzer:
     ) -> tuple[float, float, float]:
         """Calculates the Wilson score interval of success-failure experiments.
 
-        Calcualtes the Wilson score interval as an approximation
+        Calculates the Wilson score interval as an approximation
         of the binomial proportion confidence interval.
 
         Args:

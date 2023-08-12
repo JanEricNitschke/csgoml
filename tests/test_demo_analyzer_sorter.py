@@ -24,7 +24,7 @@ class TestDemoAnalyzerSorter:
         if os.path.exists(maps_dir):
             msg = (
                 "This test needs to be executed in a directory where "
-                "it can savely create and delete a 'Maps' subdir!"
+                "it can safely create and delete a 'Maps' subdir!"
             )
             raise AssertionError(msg)
         self.sorter = DemoAnalyzerSorter(

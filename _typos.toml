@@ -1,0 +1,5 @@
+[default]
+extend-ignore-identifiers-re = [
+    # Don't correct Five-SeveN
+    ".*SeveN.*",
+]

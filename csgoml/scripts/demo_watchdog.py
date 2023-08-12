@@ -2,7 +2,7 @@
 r"""Watch directory for new demo files to unpack and parse.
 
     Have watchdog check for new rar files.
-    If it finds one it shoud unpack it and
+    If it finds one it should unpack it and
     run DemoAnalyzer_Sorter.py over the resulting folder and
     have each jsons name as DemoName_RarNumber.json.
     Then move the json to a destination folder.

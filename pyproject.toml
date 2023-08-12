@@ -28,9 +28,9 @@ dependencies = [
     "scikit-learn~=1.3.0",
     "scikit-learn-extra~=0.3.0",
     "scipy~=1.10.0",
-    "sympy~=1.12.0",
-    "tensorflow~=2.13.0",
-    "tqdm>=4.65.0",
+    "sympy==1.11.0",
+    # "tensorflow~=2.13.0",
+    "tqdm~=4.65.0",
     "watchdog~=3.0.0",
 ]
 dynamic = ["version"]
@@ -142,12 +142,12 @@ convention = "google" # Accepts: "google", "numpy", or "pep257".
 max-args = 15
 
 [tool.pyright]
-include                            = ["csgoml"]
-exclude                            = ["tests"]
-strictListInference                = true
-strictDictionaryInference          = true
-strictSetInference                 = true
-useLibraryCodeForTypes             = false
+include                   = ["csgoml"]
+exclude                   = ["tests"]
+strictListInference       = true
+strictDictionaryInference = true
+strictSetInference        = true
+# useLibraryCodeForTypes             = false
 reportPropertyTypeMismatch         = "error"
 reportFunctionMemberAccess         = "warning"
 reportMissingTypeStubs             = "none"
@@ -197,6 +197,8 @@ good-names = [
     "x2",
     "y1",
     "y2",
+    "z1",
+    "z2",
 ]
 
 [tool.pylint.design]

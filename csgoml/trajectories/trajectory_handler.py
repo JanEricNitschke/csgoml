@@ -1,7 +1,7 @@
 """This module contains the TrajectoryHandler.
 
 That reads in the precomputed trajectories and
-makes them easily availalbe in the form of numpy arrays.
+makes them easily available in the form of numpy arrays.
 
 Example::
 
@@ -33,7 +33,7 @@ class TrajectoryHandler:
             the trajectory data for every round on a given map.
         datasets (dict[str, npt.NDArray]): Dictionary of position and
             token trajectory numpy arrays
-        aux (dict[str, npt.NDArray]): Dictionary of auxilliary information
+        aux (dict[str, npt.NDArray]): Dictionary of auxiliary information
             about about trajectories.
         random_state (int): Integer for random_states
         time (int): Maximum time that is reasonable for a round to have
@@ -101,7 +101,7 @@ class TrajectoryHandler:
     def _apply_transformations(self, trajectories: pl.DataFrame) -> pl.DataFrame:
         """Apply transformations to trajectories dataframe.
 
-        Go from ticks to seconds by substracting the first tick value and
+        Go from ticks to seconds by subtracting the first tick value and
         dividing by 128.
 
         Transform tokens from string to list of integers.
@@ -303,7 +303,8 @@ class TrajectoryHandler:
             shuffle=True,
             random_state=self.random_state,
         )
-        return (
+        # Type hints for sklearn are shit.
+        return (  # pyright: ignore [reportGeneralTypeIssues]
             train_labels,
             val_labels,
             test_labels,
@@ -370,6 +371,7 @@ class TrajectoryHandler:
             }
             first, last = side_conversion[side]
             array_for_clustering = self.datasets["token"][-n_rounds:, :time, first:last]
-        return shuffle(
+        # Type hints for sklearn are shit.
+        return shuffle(  # pyright: ignore [reportGeneralTypeIssues]
             array_for_plotting, array_for_clustering, random_state=self.random_state
         )

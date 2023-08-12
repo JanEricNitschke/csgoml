@@ -26,9 +26,9 @@ setup(
         "scikit-learn~=1.3.0",
         "scikit-learn-extra~=0.3.0",
         "scipy~=1.10.0",
-        "sympy~=1.12.0",
+        "sympy==1.11",
         "tensorflow~=2.13.0",
-        "tqdm>=4.65.0",
+        "tqdm~=4.65.0",
         "watchdog~=3.0.0",
     ],
     # metadata to display on PyPI

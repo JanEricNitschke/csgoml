@@ -186,16 +186,24 @@ def plot_path(
         None (Directly saves the plot to file)
     """
     if graph is None:
-        graph = {}
+        graph = {
+            "distanceType": "graph",
+            "distance": float("inf"),
+            "areas": [],
+        }
     if geodesic is None:
-        geodesic = {}
+        geodesic = {
+            "distanceType": "geodesic",
+            "distance": float("inf"),
+            "areas": [],
+        }
     fig, axis = plot_map(map_name=map_name, map_type="simplerader", dark=True)
     fig.set_size_inches(19.2, 10.8)
-    for a, area in NAV[map_name].items():
-        if a not in graph["areas"] and a not in geodesic["areas"]:
+    for area_id, area in NAV[map_name].items():
+        if area_id not in graph["areas"] and area_id not in geodesic["areas"]:
             continue
         width, height, southwest_x, southwest_y = get_area_dimensions(map_name, area)
-        color = _get_color_for_area(area, graph["areas"], geodesic["areas"])
+        color = _get_color_for_area(area_id, graph["areas"], geodesic["areas"])
         rect = patches.Rectangle(
             (southwest_x, southwest_y),
             width,
@@ -323,7 +331,7 @@ def compute_dtw(
         trajectory_array_2: Numpy array with shape (n_Time,2|1, 5, 3)
             with the first index indicating the team,
             the second the player and the third the coordinate
-        dist_matrix: Nested dict that contains the
+        dist_matrix: Numpy array that contains the
             precomputed distance between any pair of areas
         dtw: Boolean indicating whether matching should be performed via
             dynamic time warping (true) or euclidean (false)
@@ -354,8 +362,7 @@ def compute_dtw(
 def fast_token_trajectory_distance(
     trajectory_array_1: np.ndarray,
     trajectory_array_2: np.ndarray,
-    dist_matrix: dict,
-    map_area_names: list[str],
+    dist_matrix: np.ndarray,
     *,
     dtw: bool = False,
 ) -> float:
@@ -364,7 +371,7 @@ def fast_token_trajectory_distance(
     Args:
         trajectory_array_1: Numpy array with shape (n_Time,len(token))
         trajectory_array_2: Numpy array with shape (n_Time,len(token))
-        dist_matrix: Nested dict that contains the
+        dist_matrix: Numpy array that contains the
             precomputed distance between any pair of areas
         map_area_names: List of strings of area names
         dtw: Boolean indicating whether matching should be performed via
@@ -389,7 +396,6 @@ def fast_token_trajectory_distance(
                     token_array_1=trajectory_array_1[i],
                     token_array_2=trajectory_array_2[j],
                     dist_matrix=dist_matrix,
-                    map_area_names=map_area_names,
                 )
                 dtw_matrix[(i, j)] = dist + min(
                     dtw_matrix[(i - 1, j)],
@@ -409,7 +415,6 @@ def fast_token_trajectory_distance(
             if time in range(len(trajectory_array_2))
             else trajectory_array_2[-1],
             dist_matrix=dist_matrix,
-            map_area_names=map_area_names,
         )
         for time in range(length)
     )
@@ -418,7 +423,7 @@ def fast_token_trajectory_distance(
 
 def _get_compressed_area_dist_matrix(
     map_name: str,
-) -> tuple[npt.NDArray, dict[types.int64, types.int64]]:
+) -> tuple[npt.NDArray, dict[int, int]]:
     """Generates a compressed area distance matrix.
 
     Args:
@@ -493,8 +498,7 @@ def _get_traj_matrix_area_dtw(
                 .min(-1)
                 .mean(-1)
             )
-            logging.info(dtw_matrix.shape)
-            precomputed[i][j] = compute_dtw(
+            precomputed[i, j] = compute_dtw(
                 precompute_array[i], precompute_array[j], dtw_matrix
             )
     precomputed += precomputed.T
@@ -534,7 +538,7 @@ def _get_traj_matrix_area_linear(
             for j in range(i + 1, len(precompute_array)):
                 traj_array_1 = precompute_array[i]
                 traj_array_2 = precompute_array[j]
-                precomputed[i][j] = (
+                precomputed[i, j] = (
                     dist_matrix[
                         traj_array_1[..., permutations],
                         traj_array_2[..., np.newaxis, :],
@@ -658,7 +662,7 @@ def get_traj_matrix_place(
     return _get_traj_matrix_area_linear(precompute_array, permutations, dist_matrix)
 
 
-def _get_map_area_names(map_name: str) -> typed.List:
+def _get_map_area_names(map_name: str) -> list[str]:
     """Generates list of all named place on a map in sorted order.
 
     Args:
@@ -668,13 +672,12 @@ def _get_map_area_names(map_name: str) -> typed.List:
         sorted list of named places
     """
     map_area_names = {NAV[map_name][area_id]["areaName"] for area_id in NAV[map_name]}
-    map_area_names = sorted(map_area_names)
-    return typed.List(map_area_names)
+    return sorted(map_area_names)
 
 
 def _get_compressed_place_dist_matrix(
     map_name: str,
-) -> dict[types.string, dict[types.string, types.float64]]:
+) -> dict[str, dict[str, float]]:
     """Generates a compressed place distance matrix for tokens.
 
     Args:
@@ -683,15 +686,11 @@ def _get_compressed_place_dist_matrix(
         typed dict of compressed matrix
     """
     old_dist_matrix = PLACE_DIST_MATRIX[map_name]
-    d1_type = types.DictType(types.string, types.float64)
-    dist_matrix = typed.Dict.empty(types.string, d1_type)
+    dist_matrix: dict[str, dict[str, float]] = {}
     for place1 in old_dist_matrix:
         for place2 in old_dist_matrix[place1]:
             if place1 not in dist_matrix:
-                dist_matrix[place1] = typed.Dict.empty(
-                    key_type=types.string,
-                    value_type=types.float64,
-                )
+                dist_matrix[place1] = {}
             dist_matrix[place1][place2] = min(
                 old_dist_matrix[place1][place2]["geodesic"]["centroid"],
                 old_dist_matrix[place2][place1]["geodesic"]["centroid"],
@@ -717,18 +716,16 @@ def get_traj_matrix_token(
     Returns:
         Numpy array of distances between trajectories
     """
-    map_area_names = _get_map_area_names(map_name)
-    dist_matrix = _get_compressed_place_dist_matrix(map_name)
+    dist_matrix, _ = _get_compressed_places_dist_matrix(map_name)
     precomputed = np.zeros((len(precompute_array), len(precompute_array)))
     for i in range(len(precompute_array)):
         if i % 50 == 0:
             logging.info(i)
         for j in range(i + 1, len(precompute_array)):
-            precomputed[i][j] = fast_token_trajectory_distance(
+            precomputed[i, j] = fast_token_trajectory_distance(
                 precompute_array[i],
                 precompute_array[j],
                 dist_matrix,
-                map_area_names=map_area_names,
                 dtw=dtw,
             )
     precomputed += precomputed.T
@@ -757,8 +754,7 @@ def _get_traj_matrix_position_dtw(precompute_array: npt.NDArray) -> npt.NDArray:
                 .min(-1)
                 .mean(-1)
             )
-            logging.info(dtw_matrix.shape)
-            precomputed[i][j] = compute_dtw(
+            precomputed[i, j] = compute_dtw(
                 precompute_array[i], precompute_array[j], dtw_matrix
             )
     precomputed += precomputed.T
@@ -791,7 +787,7 @@ def _get_traj_matrix_position_linear(precompute_array: npt.NDArray) -> npt.NDArr
             for j in range(i + 1, len(precompute_array)):
                 traj_array_1 = precompute_array[i]
                 traj_array_2 = precompute_array[j]
-                precomputed[i][j] = (
+                precomputed[i, j] = (
                     np.linalg.norm(
                         traj_array_1[..., permutations, :]
                         - traj_array_2[..., np.newaxis, :, :],
@@ -829,17 +825,15 @@ def get_traj_matrix_position(
 def fast_token_state_distance(
     token_array_1: np.ndarray,
     token_array_2: np.ndarray,
-    dist_matrix: dict,
-    map_area_names: list[str],
+    dist_matrix: np.ndarray,
 ) -> float:
     """Calculates a distance between two game states based on tokens.
 
     Args:
         token_array_1: Numpy array with shape (len(token))
         token_array_2: Numpy array with shape (len(token))
-        dist_matrix: Nested dict that contains the precomputed distance
+        dist_matrix: Numpy array that contains the precomputed distance
             between any pair of areas
-        map_area_names: List of strings of area names
 
     Returns:
         A float representing the distance between these two game states
@@ -859,8 +853,8 @@ def fast_token_state_distance(
     # Get the indices where array1 and array2 have larger values than the other.
     # Use each index as often as it is larger
     diff_array = np.subtract(token_array_1, token_array_2)
-    pos_indices = []
-    neg_indices = []
+    pos_indices: list[int] = []
+    neg_indices: list[int] = []
     for i, difference in enumerate(diff_array):
         if difference > 0:
             pos_indices.extend([i] * int(difference))
@@ -875,13 +869,7 @@ def fast_token_state_distance(
         tuple(sorted(zip(perm, neg_indices, strict=True)))
         for perm in multiset_permutations(pos_indices, len(neg_indices))
     }:
-        # for perm in itertools.permutations(pos_indices, len(neg_indices)):
-        cur_dist = 0
-        # Iterate of the mapping. Eg: [(0,2),(1,3)] and get their total distance
-        # For the example this would be dist(0,2)+dist(1,3)
-        for area1, area2 in mapping:
-            this_dist = dist_matrix[map_area_names[area1]][map_area_names[area2]]
-            cur_dist += this_dist
+        cur_dist: float = sum(dist_matrix[area1, area2] for area1, area2 in mapping)
         side_distance = min(side_distance, cur_dist)
     return side_distance / size
 

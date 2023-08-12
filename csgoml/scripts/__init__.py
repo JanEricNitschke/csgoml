@@ -1,1 +1,1 @@
-"""Module containg an assortment of helper scripts."""
+"""Module containing an assortment of helper scripts."""

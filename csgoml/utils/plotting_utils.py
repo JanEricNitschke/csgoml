@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-"""Collection of functions to extend awpy plotting capabilites.
+"""Collection of functions to extend awpy plotting capabilities.
 
 Example::
 
@@ -245,12 +245,12 @@ def _plot_area_with_name(
     text_y = center[1]
     if (
         map_name in MAP_DATA
-        and "z_cutoff" in MAP_DATA[map_name]
+        and "z_cutoff" in (current_map_data := MAP_DATA[map_name])
         and (
             NAV[map_name][cent_id]["southEastZ"] + NAV[map_name][cent_id]["northWestZ"]
         )
         / 2
-        < MAP_DATA[map_name]["z_cutoff"]
+        < current_map_data["z_cutoff"]
     ):
         hull[:, 1] = np.array([y + 1024 for y in hull[:, 1]])
         text_y += 1024
@@ -322,12 +322,12 @@ def _plot_area(
 ) -> None:
     if (
         map_name in MAP_DATA
-        and "z_cutoff" in MAP_DATA[map_name]
+        and "z_cutoff" in (current_map_data := MAP_DATA[map_name])
         and (
             NAV[map_name][cent_id]["southEastZ"] + NAV[map_name][cent_id]["northWestZ"]
         )
         / 2
-        < MAP_DATA[map_name]["z_cutoff"]
+        < current_map_data["z_cutoff"]
     ):
         hull[:, 1] = np.array([y + 1024 for y in hull[:, 1]])
     axis.plot(hull[:, 0], hull[:, 1], "-", lw=3, label=area)
@@ -337,7 +337,7 @@ def get_area_avg_z(area: Area) -> float:
     """Get the average z coordinate for an Area.
 
     Args:
-        area (Area): Area to get the avg z coordiante for.
+        area (Area): Area to get the avg z coordinatefor.
 
     Returns:
         float: Average z coordinate of the area.
@@ -359,8 +359,8 @@ def get_z_cutoff_shift(map_name: str, avg_z: float) -> float:
     """
     if (
         map_name in MAP_DATA
-        and "z_cutoff" in MAP_DATA[map_name]
-        and avg_z < MAP_DATA[map_name]["z_cutoff"]
+        and "z_cutoff" in (current_map_data := MAP_DATA[map_name])
+        and avg_z < current_map_data["z_cutoff"]
     ):
         return 1024
     return 0
@@ -541,12 +541,15 @@ def plot_map_connections(
     fig, axis = plot_map(map_name=map_name, map_type=map_type, dark=dark)
     fig.set_size_inches(19.2, 21.6)
     _plot_tiles(map_name, axis)
-    for source, dest in NAV_GRAPHS[map_name].edges():
-        source_node = NAV_GRAPHS[map_name].nodes()[source]
-        dest_node = NAV_GRAPHS[map_name].nodes()[dest]
-
-        x1, x2 = source_node["center"][0], dest_node["center"][0]
-        y1, y2 = source_node["center"][1], dest_node["center"][1]
+    # networkX type hints suck. So pyright does not know that we only
+    # get a two sized tuple for our case.
+    for source, dest in NAV_GRAPHS[  # pyright: ignore [reportGeneralTypeIssues]
+        map_name
+    ].edges():
+        source_node = NAV_GRAPHS[map_name].nodes[source]
+        dest_node = NAV_GRAPHS[map_name].nodes[dest]
+        x1, y1, z1 = source_node["center"]
+        x2, y2, _z2 = dest_node["center"]
         try:
             x1, x2 = position_transform(map_name, x1, "x"), position_transform(
                 map_name, x2, "x"
@@ -557,8 +560,8 @@ def plot_map_connections(
         finally:
             if (
                 map_name in MAP_DATA
-                and "z_cutoff" in MAP_DATA[map_name]
-                and source_node["center"][2] < MAP_DATA[map_name]["z_cutoff"]
+                and "z_cutoff" in (current_map_data := MAP_DATA[map_name])
+                and z1 < current_map_data[map_name]["z_cutoff"]
             ):
                 y1, y2 = y1 + 1024, y2 + 1024
             axis.plot(
@@ -637,8 +640,8 @@ def get_shortest_distances_mapping(
             else:
                 this_dist = point_distance(
                     map_name,
-                    current_positions[current_i, :3],
-                    leaders[leader_i, :3],
+                    tuple(current_positions[current_i, :3]),
+                    tuple(leaders[leader_i, :3]),
                     dist_type,
                 )["distance"]
             distance_pairs[leader_i, current_i] = this_dist
@@ -855,11 +858,11 @@ def _fill_plot_positions_traj_gif(
                 # If we are an alive leader we get opaque and big markers
                 if frame_index == 0:
                     alpha = 1
-                    size = mpl.rcParams["lines.markersize"] ** 2
+                    size = (mpl.rcParams["lines.markersize"] or 1) ** 2
                 # If not we get partially transparent and small ones
                 else:
                     alpha = 0.5
-                    size = 0.3 * mpl.rcParams["lines.markersize"] ** 2
+                    size = 0.3 * (mpl.rcParams["lines.markersize"] or 1) ** 2
                 positions.append(PlotPosition(pos, color, marker, alpha, size))
     return positions
 
@@ -1047,11 +1050,11 @@ def _fill_plot_positions_pos_gif(
                 # If we are an alive leader we get opaque and big markers
                 if frame_index == 0:
                     alpha = 1
-                    size = mpl.rcParams["lines.markersize"] ** 2
+                    size = (mpl.rcParams["lines.markersize"] or 1) ** 2
                 # If not we get partially transparent and small ones
                 else:
                     alpha = 0.5
-                    size = 0.3 * mpl.rcParams["lines.markersize"] ** 2
+                    size = 0.3 * (mpl.rcParams["lines.markersize"] or 1) ** 2
                 positions.append(PlotPosition(pos, color, marker, alpha, size))
     return positions
 
@@ -1172,7 +1175,7 @@ def plot_rounds_different_players(
                 dark=dark,
                 dist_type=dist_type,
                 dtw=dtw,
-                dpi=dpi if dpi else 1000,
+                dpi=dpi or 1000,
             )
             if image
             else plot_rounds_different_players_trajectory_gif(
@@ -1185,7 +1188,7 @@ def plot_rounds_different_players(
                 n_frames=n_frames,
                 dist_type=dist_type,
                 dtw=dtw,
-                dpi=dpi if dpi else 300,
+                dpi=dpi or 300,
             )
         )
     if image:
@@ -1196,7 +1199,7 @@ def plot_rounds_different_players(
             map_type=map_type,
             dark=dark,
             dist_type=dist_type,
-            dpi=dpi if dpi else 1000,
+            dpi=dpi or 1000,
         )
     # gif
     return plot_rounds_different_players_position_gif(
@@ -1208,7 +1211,7 @@ def plot_rounds_different_players(
         fps=fps,
         n_frames=n_frames,
         dist_type=dist_type,
-        dpi=dpi if dpi else 300,
+        dpi=dpi or 300,
     )
 
 

@@ -31,7 +31,7 @@ The latter functionality has also been given a front-end either [here](https://g
 # tensorflow_input_preparation.py
 A script that produces, for each map separately, a json file containing different configurations of player trajectory data for each round played on that map.
 
-This is in perparation of further analysis to separate the extensive cleaning neccessary from the final analysis.
+This is in preparation of further analysis to separate the extensive cleaning necessary from the final analysis.
 
 # read_tensorflow_input.py, trajectory_handler.py, trajectory_predictor.py and trajectory_clusterer.py
 Contain classes designed to read in the json files produced by tensorflow_input_preparation.py and train LSTM networks to predict a winner of a round based on player trajectory data or cluster rounds based on player trajectories.

@@ -145,7 +145,8 @@ class DemoAnalyzerSorter:
             data: json object produced from awpy parsing a csgo demo file.
 
         Returns:
-            A string corresponding to the (shortend) name of the map of the parsed game.
+            A string corresponding to the (shortened)
+                name of the map of the parsed game.
         """
         if data["mapName"].startswith("de_"):
             return data["mapName"].split("_")[1]
@@ -214,6 +215,8 @@ class DemoAnalyzerSorter:
             data = demo_parser.parse(clean=False, return_type="json")
             self.clean_rounds(demo_parser)
             data = demo_parser.json
+            if not data:
+                continue
             map_name = self.get_map_name(data)
             logging.debug("Scanned map name: %s", map_name)
             source = os.path.join(directory, f"{name}.json")

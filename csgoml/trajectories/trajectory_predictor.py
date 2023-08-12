@@ -136,7 +136,7 @@ class TrajectoryPredictor:
                 coordinate_type (str): String indicating whether player coordinates
                     should be used directly ("position") or
                     the summarizing tokens ("token") instead.
-                side (str): Sring indicating whether to include positions for
+                side (str): String indicating whether to include positions for
                     players on the CT side ('CT'), T  side ('T') or both sides ('BOTH')
                 time (int): Integer indicating the first how
                     many seconds should be considered
@@ -433,7 +433,7 @@ class TrajectoryPredictor:
     ) -> None:
         """Plot and log results for training and evaluating the model.
 
-        Logs evaluation loss and accuarcy from the test set and
+        Logs evaluation loss and accuracy from the test set and
         produces plots of training vs val loss and accuracy during training
 
         Args:

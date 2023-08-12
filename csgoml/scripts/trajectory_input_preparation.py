@@ -43,6 +43,7 @@ from awpy.types import (
     PlayerInfo,
     Token,
     int_to_string_n_players,
+    is_valid_side,
     proper_player_number,
     upper_side,
 )
@@ -58,7 +59,7 @@ def initialize_round_positions(
 ) -> RoundPositions:
     """Initializes dictionary of lists for one rounds positions.
 
-    The positions dictinary contains the following keys:
+    The positions dictionary contains the following keys:
     Tick, token, interpolated, CTtoken, Ttoken and for each player on each side
     side+"Player"+number+feature where side is in [CT,T],
     number in range(1,6) and feature in ["Alive", "Name", "x", "y", "z"]
@@ -194,7 +195,7 @@ def build_intermediate_frames(
     return intermdiate_frames
 
 
-def get_postion_token(frame: GameFrame, map_name: str, token_length: int) -> Token:
+def get_position_token(frame: GameFrame, map_name: str, token_length: int) -> Token:
     """Generate a dictionary of position tokens from frame dictionary and map_name.
 
     The position token is a string of integers representing the
@@ -210,7 +211,8 @@ def get_postion_token(frame: GameFrame, map_name: str, token_length: int) -> Tok
             one sides position token on the played map
 
     Returns:
-        Dict of three position tokens. One for each side and aditionally a combined one.
+        Dict of three position tokens.
+            One for each side and additionally a combined one.
     """
     try:
         tokens: Token = generate_position_token(map_name, frame)
@@ -292,7 +294,7 @@ def check_size(dictionary: Mapping[str, Any]) -> int:
 
 
 def frame_is_empty(current_round: GameRound) -> bool:
-    """Checks whether a round dicionary contains None or an empty list frames.
+    """Checks whether a round dictionary contains None or an empty list frames.
 
     None or empty frames will raise exceptions when
     trying to extract player information out of them.
@@ -460,6 +462,11 @@ def append_to_round_positions(
         )
 
 
+def _bool_int(value: bool) -> Literal[0, 1]:  # noqa: FBT001
+    """Typeguarded conversion from bool to Literal[0, 1]."""
+    return 1 if value else 0
+
+
 def append_step_to_round_positions(
     round_positions: RoundPositions,
     side: Literal["ct", "t"],
@@ -505,7 +512,7 @@ def append_step_to_round_positions(
         ][-1]
     )
     alive_val = (
-        int(player["isAlive"])
+        _bool_int(player["isAlive"])
         if step == 1
         else round_positions[
             upper_side(side) + "Player" + id_number_dict[side][str(player_id)] + "Alive"
@@ -548,7 +555,7 @@ def append_step_to_round_positions(
         )
     )
     area_val = (
-        find_closest_area(map_name, [x_val, y_val, z_val])["areaId"]
+        find_closest_area(map_name, (x_val, y_val, z_val))["areaId"]
         if map_name in NAV
         else -1
     )
@@ -604,7 +611,7 @@ def convert_winner_to_int(winner_string: str) -> Literal[0, 1] | None:
 
 
 def get_token_length(map_name: str) -> int:
-    """Determine the lenght of player position tokens for this map.
+    """Determine the length of player position tokens for this map.
 
     The length of the position token is the number of unique named areas.
     Determine it by looping through all areas and
@@ -689,12 +696,13 @@ def analyze_players(
     """Analyzes the players in a given frame and side.
 
     Args:
-        frame (GameFrame): Dicitionary containg all information about the current round
+        frame (GameFrame): Dicitionary containing all information
+            about the current round
         dict_initialized (dict[str, bool]): Dict containing information about
             whether or not a given side has been initialized already
         id_number_dict (dict[str, dict[str, str]]): Dict mapping player to a number
         side (Literal["ct","t"]): String of the current side
-        round_positions (dict[str, list]): Dict containg all player trajectories
+        round_positions (dict[str, list]): Dict containing all player trajectories
             of the current round
         second_difference (int): Time difference from last frame to the current one
         map_name (str): Name of the map under consideration
@@ -703,34 +711,53 @@ def analyze_players(
         None (round_positions is appended to in place)
     """
     for player_index, player in enumerate(frame[side]["players"] or []):
-        # There should only be 5 players in a frame -> so index 0 - 4
-        if not proper_player_number(player_index) or player_index == N_PLAYERS:
-            continue
-        player_id = get_player_id(player)
-        # If the dict of the team has not been initialized add that player.
-        # Should only happen once per player per team per round
-        # But for each team can happen on different rounds in some rare cases.
-        if dict_initialized[side] is False:
-            id_number_dict[side][str(player_id)] = int_to_string_n_players(
-                player_index + 1
-            )
-        # If a player joins mid round
-        # (either a bot due to player leaving or player (re)joining)
-        # do not use him for this round.
-        if str(player_id) not in id_number_dict[side]:
-            continue
-        append_to_round_positions(
-            round_positions,
-            side,
-            id_number_dict,
-            player_id,
+        _analyze_player(
             player,
+            player_index,
+            dict_initialized,
+            id_number_dict,
+            side,
+            round_positions,
             second_difference,
             map_name,
         )
     # After looping over each player in the team once
     # the steamID matching has been initialized
     dict_initialized[side] = True
+
+
+def _analyze_player(
+    player: PlayerInfo,
+    player_index: int,
+    dict_initialized: DictInitialized,
+    id_number_dict: IDNumberDict,
+    side: Literal["ct", "t"],
+    round_positions: RoundPositions,
+    second_difference: int,
+    map_name: str,
+) -> None:
+    if not proper_player_number(player_index) or player_index == N_PLAYERS:
+        return
+    player_id = get_player_id(player)
+    # If the dict of the team has not been initialized add that player.
+    # Should only happen once per player per team per round
+    # But for each team can happen on different rounds in some rare cases.
+    if dict_initialized[side] is False:
+        id_number_dict[side][str(player_id)] = int_to_string_n_players(player_index + 1)
+    # If a player joins mid round
+    # (either a bot due to player leaving or player (re)joining)
+    # do not use him for this round.
+    if str(player_id) not in id_number_dict[side]:
+        return
+    append_to_round_positions(
+        round_positions,
+        side,
+        id_number_dict,
+        player_id,
+        player,
+        second_difference,
+        map_name,
+    )
 
 
 def add_general_information(
@@ -747,12 +774,12 @@ def add_general_information(
     """Adds general information to round_positions.
 
     Args:
-        frame (GameFrame): Dict containg all information about the current round
+        frame (GameFrame): Dict containing all information about the current round
         current_round (GameRound): Dict containing all information
             about the current round
         second_difference (int): Time difference from last frame to the current one
         token_length: (int): Length of the position token for the current map
-        round_positions (dict[str, list]): Dictionary containg all player
+        round_positions (dict[str, list]): Dictionary containing all player
             trajectories of the current round
         ticks (list[int]): Will contain the current and previous tick
         index (int): Index of the current frame
@@ -776,7 +803,7 @@ def add_general_information(
         )
     )
     for i in range(second_difference, 0, -1):
-        tokens = get_postion_token(
+        tokens = get_position_token(
             token_frames[second_difference - i],
             map_name,
             token_length,
@@ -899,8 +926,8 @@ def analyze_rounds(
 
     Loops over every round in "data, every frame in each rounds,
     every side in each frame and every player in each side
-    and adds their position as well as auxilliary information to dictionary.
-    This dictionary and more auxilliary information is then appended to the overall
+    and adds their position as well as auxiliary information to dictionary.
+    This dictionary and more auxiliary information is then appended to the overall
     dictionary containing all information about matches on this map.
 
     Args:
@@ -919,10 +946,10 @@ def analyze_rounds(
         # If there are no frames in the round skip it.
         if frame_is_empty(current_round):
             continue
-        winner_id = convert_winner_to_int(current_round["winningSide"])
-        # If winner is neither then None is returned and the round should be skipped.
-        if winner_id is None:
+        winning_side = current_round["winningSide"]
+        if not is_valid_side(winning_side):
             continue
+        winner_id = convert_winner_to_int(winning_side)
         skip_round, round_positions = analyze_frames(
             current_round, map_name, token_length, tick_rate, (match_id, winner_id)
         )

@@ -12,7 +12,6 @@ import numpy as np
 from awpy.analytics.nav import (
     area_distance,
 )
-from numba import typed, types
 
 from csgoml.utils.nav_utils import (
     _get_map_area_names,
@@ -225,26 +224,16 @@ class TestNavUtils:
                 ],
             ]
         )
-        d1_type = types.DictType(types.string, types.float64)
-        dist_matrix = typed.Dict.empty(types.string, d1_type)
-        map_area_names = ["One", "Two", "Three", "Four"]
-        for i in range(4):
-            if map_area_names[i] not in dist_matrix:
-                dist_matrix[map_area_names[i]] = typed.Dict.empty(
-                    key_type=types.string,
-                    value_type=types.float64,
-                )
-            for j in range(4):
-                dist_matrix[map_area_names[i]][map_area_names[j]] = float(
-                    abs(i - j) ** 2
-                )
+        dist_matrix = np.zeros((4, 4))
+        for i, j in itertools.product(range(4), range(4)):
+            dist_matrix[i, j] = float(abs(i - j) ** 2)
         dist = fast_token_trajectory_distance(
-            token_array1, token_array2, dist_matrix, map_area_names, dtw=False
+            token_array1, token_array2, dist_matrix, dtw=False
         )
         assert isinstance(dist, float)
         assert round(dist, 2) == round(4 / 4, 2)
         dist = fast_token_trajectory_distance(
-            token_array1, token_array2, dist_matrix, map_area_names, dtw=True
+            token_array1, token_array2, dist_matrix, dtw=True
         )
         assert isinstance(dist, float)
         assert round(dist, 2) == round(2 / 4, 2)
@@ -273,8 +262,6 @@ class TestNavUtils:
             calc_precomputed = get_traj_matrix_area(
                 to_precompute, self.map_name, dtw=False
             )
-        print(calc_precomputed.shape)
-        print(calc_precomputed)
         assert target_precomputed.shape == calc_precomputed.shape
         assert (target_precomputed == calc_precomputed).all()
         with patch("csgoml.utils.nav_utils._prepare_trajectories") as prepare_mock:
@@ -317,8 +304,6 @@ class TestNavUtils:
             calc_precomputed = get_traj_matrix_place(
                 to_precompute, self.map_name, dtw=False
             )
-        print(calc_precomputed.shape)
-        print(calc_precomputed)
         assert target_precomputed.shape == calc_precomputed.shape
         assert (target_precomputed == calc_precomputed).all()
         with patch(
@@ -341,30 +326,28 @@ class TestNavUtils:
         """Tests get_map_area_names."""
         map_area_names = _get_map_area_names("de_ancient")
         assert len(map_area_names) == 20
-        assert map_area_names == typed.List(
-            [
-                "",
-                "Alley",
-                "BackHall",
-                "BombsiteA",
-                "BombsiteB",
-                "CTSpawn",
-                "House",
-                "MainHall",
-                "Middle",
-                "Outside",
-                "Ramp",
-                "Ruins",
-                "SideEntrance",
-                "SideHall",
-                "TSideLower",
-                "TSideUpper",
-                "TSpawn",
-                "TopofMid",
-                "Tunnel",
-                "Water",
-            ]
-        )
+        assert map_area_names == [
+            "",
+            "Alley",
+            "BackHall",
+            "BombsiteA",
+            "BombsiteB",
+            "CTSpawn",
+            "House",
+            "MainHall",
+            "Middle",
+            "Outside",
+            "Ramp",
+            "Ruins",
+            "SideEntrance",
+            "SideHall",
+            "TSideLower",
+            "TSideUpper",
+            "TSpawn",
+            "TopofMid",
+            "Tunnel",
+            "Water",
+        ]
 
     def test_get_traj_matrix_token(self):
         """Tests get_traj_matrix_token."""
@@ -444,40 +427,26 @@ class TestNavUtils:
             ]
         )
         to_precompute = np.stack([token_array1, token_array2, token_array3])
-        d1_type = types.DictType(types.string, types.float64)
-        dist_matrix = typed.Dict.empty(types.string, d1_type)
-        map_area_names = ["One", "Two", "Three", "Four", "Five"]
-        for i in range(5):
-            if map_area_names[i] not in dist_matrix:
-                dist_matrix[map_area_names[i]] = typed.Dict.empty(
-                    key_type=types.string,
-                    value_type=types.float64,
-                )
-            for j in range(5):
-                dist_matrix[map_area_names[i]][map_area_names[j]] = float(abs(i - j))
+        dist_matrix = np.zeros((5, 5))
+        for i, j in itertools.product(range(5), range(5)):
+            dist_matrix[i, j] = float(abs(i - j))
         target_precomputed = np.zeros((len(to_precompute), len(to_precompute)))
         target_precomputed[0][1] = target_precomputed[1][0] = 1.0
         target_precomputed[0][2] = target_precomputed[2][0] = 2.0
         target_precomputed[1][2] = target_precomputed[2][1] = 1.0
         with patch(
-            "csgoml.utils.nav_utils._get_map_area_names"
-        ) as area_names_mock, patch(
-            "csgoml.utils.nav_utils._get_compressed_place_dist_matrix"
+            "csgoml.utils.nav_utils._get_compressed_places_dist_matrix"
         ) as compress_mock:
-            area_names_mock.return_value = map_area_names
-            compress_mock.return_value = dist_matrix
+            compress_mock.return_value = (dist_matrix, None)
             calc_precomputed = get_traj_matrix_token(
                 to_precompute, self.map_name, dtw=False
             )
         assert target_precomputed.shape == calc_precomputed.shape
         assert (target_precomputed == calc_precomputed).all()
         with patch(
-            "csgoml.utils.nav_utils._get_map_area_names"
-        ) as area_names_mock, patch(
-            "csgoml.utils.nav_utils._get_compressed_place_dist_matrix"
+            "csgoml.utils.nav_utils._get_compressed_places_dist_matrix"
         ) as compress_mock:
-            area_names_mock.return_value = map_area_names
-            compress_mock.return_value = dist_matrix
+            compress_mock.return_value = (dist_matrix, None)
             calc_precomputed = get_traj_matrix_token(
                 to_precompute, self.map_name, dtw=True
             )
@@ -509,18 +478,10 @@ class TestNavUtils:
 
     def test_fast_token_state_distance(self):
         """Tests fast_token_state_distance."""
-        d1_type = types.DictType(types.string, types.float64)
-        dist_matrix = typed.Dict.empty(types.string, d1_type)
-        map_area_names = ["One", "Two", "Three", "Four"]
-        for i in range(4):
-            if map_area_names[i] not in dist_matrix:
-                dist_matrix[map_area_names[i]] = typed.Dict.empty(
-                    key_type=types.string,
-                    value_type=types.float64,
-                )
-            for j in range(4):
-                dist_matrix[map_area_names[i]][map_area_names[j]] = float(abs(i - j))
-        dist_matrix["One"]["Four"] = dist_matrix["Four"]["One"] = sys.maxsize / 6
+        dist_matrix = np.zeros((4, 4))
+        for i, j in itertools.product(range(4), range(4)):
+            dist_matrix[i, j] = float(abs(i - j))
+        dist_matrix[0][3] = dist_matrix[3][0] = sys.maxsize / 6
         token_array1 = np.array(
             [
                 0.0,
@@ -537,9 +498,7 @@ class TestNavUtils:
                 0.0,
             ]
         )
-        dist = fast_token_state_distance(
-            token_array1, token_array2, dist_matrix, map_area_names
-        )
+        dist = fast_token_state_distance(token_array1, token_array2, dist_matrix)
         assert abs(dist / sys.maxsize - 1) < 0.0001
         token_array1 = np.array(
             [
@@ -557,9 +516,7 @@ class TestNavUtils:
                 0.0,
             ]
         )
-        dist = fast_token_state_distance(
-            token_array1, token_array2, dist_matrix, map_area_names
-        )
+        dist = fast_token_state_distance(token_array1, token_array2, dist_matrix)
         assert isinstance(dist, float)
         assert dist == 1.0
         token_array1 = np.array(
@@ -578,9 +535,7 @@ class TestNavUtils:
                 0.0,
             ]
         )
-        dist = fast_token_state_distance(
-            token_array1, token_array2, dist_matrix, map_area_names
-        )
+        dist = fast_token_state_distance(token_array1, token_array2, dist_matrix)
         assert isinstance(dist, float)
         assert dist == 2.0
         token_array1 = np.array(
@@ -599,9 +554,7 @@ class TestNavUtils:
                 0.0,
             ]
         )
-        dist = fast_token_state_distance(
-            token_array1, token_array2, dist_matrix, map_area_names
-        )
+        dist = fast_token_state_distance(token_array1, token_array2, dist_matrix)
         assert isinstance(dist, float)
         assert dist == 2.0
         token_array1 = np.array(
@@ -620,9 +573,7 @@ class TestNavUtils:
                 5.0,
             ]
         )
-        dist = fast_token_state_distance(
-            token_array1, token_array2, dist_matrix, map_area_names
-        )
+        dist = fast_token_state_distance(token_array1, token_array2, dist_matrix)
         assert isinstance(dist, float)
         assert abs(dist / (sys.maxsize / 6) - 1) < 0.0001
         token_array1 = np.array(
@@ -641,9 +592,7 @@ class TestNavUtils:
                 0.0,
             ]
         )
-        dist = fast_token_state_distance(
-            token_array1, token_array2, dist_matrix, map_area_names
-        )
+        dist = fast_token_state_distance(token_array1, token_array2, dist_matrix)
         assert isinstance(dist, float)
         assert dist == 1.0
 

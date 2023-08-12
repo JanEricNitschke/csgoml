@@ -42,7 +42,7 @@ class WeaponsClassesSwitch(TypedDict):
 
 
 class TimeSpecification(TypedDict):
-    """Holds information about the time the fights should have occured in."""
+    """Holds information about the time the fights should have occurred in."""
 
     start: int
     end: int

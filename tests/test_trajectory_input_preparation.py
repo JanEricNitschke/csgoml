@@ -13,7 +13,7 @@ from csgoml.scripts.trajectory_input_preparation import (
     convert_winner_to_int,
     frame_is_empty,
     get_player_id,
-    get_postion_token,
+    get_position_token,
     get_token_length,
     initialize_round,
     initialize_round_positions,
@@ -231,8 +231,8 @@ class TestTrajectoryInputPreparation:
         }
         assert int_frames == [int_frame, current_frame]
 
-    def test_get_postion_token(self):
-        """Tests get_postion_token."""
+    def test_get_position_token(self):
+        """Tests get_position_token."""
         frame = {
             "t": {
                 "players": [
@@ -275,7 +275,7 @@ class TestTrajectoryInputPreparation:
         }
         map_name = "de_inferno"
         token_length = 25
-        tokens = get_postion_token(
+        tokens = get_position_token(
             frame=frame, map_name=map_name, token_length=token_length
         )
         assert tokens == {
@@ -284,7 +284,7 @@ class TestTrajectoryInputPreparation:
             "token": "01000000000000001000000000200000000000000000000000",
         }
         map_name = "de_nope"
-        tokens = get_postion_token(
+        tokens = get_position_token(
             frame=frame, map_name=map_name, token_length=token_length
         )
         assert tokens == {
@@ -294,7 +294,7 @@ class TestTrajectoryInputPreparation:
         }
         map_name = "de_inferno"
         frame["t"]["players"] = None
-        tokens = get_postion_token(
+        tokens = get_position_token(
             frame=frame, map_name=map_name, token_length=token_length
         )
         assert tokens == {
@@ -303,7 +303,7 @@ class TestTrajectoryInputPreparation:
             "token": "00000000000000000000000000000000000000000000000000",
         }
         frame["t"] = None
-        tokens = get_postion_token(
+        tokens = get_position_token(
             frame=frame, map_name=map_name, token_length=token_length
         )
         assert tokens == {
