@@ -12,7 +12,7 @@ setup(
     # Project uses reStructuredText, so ensure that the docutils get
     # installed or upgraded on the target machine
     install_requires=[
-        "awpy>=1.2.3",
+        "awpy>=1.3.1",
         "boto3~=1.28.1",
         "imageio~=2.28.0",
         "matplotlib~=3.7.0",

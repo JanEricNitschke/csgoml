@@ -95,7 +95,8 @@ class FightAnalyzer:
 
         Args:
             map_name (str): A string of the name of the map being considered
-            pos (list[Optional[float]]): A list of x, y and z coordinates
+            pos (tuple[Optional[float], Optional[float], Optional[float]]):
+                A tuple of x, y and z coordinates,
 
         Return:
             A string of the name of the area that contains pos on map "map"
