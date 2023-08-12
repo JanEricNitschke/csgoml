@@ -449,7 +449,7 @@ def _get_compressed_area_dist_matrix(
 def _apply_matching(
     precompute_array: npt.NDArray, matching: dict[int, int]
 ) -> npt.NDArray:
-    def get_matching(x: int | str | float) -> int:
+    def get_matching(x: str | float) -> int:
         return matching[int(x)] if int(x) in matching else next(iter(matching.values()))
 
     return np.vectorize(get_matching)(precompute_array)
@@ -609,7 +609,7 @@ def _apply_matching_place(
 ) -> npt.NDArray:
     map_areas = NAV[map_name]
 
-    def get_matching(x: int | float | str) -> int:
+    def get_matching(x: float | str) -> int:
         return (
             matching[map_areas[int(x)]["areaName"]]
             if int(x) in map_areas and map_areas[int(x)]["areaName"] in matching

@@ -538,7 +538,7 @@ def plot_map_connections(
         None, saves .png
     """
     logging.info("Plotting connections for %s", map_name)
-    fig, axis = plot_map(map_name=map_name, map_type=map_type, dark=dark)
+    fig, axis = plot_map(map_name, map_type, dark=dark)
     fig.set_size_inches(19.2, 21.6)
     _plot_tiles(map_name, axis)
     # networkX type hints suck. So pyright does not know that we only
@@ -546,10 +546,8 @@ def plot_map_connections(
     for source, dest in NAV_GRAPHS[  # pyright: ignore [reportGeneralTypeIssues]
         map_name
     ].edges():
-        source_node = NAV_GRAPHS[map_name].nodes[source]
-        dest_node = NAV_GRAPHS[map_name].nodes[dest]
-        x1, y1, z1 = source_node["center"]
-        x2, y2, _z2 = dest_node["center"]
+        x1, y1, z1 = NAV_GRAPHS[map_name].nodes[source]["center"]
+        x2, y2, _ = NAV_GRAPHS[map_name].nodes[dest]["center"]
         try:
             x1, x2 = position_transform(map_name, x1, "x"), position_transform(
                 map_name, x2, "x"
