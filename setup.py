@@ -27,7 +27,7 @@ setup(
         "scikit-learn-extra~=0.3.0",
         "scipy~=1.10.0",
         "sympy==1.11",
-        "tensorflow~=2.13.0",
+        # "tensorflow~=2.13.0",  # noqa: ERA001
         "tqdm~=4.65.0",
         "watchdog~=3.0.0",
     ],
