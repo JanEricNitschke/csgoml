@@ -631,7 +631,10 @@ class FightAnalyzer:
         result = list(cursor.fetchone() or [])
 
         if len(result) == 2 and result[1] > 0:  # noqa: PLR2004
-            res["situations_found"], res["ct_win_percentage"] = (
+            (
+                res["situations_found"],
+                res["ct_win_percentage"],  # pyright: ignore [reportGeneralTypeIssues]
+            ) = (
                 result[1],
                 tuple(
                     round(100 * x)

@@ -638,8 +638,12 @@ def get_shortest_distances_mapping(
             else:
                 this_dist = point_distance(
                     map_name,
-                    tuple(current_positions[current_i, :3]),
-                    tuple(leaders[leader_i, :3]),
+                    tuple(
+                        current_positions[current_i, :3]
+                    ),  # pyright: ignore [reportGeneralTypeIssues]
+                    tuple(
+                        leaders[leader_i, :3]
+                    ),  # pyright: ignore [reportGeneralTypeIssues]
                     dist_type,
                 )["distance"]
             distance_pairs[leader_i, current_i] = this_dist
