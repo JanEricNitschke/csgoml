@@ -14,23 +14,23 @@ classifiers = [
     "Programming Language :: Python :: 3",
 ]
 dependencies = [
-    "awpy>=1.3.1",
-    "boto3~=1.28.1",
-    "imageio~=2.28.0",
-    "matplotlib~=3.7.0",
-    "numba~=0.57.1",
-    "numpy>=1.20.0",
-    "patool~=1.12",
-    "polars[numpy]~=0.18.6",
+    "awpy @ git+https://github.com/JanEricNitschke/csgo@update-ci#egg=awpy",
+    "boto3~=1.34.12",
+    "imageio~=2.33.1",
+    "matplotlib~=3.8.2",
+    "numba~=0.59.0rc1",
+    "numpy>=1.26,<=1.27",
+    "patool~=2.0",
+    "polars[numpy]~=0.20.3",
     "PyMySQL[rsa]~=1.1.0",
     "requests~=2.31.0",
     "requests_ip_rotator~=1.0.14",
-    "scikit-learn~=1.3.0",
+    "scikit-learn~=1.3.2",
     "scikit-learn-extra~=0.3.0",
-    "scipy~=1.10.0",
-    "sympy==1.11.0",
-    # "tensorflow~=2.13.0",
-    "tqdm~=4.65.0",
+    "scipy~=1.11.4",
+    "sympy==1.12",
+    "tensorflow~=2.15.0",
+    "tqdm~=4.66.1",
     "watchdog~=3.0.0",
 ]
 dynamic = ["version"]
@@ -144,6 +144,7 @@ max-args = 15
 [tool.pyright]
 include                   = ["csgoml"]
 exclude                   = ["tests"]
+extraPaths                = ["src/awpy"]
 strictListInference       = true
 strictDictionaryInference = true
 strictSetInference        = true
@@ -165,8 +166,9 @@ reportUnnecessaryComparison        = "error"
 reportUnnecessaryContains          = "error"
 reportAssertAlwaysTrue             = "error"
 reportUnnecessaryTypeIgnoreComment = "error"
-reportImplicitOverride             = "none"
+reportImplicitOverride             = "error"
 reportShadowedImports              = "error"
+reportMissingImports               = "warning"
 
 
 [tool.coverage.run]
@@ -288,3 +290,6 @@ min-similarity-lines = 10
 [tool.pylint.spelling]
 # Limits count of emitted suggestions for spelling mistakes.
 max-spelling-suggestions = 4
+
+[tool.pylint.import]
+known-third-party = "awpy"

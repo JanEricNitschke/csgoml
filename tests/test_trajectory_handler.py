@@ -70,7 +70,7 @@ class TestTrajectoryHandler:
         assert len(shape) == 3
         assert shape[1] == self.handler.time
         assert shape[0] == len(self.complete_dataframe)
-        assert self.handler.datasets["token"].dtype == np.int32
+        assert self.handler.datasets["token"].dtype == np.int64
         assert "position" in self.handler.datasets
         assert isinstance(self.handler.datasets["position"], np.ndarray)
         shape = self.handler.datasets["position"].shape

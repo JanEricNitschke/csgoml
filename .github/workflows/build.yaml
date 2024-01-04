@@ -15,7 +15,7 @@ jobs:
       fail-fast: false
       matrix:
         os: [ubuntu-latest] # , macos-latest, windows-latest
-        python-version: ["3.11"]  #, "3.12-dev"]
+        python-version: ["3.11", "3.12"]
     steps:
       - name: Setup MySQL
         uses: mirromutth/mysql-action@v1.1
@@ -25,6 +25,22 @@ jobs:
           mysql version: '8.0' # Optional, default value is "latest". The version of the MySQL
           mysql database: 'analyzertest' # Optional, default value is "test". The specified database which will be create
           mysql root password: 'testpassword' # Required if "mysql user" is empty, default is empty. The root superuser password
+      - name: Cache test demos
+        id: cache-demos
+        uses: actions/cache@v3
+        env:
+          cache-name: cache-demos
+        with:
+          # demos are downloaded to
+          # and looked for in `{repo}/tests`
+          path: ${{ github.workspace }}/tests/*.dem
+          # Invalidate the cache if the file containing the demo urls
+          # has changed.
+          key: cache-test-demos-${{ hashFiles('**/test_data.json') }}
+          # Care with this: If a demo changes but the name remains the same
+          # then this could cause issues.
+          # So do not do that!
+          restore-keys: cache-test-demos-
       - name: Checkout CSGOML library
         uses: actions/checkout@v3
       - name: Set up Python
@@ -40,16 +56,20 @@ jobs:
           python -m pip install --upgrade pip
           pip install -r requirements.txt
           pip install -r tests/requirements.txt
+          python setup.py install
+          cd src/awpy
+          pip install -e . --config-settings editable_mode=compat
+          cd ../..
       - name: Check formatting with black
         uses: psf/black@stable
       - name: Lint with ruff
         uses: chartboost/ruff-action@v1
         with:
-          version: 0.0.291
+          version: 0.1.11
       - name: Typecheck with pyright
         uses: jakebailey/pyright-action@v1
         with:
-          version: 1.1.328
+          version: 1.1.344
       - name: Thorough check with pylint
         run: pylint csgoml
       - name: Test with pytest

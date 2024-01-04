@@ -28,7 +28,7 @@ class TestDemoAnalyzerSorter:
             )
             raise AssertionError(msg)
         self.sorter = DemoAnalyzerSorter(
-            dirs=[os.getcwd()],
+            dirs=[os.path.join(os.getcwd(), "tests")],
             ids=[100, 700, 500],
             maps_dir=maps_dir,
         )
@@ -37,7 +37,7 @@ class TestDemoAnalyzerSorter:
         """Set sorter to none, deletes all demofiles, JSON and directories."""
         files_in_directory = os.listdir()
         if filtered_files := [
-            file for file in files_in_directory if file.endswith((".dem", ".json"))
+            file for file in files_in_directory if file.endswith(".json")
         ]:
             for f in filtered_files:
                 os.remove(f)
@@ -47,8 +47,12 @@ class TestDemoAnalyzerSorter:
     @staticmethod
     def _get_demofile(demo_link: str) -> None:
         print(f"Requesting {demo_link}")
+        file_name = f"tests/{demo_link.split(r'/')[-1]}"
+        if os.path.exists(file_name):
+            print("File already exists!")
+            return
         r = requests.get(demo_link, timeout=20)
-        with open(demo_link.split(r"/")[-1], "wb") as demo_file:
+        with open(f"tests/{demo_link.split(r'/')[-1]}", "wb") as demo_file:
             demo_file.write(r.content)
 
     def test_get_ids(self):

@@ -543,9 +543,7 @@ def plot_map_connections(
     _plot_tiles(map_name, axis)
     # networkX type hints suck. So pyright does not know that we only
     # get a two sized tuple for our case.
-    for source, dest in NAV_GRAPHS[  # pyright: ignore [reportGeneralTypeIssues]
-        map_name
-    ].edges():
+    for source, dest in NAV_GRAPHS[map_name].edges():
         x1, y1, z1 = NAV_GRAPHS[map_name].nodes[source]["center"]
         x2, y2, _ = NAV_GRAPHS[map_name].nodes[dest]["center"]
         try:

@@ -33,10 +33,10 @@ import os
 import random
 from typing import Literal
 
+import keras
 import matplotlib.pyplot as plt
 import tensorflow as tf
 from numpy import ndarray
-from tensorflow import keras
 
 from csgoml.trajectories.trajectory_handler import TrajectoryHandler
 from csgoml.types import (
@@ -217,7 +217,7 @@ class TrajectoryPredictor:
         coordinate_type: str,
         datasets: tuple[tf.data.Dataset, tf.data.Dataset, tf.data.Dataset],
         dnn_config: DNNConfig,
-    ) -> tuple[keras.Sequential, tf.keras.callbacks.History, float, float, float]:
+    ) -> tuple[keras.Sequential, keras.callbacks.History, float, float, float]:
         """Wrapper function to get, compile, train and evaluate a model.
 
         Args:
@@ -243,11 +243,11 @@ class TrajectoryPredictor:
         logging.info("Compiling model")
         learning_rate = dnn_config["learning_rate"]  # 0.00007
         model.compile(
-            optimizer=tf.keras.optimizers.Adam(learning_rate=learning_rate),
-            loss=tf.keras.losses.BinaryCrossentropy(from_logits=True),
+            optimizer=keras.optimizers.Adam(learning_rate=learning_rate),
+            loss=keras.losses.BinaryCrossentropy(from_logits=True),
             metrics=[
                 "accuracy",
-                tf.keras.losses.BinaryCrossentropy(
+                keras.losses.BinaryCrossentropy(
                     from_logits=True, name="binary_crossentropy"
                 ),
             ],
@@ -261,7 +261,7 @@ class TrajectoryPredictor:
             train_dataset,
             epochs=epochs,
             validation_data=val_dataset,
-            callbacks=tf.keras.callbacks.EarlyStopping(
+            callbacks=keras.callbacks.EarlyStopping(
                 monitor="val_binary_crossentropy", patience=patience
             ),
         )
@@ -337,20 +337,20 @@ class TrajectoryPredictor:
                 input_shape (tuple): Tuple of the shape of the network input
 
         Returns:
-            The sequantial tf.keras LSTM model
+            The sequential keras LSTM model
         """
         nodes_per_layer = model_config["nodes_per_layer"]
         input_shape = model_config["input_shape"]
-        return tf.keras.Sequential(
+        return keras.Sequential(
             [
                 keras.layers.LSTM(nodes_per_layer, input_shape=input_shape),
                 keras.layers.Dense(
                     nodes_per_layer, activation="relu"
-                ),  # ,kernel_regularizer=tf.keras.regularizers.l2(0.001)
+                ),  # ,kernel_regularizer=keras.regularizers.l2(0.001)
                 keras.layers.Dropout(0.2),
                 keras.layers.Dense(
                     nodes_per_layer, activation="relu"
-                ),  # ,kernel_regularizer=tf.keras.regularizers.l2(0.001)
+                ),  # ,kernel_regularizer=keras.regularizers.l2(0.001)
                 keras.layers.Dropout(0.2),
                 keras.layers.Dense(1),
             ]
@@ -365,7 +365,7 @@ class TrajectoryPredictor:
                 input_shape (tuple): Tuple of the shape oof the network input
 
         Returns:
-            The sequantial tf.keras CONV2D + LSTM model
+            The sequential keras CONV2D + LSTM model
         """
         nodes_per_layer = model_config["nodes_per_layer"]
         input_shape = model_config["input_shape"]
@@ -373,7 +373,7 @@ class TrajectoryPredictor:
         pooling_size_1 = (2, 2)
         # Do we have the extra dimension because we are looking at two teams.
         pooling_size_2 = (2, 2) if input_shape[1] == 2 else (1, 2)  # noqa: PLR2004
-        return tf.keras.Sequential(
+        return keras.Sequential(
             [
                 keras.layers.TimeDistributed(
                     keras.layers.BatchNormalization(),
@@ -414,11 +414,11 @@ class TrajectoryPredictor:
                 keras.layers.LSTM(nodes_per_layer),
                 keras.layers.Dense(
                     nodes_per_layer, activation="relu"
-                ),  # ,kernel_regularizer=tf.keras.regularizers.l2(0.001)
+                ),  # ,kernel_regularizer=keras.regularizers.l2(0.001)
                 keras.layers.Dropout(0.2),
                 keras.layers.Dense(
                     nodes_per_layer, activation="relu"
-                ),  # ,kernel_regularizer=tf.keras.regularizers.l2(0.001)
+                ),  # ,kernel_regularizer=keras.regularizers.l2(0.001)
                 keras.layers.Dropout(0.2),
                 keras.layers.Dense(1),
             ]
@@ -426,7 +426,7 @@ class TrajectoryPredictor:
 
     def plot_model(
         self,
-        history: tf.keras.callbacks.History,
+        history: keras.callbacks.History,
         plot_path: str,
         dnn_snippet: str,
         config_snippet: str,

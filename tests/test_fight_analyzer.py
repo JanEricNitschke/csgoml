@@ -422,8 +422,8 @@ class TestFightAnalyzer:
             "CTSpawn",
             "P90",
         )
-        result = self._check_query("SELECT COUNT(*) FROM `CTWeapons`", 2)
-        result = self._check_query("SELECT COUNT(*) FROM `TWeapons`", 3)
+        self._check_query("SELECT COUNT(*) FROM `CTWeapons`", 2)
+        self._check_query("SELECT COUNT(*) FROM `TWeapons`", 3)
         self.analyzer.cursor.execute("SET FOREIGN_KEY_CHECKS = 0;")
         self.analyzer.cursor.execute("TRUNCATE TABLE `CTWeapons`;")
         self.analyzer.cursor.execute("TRUNCATE TABLE `TWeapons`;")
@@ -434,7 +434,6 @@ class TestFightAnalyzer:
         self.analyzer.cursor.execute(query)
         result = self.analyzer.cursor.fetchone()
         assert result == (expectation,)
-        return result
 
     def test_analyze_demos(self):
         """Tests analyze_demos."""
@@ -446,14 +445,16 @@ class TestFightAnalyzer:
             return
         self.analyzer.analyze_demos()
         assert self.analyzer.n_analyzed == 2
-        result = self._check_query("de_inferno", 6)
-        self.analyzer.cursor.execute(
-            "SELECT COUNT(*) FROM `Events` where MapName = %s and Round = %s",
-            ("de_inferno", 1),
+        self._check_query(
+            "SELECT COUNT(*) FROM `Events` where MapName = 'de_inferno'", 6
         )
-        result = self.analyzer.cursor.fetchone()
-        assert result == (3,)
-        result = self._check_query("de_mirage", 3)
+        self._check_query(
+            "SELECT COUNT(*) FROM `Events` where MapName = 'de_inferno' and Round = 1",
+            3,
+        )
+        self._check_query(
+            "SELECT COUNT(*) FROM `Events` where MapName = 'de_mirage'", 3
+        )
 
     def test_calculate_ct_win_percentage(self):
         """Tests calculate_ct_win_percentage."""
@@ -465,40 +466,43 @@ class TestFightAnalyzer:
             return
         event: FightSpecification = {
             "map_name": "de_inferno",
-            "times": [0, 10000],
+            "times": {"start": 0, "end": 10000},
             "positions": {
-                "CT": {"Allowed": {}, "Forbidden": {}},
-                "T": {"Allowed": {}, "Forbidden": {}},
+                "CT": [],
+                "T": [],
             },
             "use_weapons_classes": {"CT": "weapons", "T": "weapons", "Kill": "weapons"},
             "weapons": {
                 "CT": {
-                    "Allowed": {},
-                    "Forbidden": {},
+                    "Allowed": [],
+                    "Forbidden": [],
                 },
                 "Kill": [],
                 "T": {
-                    "Allowed": {},
-                    "Forbidden": {},
+                    "Allowed": [],
+                    "Forbidden": [],
                 },
             },
             "classes": {
                 "CT": {
-                    "Allowed": {},
-                    "Forbidden": {},
+                    "Allowed": [],
+                    "Forbidden": [],
                 },
                 "T": {
-                    "Allowed": {},
-                    "Forbidden": {},
+                    "Allowed": [],
+                    "Forbidden": [],
                 },
                 "Kill": [],
             },
         }
-
-        assert self.analyzer.calculate_ct_win_percentage(
-            event, self.analyzer.cursor
-        ) == (6, round(4 / 6 * 100))
+        result = self.analyzer.calculate_ct_win_percentage(event, self.analyzer.cursor)
+        assert (result["situations_found"], result["ct_win_percentage"][1]) == (
+            6,
+            round(4 / 6 * 100),
+        )
         event["map_name"] = "cs_rush"
-        assert self.analyzer.calculate_ct_win_percentage(
-            event, self.analyzer.cursor
-        ) == (0, 0)
+        result = self.analyzer.calculate_ct_win_percentage(event, self.analyzer.cursor)
+        assert (result["situations_found"], result["ct_win_percentage"][1]) == (
+            0,
+            0,
+        )

@@ -124,7 +124,7 @@ class TrajectoryHandler:
             pl.List(pl.Int64), pl.List(pl.Float64), pl.List(pl.List(pl.Int64))
         )
         return trajectories.with_columns(
-            cols.list.take(pl.arange(0, self.time), null_on_oob=True).list.eval(
+            cols.list.gather(pl.arange(0, self.time), null_on_oob=True).list.eval(
                 pl.element().forward_fill()
             )
         )
