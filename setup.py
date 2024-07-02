@@ -21,7 +21,7 @@ setup(
         "patool~=2.0",
         "polars[numpy]~=0.20.3",
         "PyMySQL[rsa]~=1.1.0",
-        "requests~=2.31.0",
+        "requests>=2.31,<2.33",
         "requests_ip_rotator~=1.0.14",
         "scikit-learn~=1.3.2",
         "scikit-learn-extra~=0.3.0",
