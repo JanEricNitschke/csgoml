@@ -23,7 +23,7 @@ setup(
         "PyMySQL[rsa]~=1.1.0",
         "requests>=2.31,<2.33",
         "requests_ip_rotator~=1.0.14",
-        "scikit-learn~=1.3.2",
+        "scikit-learn>=1.5.0,<1.6",
         "scikit-learn-extra~=0.3.0",
         "scipy~=1.11.4",
         "sympy==1.12",

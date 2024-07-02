@@ -152,12 +152,12 @@ class TrajectoryHandler:
         for side_index, side in enumerate(sides):
             for number in range(1, 6):
                 for feature_index, feature in enumerate(featurelist):
-                    return_array[
-                        :, :, side_index, number - 1, feature_index
-                    ] = np.stack(
-                        trajectories.get_column(
-                            side + "Player" + str(number) + feature
-                        ).to_list()
+                    return_array[:, :, side_index, number - 1, feature_index] = (
+                        np.stack(
+                            trajectories.get_column(
+                                side + "Player" + str(number) + feature
+                            ).to_list()
+                        )
                     )
         return return_array
 

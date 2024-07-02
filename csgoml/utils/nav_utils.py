@@ -300,12 +300,16 @@ def trajectory_distance(
             (
                 dist_func(
                     map_name,
-                    trajectory_array_1[time]
-                    if time in range(len(trajectory_array_1))
-                    else trajectory_array_1[-1],
-                    trajectory_array_2[time]
-                    if time in range(len(trajectory_array_2))
-                    else trajectory_array_2[-1],
+                    (
+                        trajectory_array_1[time]
+                        if time in range(len(trajectory_array_1))
+                        else trajectory_array_1[-1]
+                    ),
+                    (
+                        trajectory_array_2[time]
+                        if time in range(len(trajectory_array_2))
+                        else trajectory_array_2[-1]
+                    ),
                     distance_type,
                 )
             )
@@ -408,12 +412,16 @@ def fast_token_trajectory_distance(
         ) / length
     dist = sum(
         fast_token_state_distance(
-            token_array_1=trajectory_array_1[time]
-            if time in range(len(trajectory_array_1))
-            else trajectory_array_1[-1],
-            token_array_2=trajectory_array_2[time]
-            if time in range(len(trajectory_array_2))
-            else trajectory_array_2[-1],
+            token_array_1=(
+                trajectory_array_1[time]
+                if time in range(len(trajectory_array_1))
+                else trajectory_array_1[-1]
+            ),
+            token_array_2=(
+                trajectory_array_2[time]
+                if time in range(len(trajectory_array_2))
+                else trajectory_array_2[-1]
+            ),
             dist_matrix=dist_matrix,
         )
         for time in range(length)

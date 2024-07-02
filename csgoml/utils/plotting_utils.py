@@ -300,7 +300,7 @@ def plot_map_areas(
         # the whole map and messes with clarity
         # but add it to the legend
         else:
-            axis.plot(np.NaN, np.NaN, label="None")
+            axis.plot(np.nan, np.nan, label="None")
     # Place legend outside of the plot
     handles, labels = axis.get_legend_handles_labels()
     lgd = axis.legend(handles, labels, loc="upper left", bbox_to_anchor=(1.01, 1.01))
@@ -404,7 +404,7 @@ def _plot_areas(cent_ids: dict[str, int], axis: Axes, map_name: str) -> None:
         # the whole map and messes with clarity
         # but add it to the legend
         else:
-            axis.plot(np.NaN, np.NaN, label="None")
+            axis.plot(np.nan, np.nan, label="None")
 
 
 def _plot_mids(

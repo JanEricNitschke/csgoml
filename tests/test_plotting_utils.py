@@ -1,4 +1,5 @@
 """Tests for plotting_utils.py."""
+
 # pylint: disable=attribute-defined-outside-init
 
 import json

@@ -581,13 +581,11 @@ def append_step_to_round_positions(
 
 
 @overload
-def convert_winner_to_int(winner_string: Literal["CT"]) -> Literal[1]:
-    ...
+def convert_winner_to_int(winner_string: Literal["CT"]) -> Literal[1]: ...
 
 
 @overload
-def convert_winner_to_int(winner_string: Literal["T"]) -> Literal[0]:
-    ...
+def convert_winner_to_int(winner_string: Literal["T"]) -> Literal[0]: ...
 
 
 def convert_winner_to_int(winner_string: str) -> Literal[0, 1] | None:
@@ -632,7 +630,14 @@ def get_token_length(map_name: str) -> int:
 
 def initialize_round(
     current_round: GameRound, match_id: str, map_name: str, winner_id: Literal[0, 1]
-) -> tuple[bool, int, IDNumberDict, DictInitialized, RoundPositions, list[int],]:
+) -> tuple[
+    bool,
+    int,
+    IDNumberDict,
+    DictInitialized,
+    RoundPositions,
+    list[int],
+]:
     """Initializes the variables for the current round.
 
     Args:

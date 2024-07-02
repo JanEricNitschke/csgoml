@@ -1,4 +1,5 @@
 """Tests for fight_analyzer.py."""
+
 # pylint: disable=attribute-defined-outside-init,invalid-name
 
 import json

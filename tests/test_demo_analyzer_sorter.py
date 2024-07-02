@@ -1,4 +1,5 @@
 """Tests for demo_analyzer_sorter.py."""
+
 # pylint: disable=attribute-defined-outside-init
 
 import json

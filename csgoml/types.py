@@ -19,7 +19,7 @@ class AllowedForbidden(TypedDict):
 
 
 class EquipSpecification(TypedDict):
-    """Holds information about equipement specifications."""
+    """Holds information about equipment specifications."""
 
     Kill: list[str]
     CT: AllowedForbidden

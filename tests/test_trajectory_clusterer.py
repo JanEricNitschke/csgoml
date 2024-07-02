@@ -1,4 +1,5 @@
 """Tests for trajectory_clusterer.py."""
+
 # pylint: disable=attribute-defined-outside-init
 
 import json
